@@ -1,0 +1,49 @@
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.pyc
+
+# 构建日志与临时产物
+.build-logs/
+.stale/
+_m/
+assets/_icon_tmp/
+
+# 数据库（二进制，每天变化，提交会把仓库撑大）
+# 云端历史由 GitHub Actions 的 cache 保存，缓存失效时自动全量重抓
+kpop.db
+*.db
+*.sqlite
+*.sqlite3
+
+# 依赖目录（体积巨大，绝不提交）
+desktop/node_modules/
+mobile/node_modules/
+
+# 打包产物
+desktop/dist/
+desktop/release/
+mobile/android/app/build/
+mobile/android/.gradle/
+mobile/android/.idea/
+mobile/android/capacitor-cordova-android-plugins/
+mobile/ios/App/Pods/
+mobile/ios/App/build/
+mobile/www/
+
+# 安装包二进制（走外链分发，不进仓库）
+site/downloads/
+*.exe
+*.apk
+*.ipa
+
+# 签名密钥与密码（敏感，禁止提交）
+*.jks
+*.keystore
+keystore.properties
+mobile/android/app/keystore.properties
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini

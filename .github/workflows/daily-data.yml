@@ -1,0 +1,67 @@
+name: 每日更新数据
+
+# 每天北京时间 09:00 自动跑一次（GitHub 用的是 UTC，09:00 北京 = 01:00 UTC）
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:      # 也可以在 GitHub 网页上手动点一次
+
+permissions:
+  contents: write         # 允许把更新后的 data.js 提交回仓库
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHONIOENCODING: utf-8
+      TZ: Asia/Shanghai
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 把上一次的 kpop.db 取回来。有它就能增量抓取（约 3 分钟），
+      # 没有就得全量重抓（约 25 分钟）。缓存不用提交进仓库，避免仓库膨胀。
+      - name: 取出上次的数据库
+        uses: actions/cache@v4
+        with:
+          path: kpop.db
+          key: kpop-db-${{ github.run_id }}
+          restore-keys: |
+            kpop-db-
+
+      # 有上次的数据库 → 增量抓取（约 3 分钟）
+      # 没有（首次运行，或缓存被清理）→ 自动改全量抓取（约 25 分钟），保证历史完整
+      - name: 抓取数据入库并导出 data.js
+        run: |
+          if [ -f kpop.db ]; then
+            echo "检测到已有数据库 → 增量抓取"
+            python scripts/build.py
+          else
+            echo "没有数据库（首次或缓存已失效）→ 全量抓取"
+            python scripts/build.py --full
+          fi
+
+      # 把界面源码与数据复制到 知未.html / desktop/app / site/app
+      - name: 分发到各端
+        run: python tools/sync.py
+
+      # 提交后 Cloudflare 会检测到 push，自动重新部署网站
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "chore(data): 自动更新数据 $(date +'%Y-%m-%d %H:%M')"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          else
+            echo "数据无变化，跳过提交"
+          fi

@@ -1,0 +1,20 @@
+{
+  "name": "zhiwei-mobile",
+  "version": "1.0.0",
+  "description": "知未 · K-POP 回归日历（Android / iOS）",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios",
+    "build:apk": "cd android && gradlew.bat assembleRelease"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  }
+}

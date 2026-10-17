@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#6d4aff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>知未 · K-POP 回归日历</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' stroke='%237c5cff' stroke-width='8' fill='%23fff'/%3E%3Ctext x='50' y='22' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%237c5cff' font-family='sans-serif'%3E12%3C/text%3E%3Ctext x='67' y='26' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%237c5cff' font-family='sans-serif'%3E11%3C/text%3E%3Ctext x='79' y='38' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%239a7aff' font-family='sans-serif'%3E10%3C/text%3E%3Ctext x='83' y='54' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%23b47aff' font-family='sans-serif'%3E9%3C/text%3E%3Ctext x='79' y='70' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%23d05cff' font-family='sans-serif'%3E8%3C/text%3E%3Ctext x='67' y='82' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%23e05cd0' font-family='sans-serif'%3E7%3C/text%3E%3Ctext x='50' y='86' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%23ff5c9d' font-family='sans-serif'%3E6%3C/text%3E%3Ctext x='33' y='82' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%23ff5c9d' font-family='sans-serif'%3E5%3C/text%3E%3Ctext x='21' y='70' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%23d05cff' font-family='sans-serif'%3E4%3C/text%3E%3Ctext x='17' y='54' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%23b47aff' font-family='sans-serif'%3E3%3C/text%3E%3Ctext x='21' y='38' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%239a7aff' font-family='sans-serif'%3E2%3C/text%3E%3Ctext x='33' y='26' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%237c5cff' font-family='sans-serif'%3E1%3C/text%3E%3Ccircle cx='50' cy='50' r='4' fill='%237c5cff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="app.css">
+
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="htop">
+      <div class="brand" id="brandHome">
+        <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#ff5c9d"/>
+            </linearGradient>
+            <linearGradient id="bg2" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#b47aff"/><stop offset="1" stop-color="#ff7ab8"/>
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="44.5" fill="#fff" stroke="url(#bg1)" stroke-width="7"/>
+          <g font-family="-apple-system,'Segoe UI',sans-serif" font-weight="700"
+             dominant-baseline="central" text-anchor="middle" font-size="15.5">
+            <text x="50"  y="17"  fill="#7c5cff">12</text>
+            <text x="66.5" y="21.4" fill="#8367ff">11</text>
+            <text x="78.6" y="33.5" fill="#8f6bff">10</text>
+            <text x="83"  y="50"  fill="#9d6bff">9</text>
+            <text x="78.6" y="66.5" fill="#b46bff">8</text>
+            <text x="66.5" y="78.6" fill="#d16bf5">7</text>
+            <text x="50"  y="83"  fill="#ec66d4">6</text>
+            <text x="33.5" y="78.6" fill="#ff66b0">5</text>
+            <text x="21.4" y="66.5" fill="#ff6b95">4</text>
+            <text x="17"  y="50"  fill="#ff6b7e">3</text>
+            <text x="21.4" y="33.5" fill="#ff6b6b">2</text>
+            <text x="33.5" y="21.4" fill="#ff6b6b">1</text>
+          </g>
+          <line x1="50" y1="50" x2="50" y2="30" stroke="url(#bg2)" stroke-width="4.2" stroke-linecap="round"/>
+          <line x1="50" y1="50" x2="65" y2="58" stroke="#ffb3cd" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="4.2" fill="url(#bg1)"/>
+        </svg>
+        <span class="nm"><b>知未</b><i>K-POP 回归日历</i></span>
+      </div>
+      <div class="search">
+        <span class="ic">🔍</span>
+        <input id="q" type="text" placeholder="搜索团体 / 歌手 / 专辑 / 公司 / 粉丝名…" autocomplete="off">
+        <button class="clr" id="qclr" title="清空">✕</button>
+      </div>
+      <button class="btn" id="btnBiasMgr">💗 本命 <span id="biasN">0</span></button>
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-tab="upcoming">即将回归<span class="n" id="nUp"></span></button>
+      <button class="tab" data-tab="month">本月回归<span class="n" id="nMo"></span></button>
+      <button class="tab" data-tab="history">全部发布<span class="n" id="nHi"></span></button>
+      <button class="tab" data-tab="fav">我的收藏<span class="n" id="nFa"></span></button>
+      <button class="tab" data-tab="bias">本命动态<span class="n" id="nBi"></span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="notice" id="notice">
+    <span id="noticeTxt"></span>
+    <button id="noticeBtn">如何更新</button>
+  </div>
+
+  <div id="listView">
+    <div class="stats" id="stats"></div>
+
+    <div class="biasbox" id="biasBox" style="display:none">
+      <div style="font-weight:800;font-size:14px">💗 本命团体管理</div>
+      <div style="font-size:12.5px;color:var(--sub);margin-top:3px">
+        加入本命后：卡片上会出现红爱心，自动置顶高亮，并在「本命动态」单独追踪。
+      </div>
+      <div class="biaslist" id="biasList"></div>
+      <div class="addrow">
+        <input id="biasInput" type="text" placeholder="输入团体 / 歌手名，回车添加">
+        <button class="btn pri" id="biasAdd">添加</button>
+      </div>
+      <div class="sugg" id="biasSugg"></div>
+    </div>
+
+    <!-- 即将回归：只能选 7 天 / 30 天 -->
+    <div class="simplebar" id="upBar">
+      <span class="sbl">时间范围</span>
+      <div class="seg">
+        <button data-up="f7">未来 7 天</button>
+        <button data-up="f30">未来 30 天</button>
+      </div>
+    </div>
+
+    <!-- 本月回归：只看当月，无需筛选 -->
+    <div class="simplebar" id="moBar">
+      <span class="sbl" id="moLabel">本月回归</span>
+      <span class="sbsub" id="moSub"></span>
+    </div>
+
+    <!-- 全部发布：完整筛选 -->
+    <div class="filters" id="filters">
+      <div class="fg">
+        <label>类型</label>
+        <select id="fType">
+          <option value="">全部类型</option>
+          <option value="Single">单曲</option>
+          <option value="Mini">迷你专 EP</option>
+          <option value="Album">正规专</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>艺人</label>
+        <select id="fKind">
+          <option value="">全部艺人</option>
+          <option value="group">团体</option>
+          <option value="solo">Solo</option>
+          <option value="gg">女团</option>
+          <option value="bg">男团</option>
+          <option value="coed">混声团</option>
+          <option value="female">女歌手</option>
+          <option value="male">男歌手</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>公司</label>
+        <select id="fAgency"><option value="">全部</option></select>
+      </div>
+      <div class="fg" style="position:relative">
+        <label>时间</label>
+        <button class="datebtn" id="dateBtn">📅 <span id="dateLabel">未来 30 天</span> ▾</button>
+      </div>
+      <div class="fg">
+        <label>排序</label>
+        <select id="fSort">
+          <option value="date_asc">日期 近→远</option>
+          <option value="name">艺人名</option>
+        </select>
+      </div>
+      <div class="spacer"></div>
+      <div class="chips">
+        <button class="chip" id="cFav">★ 只看收藏</button>
+        <button class="chip" id="cBias">💗 只看本命</button>
+        <button class="chip" id="cReset" style="display:none">重置</button>
+      </div>
+
+      <div class="calpop" id="calPop">
+        <div class="calh">
+          <button id="calPrev" title="上个月">‹</button>
+          <button class="mm" id="calMon" data-calview="1" title="点击选择年份 / 月份">—</button>
+          <button id="calNext" title="下个月">›</button>
+        </div>
+        <div class="calpick" id="calPick"></div>
+        <div id="calBody">
+          <div class="calw" id="calGrid"></div>
+          <div class="caltools">
+            <button data-calsel="month">整月</button>
+            <button data-calsel="year">整年</button>
+            <button data-calsel="clear">清空</button>
+          </div>
+        </div>
+        <div class="calrng" id="calRng">点击日期选择范围，可跨月</div>
+        <div class="quick" id="calQuick"></div>
+        <div class="calfoot">
+          <button id="calClear">清除</button>
+          <button class="pri" id="calApply">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="content"></div>
+  </div>
+
+  <div id="detailView" style="display:none"></div>
+</main>
+
+<footer>
+  数据来源：<a href="https://kpopping.com" target="_blank" rel="noopener">kpopping.com</a>（回归日程）、
+  <a href="https://music.apple.com" target="_blank" rel="noopener">Apple Music</a>（发行归档 / 曲目 / 跳转）、
+  <a href="https://kpopcal.com" target="_blank" rel="noopener">kpopcal.com</a>（官方确认事件，CC BY 4.0）。
+  「知未」仅做信息聚合与外部跳转，不提供播放服务。
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="data/data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

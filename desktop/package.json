@@ -1,0 +1,64 @@
+{
+  "name": "zhiwei-kpop",
+  "productName": "知未",
+  "version": "1.0.0",
+  "description": "知未 · K-POP 回归日历 —— 未来谁会回归，过去发过什么，一页看完",
+  "main": "main.js",
+  "author": "知未",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win",
+    "dist:portable": "electron-builder --win portable",
+    "dist:installer": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "35.7.5",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.zhiwei.kpop",
+    "productName": "知未",
+    "copyright": "Copyright © 2026 知未",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "app/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "知未",
+      "installerLanguages": ["zh_CN"],
+      "language": "2052",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-便携版.${ext}"
+    },
+    "compression": "maximum",
+    "asar": true
+  }
+}

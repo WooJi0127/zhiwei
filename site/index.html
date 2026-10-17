@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>知未 · K-POP 回归日历</title>
+<meta name="description" content="知未 —— 把「未来谁会回归」和「过去发过什么」收进一个页面。支持 Windows、Android、iOS。">
+<meta name="theme-color" content="#6d4aff">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{
+  --bg:#f7f7fb; --card:#fff; --line:#e8e9f2; --text:#12141f; --sub:#666c80;
+  --brand:#6d4aff; --brand2:#ff4f92; --gold:#f5a623;
+  --grad:linear-gradient(135deg,#6d4aff,#a855f7 55%,#ff4f92);
+  --grad-soft:linear-gradient(135deg,#f3f0ff,#ffeef6);
+  --r:18px;
+  --sh:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.06);
+  --sh-lg:0 18px 60px rgba(16,24,40,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+              "Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg); color:var(--text);
+  line-height:1.65; -webkit-font-smoothing:antialiased;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+body::before{
+  content:""; position:fixed; inset:0 0 auto 0; height:720px; z-index:-1;
+  background:
+    radial-gradient(1000px 460px at 14% -10%, rgba(109,74,255,.20), transparent 62%),
+    radial-gradient(880px 420px at 86% -16%, rgba(255,79,146,.16), transparent 60%);
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+
+/* ---------- 顶部导航 ---------- */
+header{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+  background:rgba(247,247,251,.78);border-bottom:1px solid transparent;
+  transition:border-color .25s,background .25s}
+header.solid{border-color:var(--line);background:rgba(247,247,251,.94)}
+.nav{display:flex;align-items:center;gap:14px;height:64px}
+.logo{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
+.logo img{width:36px;height:36px;border-radius:10px;box-shadow:0 4px 14px rgba(109,74,255,.32)}
+.logo b{font-size:19px;letter-spacing:3px;font-weight:700}
+.logo span{font-size:10.5px;letter-spacing:2.4px;color:var(--sub);
+  display:block;margin-top:-4px;font-weight:600}
+.nav .sp{flex:1}
+.nav a.link{color:var(--sub);text-decoration:none;font-size:14px;font-weight:600;
+  padding:8px 12px;border-radius:10px;transition:.2s}
+.nav a.link:hover{color:var(--text);background:rgba(109,74,255,.07)}
+@media(max-width:720px){ .nav a.link{display:none} }
+
+/* ---------- 按钮 ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 22px;border-radius:13px;font-size:14.5px;font-weight:650;
+  text-decoration:none;cursor:pointer;border:1px solid transparent;
+  transition:transform .16s,box-shadow .2s,background .2s;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn.pri{background:var(--grad);color:#fff;box-shadow:0 6px 20px rgba(109,74,255,.32)}
+.btn.pri:hover{box-shadow:0 10px 28px rgba(109,74,255,.42);transform:translateY(-1px)}
+.btn.gho{background:#fff;color:var(--text);border-color:var(--line);box-shadow:var(--sh)}
+.btn.gho:hover{border-color:#d7d9e8;transform:translateY(-1px)}
+.btn[aria-disabled="true"]{opacity:.5;pointer-events:none}
+
+/* ---------- Hero ---------- */
+.hero{padding:64px 0 28px;text-align:center}
+.hero .tag{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:650;
+  color:#5b3fd6;background:#fff;border:1px solid #e6e0ff;border-radius:999px;
+  padding:6px 14px;box-shadow:var(--sh);margin-bottom:22px}
+.hero .dot{width:6px;height:6px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+.hero h1{font-size:clamp(30px,5.4vw,54px);line-height:1.16;letter-spacing:-1px;font-weight:800}
+.hero h1 em{font-style:normal;background:var(--grad);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.sub{max-width:620px;margin:20px auto 0;font-size:clamp(14.5px,2.1vw,17px);
+  color:var(--sub);line-height:1.85}
+.hero .acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+.hero .meta{margin-top:16px;font-size:12.5px;color:#8b90a3}
+
+/* ---------- 截图 ---------- */
+.shot{margin:52px auto 0;max-width:980px;border-radius:22px;overflow:hidden;
+  box-shadow:var(--sh-lg);border:1px solid rgba(255,255,255,.7);
+  background:#fff;position:relative}
+.shot::after{content:"";position:absolute;inset:0;border-radius:22px;
+  box-shadow:inset 0 0 0 1px rgba(16,24,40,.06);pointer-events:none}
+.shot img{display:block;width:100%;height:auto}
+.shot .bar{display:flex;align-items:center;gap:7px;padding:11px 16px;
+  background:#fbfbfe;border-bottom:1px solid var(--line)}
+.shot .bar i{width:10px;height:10px;border-radius:50%;background:#e3e5f0;display:block}
+.shot .bar i:nth-child(1){background:#ff5f57}
+.shot .bar i:nth-child(2){background:#febc2e}
+.shot .bar i:nth-child(3){background:#28c840}
+.shot .bar .u{margin-left:10px;font-size:11.5px;color:#9aa0b4;
+  background:#fff;border:1px solid var(--line);border-radius:7px;padding:2px 10px}
+
+/* ---------- 通用小节 ---------- */
+section{padding:74px 0}
+.sec-t{text-align:center;margin-bottom:44px}
+.sec-t h2{font-size:clamp(23px,3.4vw,32px);font-weight:750;letter-spacing:-.4px}
+.sec-t p{margin-top:10px;color:var(--sub);font-size:14.5px}
+
+/* ---------- 功能网格 ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:16px}
+.feat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:24px 22px;box-shadow:var(--sh);transition:transform .2s,box-shadow .2s,border-color .2s}
+.feat:hover{transform:translateY(-3px);box-shadow:0 12px 34px rgba(16,24,40,.09);
+  border-color:#dcdff0}
+.feat .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+  font-size:19px;background:var(--grad-soft);margin-bottom:15px}
+.feat h3{font-size:15.5px;font-weight:700;margin-bottom:7px}
+.feat p{font-size:13.5px;color:var(--sub);line-height:1.72}
+
+/* ---------- 平台 ---------- */
+.plats{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.plat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:28px 26px;box-shadow:var(--sh);display:flex;flex-direction:column;
+  position:relative;overflow:hidden}
+.plat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--grad);opacity:.8}
+.plat .hd{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.plat .hd .em{font-size:26px;line-height:1}
+.plat h3{font-size:17px;font-weight:750}
+.plat .ver{font-size:11.5px;color:var(--sub);font-weight:600}
+.plat p{font-size:13.5px;color:var(--sub);line-height:1.72;margin-bottom:18px}
+.plat .acts{margin-top:auto;display:flex;gap:9px;flex-wrap:wrap}
+.plat .acts .btn{height:40px;padding:0 16px;font-size:13.5px;border-radius:11px}
+.plat .note{margin-top:12px;font-size:11.5px;color:#9aa0b4;line-height:1.6}
+.badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.4px;
+  padding:3px 8px;border-radius:6px;background:#fff4e5;color:#b45309;
+  border:1px solid #fde7c4;vertical-align:2px;margin-left:6px}
+.badge.ok{background:#eafaf0;color:#15803d;border-color:#c9f0d8}
+
+/* ---------- FAQ ---------- */
+.faq{max-width:780px;margin:0 auto}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:0 20px;margin-bottom:11px;box-shadow:var(--sh);transition:border-color .2s}
+.faq details[open]{border-color:#dcd5ff}
+.faq summary{cursor:pointer;font-weight:650;font-size:14.5px;padding:16px 0;
+  list-style:none;display:flex;align-items:center;gap:10px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"＋";color:var(--brand);font-weight:700;font-size:15px;
+  transition:transform .2s;display:inline-block}
+.faq details[open] summary::before{transform:rotate(45deg)}
+.faq .a{padding:0 0 17px 25px;font-size:13.5px;color:var(--sub);line-height:1.8}
+.faq .a code{background:#f4f4f9;border:1px solid var(--line);border-radius:5px;
+  padding:1px 6px;font-size:12.5px;font-family:ui-monospace,Consolas,monospace}
+
+/* ---------- 页脚 ---------- */
+footer{border-top:1px solid var(--line);padding:40px 0 52px;margin-top:20px}
+footer .f{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;
+  justify-content:space-between}
+footer .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+footer .brand img{width:30px;height:30px;border-radius:9px}
+footer .brand b{letter-spacing:2px;font-size:15px}
+footer p{font-size:12.5px;color:#8b90a3;line-height:1.9;max-width:520px}
+footer a{color:#6f74ff;text-decoration:none}
+footer a:hover{text-decoration:underline}
+@media(max-width:640px){
+  .hero{padding:44px 0 18px}
+  section{padding:54px 0}
+  .shot{margin-top:36px;border-radius:16px}
+}
+</style>
+</head>
+<body>
+
+<header id="hd">
+  <div class="wrap nav">
+    <a class="logo" href="#top">
+      <img src="favicon.png" alt="知未">
+      <span style="display:block">
+        <b>知未</b>
+        <span>K-POP 回归日历</span>
+      </span>
+    </a>
+    <div class="sp"></div>
+    <a class="link" href="#features">功能</a>
+    <a class="link" href="#download">下载</a>
+    <a class="link" href="#faq">常见问题</a>
+    <a class="btn pri" href="#download" style="height:38px;padding:0 16px;font-size:13.5px">
+      立即下载
+    </a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- Hero -->
+  <section class="hero" style="padding-top:64px">
+    <div class="wrap">
+      <div class="tag"><span class="dot"></span>数据每日自动更新</div>
+      <h1>未来谁会回归<br><em>过去发过什么</em></h1>
+      <p class="sub">
+        不用再翻遍各个超话和日历。知未把 K-POP 的回归日程和历史发行收进一个页面，
+        倒计时、搜索、筛选、收藏、本命置顶，点开专辑看完整曲目。
+      </p>
+      <div class="acts">
+        <a class="btn pri" href="#download">下载客户端</a>
+        <a class="btn gho" href="app/index.html">在线试用</a>
+      </div>
+      <div class="meta">Windows · Android · iOS　|　纯本地运行，不做播放，不收集任何数据</div>
+
+      <div class="shot">
+        <div class="bar"><i></i><i></i><i></i><span class="u">知未 · 即将回归</span></div>
+        <img src="screenshot.png" alt="知未界面预览" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <!-- 功能 -->
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-t">
+        <h2>为什么是知未</h2>
+        <p>不是为了替代音乐 App，是为了解决「信息太散」这件事</p>
+      </div>
+      <div class="grid">
+        <div class="feat">
+          <div class="ic">⏳</div>
+          <h3>倒计时，而不是列表</h3>
+          <p>每张卡片带 D-N 角标。<b>即将回归</b>只看 7 天或 30 天，<b>本月回归</b>单独一页，
+             不用在一堆日期里翻找。</p>
+        </div>
+        <div class="feat">
+          <div class="ic">📅</div>
+          <h3>日历式时间筛选</h3>
+          <p>月历上有发行的日期带小圆点，一眼看出哪天热闹。点两个日期圈出任意区间，
+             可跨月，也能直接跳到任意年月。</p>
+        </div>
+        <div class="feat">
+          <div class="ic">❤️</div>
+          <h3>本命与收藏分开</h3>
+          <p><b>本命</b>针对艺人，所有作品自动置顶高亮；<b>收藏</b>针对单张专辑。
+             两个是独立的，不会互相干扰。</p>
+        </div>
+        <div class="feat">
+          <div class="ic">💿</div>
+          <h3>点开就有完整曲目</h3>
+          <p>大封面、发行日期、曲目数、总时长、经纪公司、粉丝名。
+             曲目逐首列出，点开看时长与曲序。</p>
+        </div>
+        <div class="feat">
+          <div class="ic">🧭</div>
+          <h3>分类不含糊</h3>
+          <p>团体 / Solo / 男团 / 女团 / 混声团 / 男歌手 / 女歌手，
+             经纪公司归并到母公司，筛选列表只有十几个。</p>
+        </div>
+        <div class="feat">
+          <div class="ic">🔒</div>
+          <h3>纯本地，不联网也能用</h3>
+          <p>数据和界面都在本地，启动即用。没有账号、没有广告、不上传任何信息。
+             想更新数据，菜单里点一下就行。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 下载 -->
+  <section id="download">
+    <div class="wrap">
+      <div class="sec-t">
+        <h2>选择你的平台</h2>
+        <p>同一套体验，各端数据一致</p>
+      </div>
+      <div class="plats">
+
+        <div class="plat">
+          <div class="hd">
+            <span class="em">🪟</span>
+            <div>
+              <h3>Windows <span class="badge ok">已发布</span></h3>
+              <div class="ver">Windows 10 / 11 · 64 位</div>
+            </div>
+          </div>
+          <p>提供安装版与便携版。安装版会创建桌面和开始菜单快捷方式，
+             便携版解压即用，不写注册表。</p>
+          <div class="acts">
+            <a class="btn pri" href="downloads/知未-1.0.0-x64.exe" download>下载安装包</a>
+            <a class="btn gho" href="downloads/知未-1.0.0-便携版.exe" download>便携版</a>
+          </div>
+          <div class="note">约 80 MB · 首次启动可能被 SmartScreen 提示，选「更多信息 → 仍要运行」</div>
+        </div>
+
+        <div class="plat">
+          <div class="hd">
+            <span class="em">🤖</span>
+            <div>
+              <h3>Android</h3>
+              <div class="ver">Android 7.0 及以上</div>
+            </div>
+          </div>
+          <p>直接安装 APK 即可，无需应用商店。手机竖屏已做适配，
+             本命和收藏存在本机。</p>
+          <div class="acts">
+            <a class="btn pri" href="downloads/知未-1.0.0.apk" download>下载 APK</a>
+          </div>
+          <div class="note">安装时需允许「安装未知来源应用」</div>
+        </div>
+
+        <div class="plat">
+          <div class="hd">
+            <span class="em">🍎</span>
+            <div>
+              <h3>iOS <span class="badge">建设中</span></h3>
+              <div class="ver">iOS 14 及以上</div>
+            </div>
+          </div>
+          <p>Xcode 工程已配置完成。上架 App Store 需要开发者账号，
+             在那之前可以先用 Safari 把网页版「添加到主屏幕」。</p>
+          <div class="acts">
+            <a class="btn gho" href="app/index.html">先用网页版</a>
+          </div>
+          <div class="note">Safari → 分享 → 添加到主屏幕，体验接近原生</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-t">
+        <h2>常见问题</h2>
+      </div>
+      <div class="faq">
+        <details open>
+          <summary>数据从哪来？多久更新一次？</summary>
+          <div class="a">
+            未来日程来自 kpopping.com 与 kpopcal.com，历史发行与曲目来自
+            Apple Music 与网易云音乐。桌面端每次启动会静默检查一次更新，
+            也可以在菜单「文件 → 检查数据更新」手动拉取。
+          </div>
+        </details>
+        <details>
+          <summary>为什么有些团搜不到？</summary>
+          <div class="a">
+            收录范围是<b>韩语专辑 / 迷你专 / 单曲</b>，排除 OST、Remix、伴奏、
+            日语版与中文版等衍生发行。如果确认某个团应该被收录但没有，
+            可以在项目的 <code>SEED_ARTISTS</code> 名单里加一行，重新生成数据即可。
+          </div>
+        </details>
+        <details>
+          <summary>能听歌吗？</summary>
+          <div class="a">
+            不能，也不打算做。知未只做信息聚合，不提供播放，
+            也不会跳转到任何音乐平台——数据来自多个源，跳哪一家都不合适，而且链接会过期。
+            看到想听的，自己去音乐 App 里搜就好。
+          </div>
+        </details>
+        <details>
+          <summary>收藏和本命会上传吗？</summary>
+          <div class="a">
+            不会。收藏与本命只存在你自己的设备上（浏览器/应用本地存储）。
+            换设备需要重新标记，清理数据也会丢失。
+          </div>
+        </details>
+        <details>
+          <summary>为什么缺少制作团队（作词/作曲）？</summary>
+          <div class="a">
+            目前公开接口都拿不到可靠的 K-POP 制作人员名单：Apple Music 不提供，
+            Discogs 对 K-POP 的 credits 几乎为空，MusicBrainz 对新专辑命中率极低。
+            详情页里如实写「暂未收录」，没有编造数据。
+          </div>
+        </details>
+        <details>
+          <summary>数据最早到什么时候？</summary>
+          <div class="a">
+            目前收录 2024 年 10 月之后的发行。更早的历史还在计划中，
+            数据源本身能一直往回翻，只是需要更长的抓取时间。
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap f">
+    <div>
+      <div class="brand">
+        <img src="favicon.png" alt="">
+        <b>知未</b>
+      </div>
+      <p>
+        图标是一个倒转的时钟：原本 1 的位置写着 11，2 的位置写着 10，整圈数字左右镜像。
+        寓意「时间倒着数」——回归是倒计时，发布是回溯。名字取「知晓未发生的事」。
+      </p>
+    </div>
+    <div style="text-align:right;min-width:200px">
+      <p style="margin-bottom:10px">
+        数据来源：<a href="https://kpopping.com" target="_blank" rel="noopener">kpopping.com</a> ·
+        Apple Music · 网易云音乐 ·
+        <a href="https://kpopcal.com" target="_blank" rel="noopener">kpopcal.com</a>
+      </p>
+      <p>本站仅做信息聚合，不提供音源，不承担内容版权。</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// 滚动时给导航加分割线
+var hd = document.getElementById("hd");
+addEventListener("scroll", function(){
+  hd.classList.toggle("solid", scrollY > 8);
+}, {passive:true});
+
+// 点到还没上线的下载项时，给个提示而不是 404。
+// 只在线上的时候检查——本地双击打开（file://）时 fetch 一定失败，
+// 那样正常能下的包也会被拦住。
+if (location.protocol === "http:" || location.protocol === "https:") {
+  document.querySelectorAll('a[href$=".apk"], a[href$=".exe"]').forEach(function(a){
+    a.addEventListener("click", function(e){
+      var href = a.getAttribute("href");
+      fetch(href, {method:"HEAD"}).then(function(r){
+        if(!r.ok) throw 0;
+      }).catch(function(){
+        e.preventDefault();
+        alert("这个安装包还没上传完成。\n可以先点「在线试用」直接用网页版。");
+      });
+    });
+  });
+}
+</script>
+</body>
+</html>

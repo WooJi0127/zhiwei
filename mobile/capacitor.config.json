@@ -1,0 +1,27 @@
+{
+  "appId": "com.zhiwei.kpop",
+  "appName": "知未",
+  "webDir": "www",
+  "loggingEnabled": false,
+  "backgroundColor": "#f2f3f9",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "contentInset": "always",
+    "scrollEnabled": true,
+    "preferredContentMode": "mobile"
+  },
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#f2f3f9",
+      "showSpinner": false
+    }
+  }
+}
