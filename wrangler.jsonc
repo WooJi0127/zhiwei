@@ -3,6 +3,7 @@
   "name": "zhiwei-kpop",
   "compatibility_date": "2026-10-01",
   "preview_urls": false,
+  "workers_dev": true,
   "assets": {
     "directory": "./site/app"
   }
