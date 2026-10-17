@@ -810,6 +810,8 @@ $("calApply").addEventListener("click", function(){
   if(!g){ $("noticeTxt").textContent = "数据未生成，请先运行更新脚本。"; $("notice").classList.add("on"); return; }
   var d = new Date(g.replace(" ", "T"));
   var h = (Date.now() - d.getTime()) / 3600000;
+  var ge = $("genAt");
+  if(ge){ ge.textContent = "数据更新于 " + g + " · "; }
   if(h > 30){
     $("noticeTxt").textContent = "数据更新于 " + g + "（已过 " + Math.floor(h) + " 小时）。"
       + "每天应自动更新一次，若未更新请检查计划任务。";

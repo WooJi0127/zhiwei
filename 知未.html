@@ -597,7 +597,7 @@ footer a{color:var(--brand)}
 </main>
 
 <footer>
-  数据来源：<a href="https://kpopping.com" target="_blank" rel="noopener">kpopping.com</a>（回归日程）、
+  <span id="genAt"></span>数据来源：<a href="https://kpopping.com" target="_blank" rel="noopener">kpopping.com</a>（回归日程）、
   <a href="https://music.apple.com" target="_blank" rel="noopener">Apple Music</a>（发行归档 / 曲目 / 跳转）、
   <a href="https://kpopcal.com" target="_blank" rel="noopener">kpopcal.com</a>（官方确认事件，CC BY 4.0）。
   「知未」仅做信息聚合与外部跳转，不提供播放服务。
@@ -1419,6 +1419,8 @@ $("calApply").addEventListener("click", function(){
   if(!g){ $("noticeTxt").textContent = "数据未生成，请先运行更新脚本。"; $("notice").classList.add("on"); return; }
   var d = new Date(g.replace(" ", "T"));
   var h = (Date.now() - d.getTime()) / 3600000;
+  var ge = $("genAt");
+  if(ge){ ge.textContent = "数据更新于 " + g + " · "; }
   if(h > 30){
     $("noticeTxt").textContent = "数据更新于 " + g + "（已过 " + Math.floor(h) + " 小时）。"
       + "每天应自动更新一次，若未更新请检查计划任务。";
