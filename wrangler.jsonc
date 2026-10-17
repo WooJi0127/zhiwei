@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zhiwei-kpop",
+  "compatibility_date": "2026-10-01",
+  "preview_urls": false,
+  "assets": {
+    "directory": "./site/app"
+  }
+}
