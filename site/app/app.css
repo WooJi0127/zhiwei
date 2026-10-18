@@ -85,10 +85,16 @@ main{max-width:1280px;margin:0 auto;padding:18px}
   flex-wrap:wrap;align-items:center;box-shadow:var(--shadow)}
 .fg{display:flex;align-items:center;gap:7px}
 .fg label{font-size:11.5px;color:var(--sub);font-weight:700;letter-spacing:.3px}
-select{padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;
-  font-size:12.5px;color:var(--text);outline:none;font-weight:600;transition:border-color .15s,box-shadow .15s}
-select:hover{border-color:#d3d7e8}
+select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:11px;background-color:#fff;
+  font-size:12.5px;color:var(--text);outline:none;font-weight:600;cursor:pointer;
+  transition:border-color .15s,box-shadow .15s,background-color .15s;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%23696f83' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;background-size:12px}
+select:hover{border-color:var(--brand2);background-color:#fdfcff}
 select:focus{border-color:var(--brand);box-shadow:var(--ring)}
+select:focus:hover{border-color:var(--brand)}
+select option{background:#fff;color:var(--text)}
 .datebtn{padding:7px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;
   font-size:12.5px;color:var(--text);font-weight:700;display:flex;align-items:center;gap:7px;
   transition:border-color .15s,box-shadow .15s}
@@ -337,6 +343,38 @@ footer a{color:var(--brand)}
   font-weight:700;opacity:0;transition:.24s;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.22)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ================= 赞赏（悬浮按钮 + 弹层） ================= */
+.spon{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:120;
+  display:flex;align-items:center;gap:7px;
+  padding:10px 17px;border:0;border-radius:24px;
+  background:var(--grad);color:#fff;font-size:13px;font-weight:800;letter-spacing:.5px;
+  box-shadow:0 6px 20px rgba(109,74,255,.34);
+  transition:transform .18s,box-shadow .18s,opacity .18s}
+.spon:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(109,74,255,.44)}
+.spon:active{transform:translateY(0)}
+.spon svg{width:16px;height:16px;flex:none}
+.spon.hide{opacity:0;pointer-events:none;transform:translateY(16px)}
+
+.sponpop{position:fixed;right:20px;bottom:calc(76px + env(safe-area-inset-bottom));
+  z-index:121;width:236px;background:#fff;border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--shadow-lg);padding:14px;display:none;animation:sponin .18s ease-out}
+.sponpop.on{display:block}
+@keyframes sponin{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+.sponh{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.sponh b{font-size:13.5px;font-weight:800}
+.sponx{border:0;background:#f0f1f7;color:var(--sub);width:22px;height:22px;
+  border-radius:50%;font-size:11px;display:grid;place-items:center;line-height:1}
+.sponx:hover{background:#e6e8f2;color:var(--text)}
+.spondesc{margin:0 0 11px;font-size:11.5px;line-height:1.65;color:var(--sub)}
+.spontabs{display:flex;gap:4px;background:#f0f1f7;border-radius:10px;padding:3px;margin-bottom:11px}
+.spontab{flex:1;border:0;background:transparent;border-radius:8px;padding:6px 0;
+  font-size:12px;font-weight:700;color:var(--sub);transition:background .15s,color .15s}
+.spontab.on{background:var(--grad);color:#fff;box-shadow:0 3px 10px rgba(109,74,255,.28)}
+.sponqr{background:#fafbfd;border:1px solid var(--line);border-radius:12px;
+  padding:9px;display:grid;place-items:center}
+.sponqr img{width:172px;height:172px;object-fit:contain;display:block;border-radius:6px}
+.spontip{margin:9px 0 0;font-size:11px;color:var(--sub);text-align:center}
+
 @media(max-width:760px){
   .hwrap{padding:10px 12px} main{padding:14px 12px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -386,6 +424,11 @@ footer a{color:var(--brand)}
   /* 7) 卡片文字在窄屏下别太挤 */
   .ctitle{font-size:13.5px}
   .car{font-size:12px}
+
+  /* 8) 赞赏按钮在小屏收窄，别挡住卡片 */
+  .spon{right:12px;bottom:calc(14px + env(safe-area-inset-bottom));padding:9px 14px;font-size:12.5px}
+  .sponpop{right:12px;bottom:calc(64px + env(safe-area-inset-bottom));width:214px}
+  .sponqr img{width:150px;height:150px}
 }
 
 /* 超窄屏（小屏手机 / 分屏） */

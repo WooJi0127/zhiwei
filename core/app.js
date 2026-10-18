@@ -630,9 +630,38 @@ function syncTabs(){
   });
 }
 
+/* ============================ 赞赏 ============================ */
+/* 收款码：现在放的是占位图。把你的微信 / 支付宝收款码转成 base64 填进下面两行的
+   引号里即可，填好后页面自动显示你自己的收款码（转 base64 这步可以让我帮你做）。 */
+var PAY_QR = {
+  wechat: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23f6f7fb'/%3E%3Crect x='60' y='56' width='80' height='80' rx='10' fill='none' stroke='%23c9cddc' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ctext x='100' y='98' text-anchor='middle' font-size='13' font-weight='bold' fill='%239aa0b4' font-family='sans-serif'%3E%E6%94%B6%E6%AC%BE%E7%A0%81%3C/text%3E%3Ctext x='100' y='120' text-anchor='middle' font-size='11' fill='%23b3b8c8' font-family='sans-serif'%3E%E5%BE%AE%E4%BF%A1%20%C2%B7%20%E5%BE%85%E4%B8%8A%E4%BC%A0%3C/text%3E%3C/svg%3E",
+  alipay: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23f6f7fb'/%3E%3Crect x='60' y='56' width='80' height='80' rx='10' fill='none' stroke='%23b9c6dd' stroke-width='2' stroke-dasharray='6 4'/%3E%3Ctext x='100' y='98' text-anchor='middle' font-size='13' font-weight='bold' fill='%239aa0b4' font-family='sans-serif'%3E%E6%94%B6%E6%AC%BE%E7%A0%81%3C/text%3E%3Ctext x='100' y='120' text-anchor='middle' font-size='11' fill='%23b3b8c8' font-family='sans-serif'%3E%E6%94%AF%E4%BB%98%E5%AE%9D%20%C2%B7%20%E5%BE%85%E4%B8%8A%E4%BC%A0%3C/text%3E%3C/svg%3E"
+};
+function SponShow(kind){
+  var img = $("sponImg");
+  if(img){ img.src = PAY_QR[kind] || PAY_QR.wechat; }
+}
+SponShow("wechat");
+
 /* ============================ 事件 ============================ */
 document.addEventListener("click", function(e){
   var t = e.target, el;
+
+  /* 赞赏：开关面板 / 切换收款码 / 点面板外自动收起
+     两个要点：
+     1) 用 closest 判断，绝不在面板上写 stopPropagation——会掐断 document 级事件委托（踩过）。
+     2) 整段做空值保护——这段代码在所有点击时都会执行，一旦报错，整个页面都会点不动。 */
+  var sp = $("sponPop");
+  if(sp){
+    if(t.closest("#sponBtn")){ sp.classList.toggle("on"); return; }
+    if((el = t.closest(".spontab"))){
+      document.querySelectorAll(".spontab").forEach(function(x){ x.classList.toggle("on", x === el); });
+      SponShow(el.getAttribute("data-pay"));
+      return;
+    }
+    if(t.closest("#sponX")){ sp.classList.remove("on"); return; }
+    if(sp.classList.contains("on") && !t.closest("#sponPop")){ sp.classList.remove("on"); }
+  }
 
   /* 本命爱心 */
   if((el = t.closest("[data-heart]"))){
