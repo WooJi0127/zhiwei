@@ -113,6 +113,7 @@ select option{background:#fff;color:var(--text)}
 .btn:hover{background:#f6f7fc;border-color:#d3d7e8}
 .btn.pri{background:var(--grad);border-color:transparent;color:#fff;
   box-shadow:0 3px 12px rgba(109,74,255,.28)}
+a.btn{display:inline-flex;align-items:center}
 
 /* ================= 简易控制条（即将回归 / 本月回归） ================= */
 .simplebar{display:none;align-items:center;gap:10px;background:var(--card);
