@@ -376,6 +376,20 @@ footer a{color:var(--brand)}
 .sponqr img{width:172px;height:172px;object-fit:contain;display:block;border-radius:6px}
 .spontip{margin:9px 0 0;font-size:11px;color:var(--sub);text-align:center}
 
+/* ================= 下载页 ================= */
+.dlhead{max-width:760px;margin:4px auto 18px}
+.dlhead h2{margin:14px 0 6px;font-size:21px;font-weight:800}
+.dlhead p{margin:0;color:var(--sub);font-size:13px}
+.dlgrid{max-width:760px;margin:0 auto;display:grid;gap:12px}
+.dlcard{display:flex;align-items:center;gap:14px;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.dlicon{font-size:26px;flex:none;line-height:1}
+.dltxt{flex:1;min-width:0}
+.dltxt b{display:block;font-size:14.5px;font-weight:800}
+.dltxt > span{display:block;font-size:12px;color:var(--sub);margin-top:2px}
+.dlcard .btn{margin-left:auto;flex:none;min-width:86px;justify-content:center;text-align:center}
+.dlnote{max-width:760px;margin:16px auto 0;color:var(--sub);font-size:12px;line-height:1.7}
+
 @media(max-width:760px){
   .hwrap{padding:10px 12px} main{padding:14px 12px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -430,6 +444,10 @@ footer a{color:var(--brand)}
   .spon{right:12px;bottom:calc(14px + env(safe-area-inset-bottom));padding:9px 14px;font-size:12.5px}
   .sponpop{right:12px;bottom:calc(64px + env(safe-area-inset-bottom));width:214px}
   .sponqr img{width:150px;height:150px}
+
+  /* 9) 下载页卡片在窄屏换行 */
+  .dlcard{flex-wrap:wrap;gap:10px}
+  .dlcard .btn{margin-left:42px}
 }
 
 /* 超窄屏（小屏手机 / 分屏） */
