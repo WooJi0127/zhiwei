@@ -9,6 +9,10 @@ __pycache__/
 _m/
 assets/_icon_tmp/
 
+# 脚本运行日志（每天变化，不该进仓库）
+update.log
+*.log
+
 # 数据库（二进制，每天变化，提交会把仓库撑大）
 # 云端历史由 GitHub Actions 的 cache 保存，缓存失效时自动全量重抓
 kpop.db
