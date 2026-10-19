@@ -208,8 +208,12 @@ select:hover{border-color:var(--brand2);background-color:#fdfcff}
 select:focus{border-color:var(--brand);box-shadow:var(--ring)}
 select:focus:hover{border-color:var(--brand)}
 select option{background:#fff;color:var(--text)}
-.datebtn{padding:7px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;
-  font-size:12.5px;color:var(--text);font-weight:700;display:flex;align-items:center;gap:7px;
+/* 日期按钮：箭头与 select 用同一枚 SVG，视觉完全对齐 */
+.datebtn{padding:7px 30px 7px 13px;border:1px solid var(--line);border-radius:11px;background-color:#fff;
+  font-size:12.5px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:7px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%23696f83' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;background-size:12px;
+  transition:border-color .15s,box-shadow .15s,background-color .15s;
   transition:border-color .15s,box-shadow .15s}
 .datebtn:hover{border-color:var(--brand2)}
 .datebtn.on{border-color:var(--brand);color:var(--brand);background:var(--grad-soft);
@@ -248,7 +252,7 @@ a.btn{display:inline-flex;align-items:center}
 .calpop.on{display:block}
 .calh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .calh .mm{font-weight:800;font-size:14px;flex:1;text-align:center}
-.calh button{border:1px solid var(--line);background:#fff;border-radius:8px;height:28px;
+.calh button{border:1px solid var(--line);background:#fff;border-radius:10px;height:28px;
   font-size:14px;color:var(--sub);line-height:1}
 .calh button#calPrev,.calh button#calNext{width:28px}
 .calh button.mm{font-size:13.5px;color:var(--text);font-weight:800}
@@ -259,13 +263,14 @@ a.btn{display:inline-flex;align-items:center}
 .calpick.on{display:grid}
 .calpick .pyh{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .calpick .pyh span{flex:1;text-align:center;font-weight:800;font-size:13.5px}
-.calpick .pyh button{width:26px;height:26px;border:1px solid var(--line);background:#fff;
+.calpick .pyh button{width:26px;height:26px;border:1px solid var(--line);background:#fff;border-radius:8px;
   border-radius:7px;font-size:13px;color:var(--sub);line-height:1}
 .calpick .pyh button:hover{background:#f4f5fa}
-.calpick .mc{padding:7px 0;border:1px solid var(--line);background:#fff;border-radius:9px;
+.calpick .mc{padding:7px 0;border:1px solid var(--line);background:#fff;border-radius:10px;
   font-size:12.5px;font-weight:700;color:var(--text)}
 .calpick .mc:hover{background:#f4f5fa}
-.calpick .mc.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.calpick .mc.on{background:var(--grad);border-color:transparent;color:#fff;
+  box-shadow:0 2px 8px rgba(109,74,255,.30)}
 /* 已选范围提示 */
 .calrng{margin-top:10px;font-size:12px;color:var(--sub);text-align:center;font-weight:600;
   line-height:1.5}
@@ -273,7 +278,7 @@ a.btn{display:inline-flex;align-items:center}
 /* 整月 / 整年 快捷 */
 .caltools{display:flex;gap:6px;margin-top:8px}
 .caltools button{flex:1;padding:6px 0;border:1px solid var(--line);background:#fff;
-  border-radius:9px;font-size:12px;font-weight:700;color:var(--sub)}
+  border-radius:10px;font-size:12px;font-weight:700;color:var(--sub)}
 .caltools button:hover{background:#f1edff;border-color:var(--brand2);color:var(--brand)}
 .calw{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calw .wd{text-align:center;font-size:11px;color:var(--sub);font-weight:700;padding:3px 0}
@@ -291,9 +296,10 @@ a.btn{display:inline-flex;align-items:center}
 .cald.today{box-shadow:inset 0 0 0 1.5px var(--brand2)}
 .quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
 .calfoot{display:flex;gap:7px;margin-top:11px}
-.calfoot button{flex:1;padding:7px;border-radius:9px;border:1px solid var(--line);background:#fff;
+.calfoot button{flex:1;padding:7px;border-radius:10px;border:1px solid var(--line);background:#fff;
   font-size:12.5px;font-weight:700;color:var(--sub)}
-.calfoot button.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.calfoot button.pri{background:var(--grad);border-color:transparent;color:#fff;
+  box-shadow:0 2px 8px rgba(109,74,255,.30)}
 
 /* ================= sections & cards ================= */
 .sec-h{display:flex;align-items:center;gap:10px;margin:26px 0 13px}
@@ -488,20 +494,6 @@ footer a{color:var(--brand)}
   padding:9px;display:grid;place-items:center}
 .sponqr img{width:172px;height:172px;object-fit:contain;display:block;border-radius:6px}
 .spontip{margin:9px 0 0;font-size:11px;color:var(--sub);text-align:center}
-
-/* ================= 下载页 ================= */
-.dlhead{max-width:760px;margin:4px auto 18px}
-.dlhead h2{margin:14px 0 6px;font-size:21px;font-weight:800}
-.dlhead p{margin:0;color:var(--sub);font-size:13px}
-.dlgrid{max-width:760px;margin:0 auto;display:grid;gap:12px}
-.dlcard{display:flex;align-items:center;gap:14px;background:var(--card);
-  border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-.dlicon{font-size:26px;flex:none;line-height:1}
-.dltxt{flex:1;min-width:0}
-.dltxt b{display:block;font-size:14.5px;font-weight:800}
-.dltxt > span{display:block;font-size:12px;color:var(--sub);margin-top:2px}
-.dlcard .btn{margin-left:auto;flex:none;min-width:86px;justify-content:center;text-align:center}
-.dlnote{max-width:760px;margin:16px auto 0;color:var(--sub);font-size:12px;line-height:1.7}
 
 @media(max-width:760px){
   .hwrap{padding:10px 12px} main{padding:14px 12px}

@@ -539,8 +539,15 @@ function detailHTML(r){
 /* ============================ 渲染 ============================ */
 /* 顶部「今天 · 打歌节目」条：默认只显示今天，点「本周」展开整周时间表。
    首页改版（P0）会直接复用这一段。 */
+/* 打歌节目条在首页和「更多」页各有一份。传 id 只刷那一个，
+   不传则两个都刷——点开关时必须都刷，否则点首页的开关会去刷新日历页那份，看起来像没反应。 */
+var SHOW_BOXES = ["homeShows", "showsBar"];
 function renderShows(boxId){
-  var box = $(boxId || "showsBar"); if(!box) return;
+  if(!boxId){
+    for(var i = 0; i < SHOW_BOXES.length; i++) renderShows(SHOW_BOXES[i]);
+    return;
+  }
+  var box = $(boxId); if(!box) return;
   var today = TODAY.getDay(), t = showsOn(today), head;
 
   if(t.length){
@@ -715,7 +722,6 @@ function renderList(){
   $("nBi").textContent = ALL.filter(function(r){ return isBias(r.artist); }).length;
 
   renderStats();
-  renderShows();
   renderBiasBox();
   $("biasBox").style.display = (S.tab==="bias" || S.showBiasMgr) ? "" : "none";
   $("dateLabel").textContent = S.range.label;
@@ -723,6 +729,11 @@ function renderList(){
 
   /* 控制条显隐：只有「全部发布」才有完整筛选 */
   var isUp = (S.tab==="upcoming"), isMo = (S.tab==="month"), isHi = (S.tab==="history");
+  var isMore = (S.tab === "more");
+  /* 打歌节目这类独立小工具只出现在「更多」页，不混进收藏 / 本命这些筛选视图 */
+  $("showsBar").style.display = isMore ? "" : "none";
+  $("stats").style.display     = isMore ? "none" : "";
+  if(isMore) renderShows("showsBar");
   $("upBar").classList.toggle("on", isUp);
   $("moBar").classList.toggle("on", isMo);
   $("filters").style.display = isHi ? "" : "none";
@@ -766,6 +777,10 @@ function renderList(){
     var fp = fl.filter(function(r){ return r._dd<0; });
     html = fl.length ? secHTML("收藏 · 即将发行", fu) + secHTML("收藏 · 已发行", fp)
       : '<div class="empty"><div class="e">★</div><h3>还没有收藏</h3><p>在卡片右上角点 ☆ 即可收藏</p></div>';
+  } else if(isMore){
+    /* 「更多」：放各种独立小工具。打歌节目时间表在上方那条，这里只是个说明 */
+    html = '<div class="empty"><div class="e">🧰</div><h3>小工具</h3>'
+         + '<p>打歌节目时间表在上方 · 后面还会往这里加别的</p></div>';
   } else if(S.tab==="bias"){
     if(!bias.length){
       html = '<div class="empty"><div class="e">&#10084;</div><h3>还没有设置本命</h3>'
@@ -785,25 +800,16 @@ function renderList(){
   $("qclr").classList.toggle("on", !!S.q);
 }
 function render(){
-  /* 首页（默认页）与日历界面互斥；打开详情 / 下载页时让位 */
-  var home = (S.view === "home" && !S.dl && !S.detailId);
+  /* 首页（默认页）与日历界面互斥；打开详情时让位 */
+  var home = (S.view === "home" && !S.detailId);
   $("homeView").style.display = home ? "" : "none";
   if(home){
     $("listView").style.display = "none";
     $("detailView").style.display = "none";
-    $("dlView").style.display = "none";
     renderHome();
     window.scrollTo({top:0,behavior:"instant"});
     return;
   }
-  if(S.dl){
-    $("listView").style.display = "none";
-    $("detailView").style.display = "none";
-    $("dlView").style.display = "";
-    window.scrollTo({top:0,behavior:"instant"});
-    return;
-  }
-  $("dlView").style.display = "none";
   if(S.detailId){
     $("listView").style.display = "none";
     $("detailView").style.display = "";
@@ -819,8 +825,6 @@ function render(){
   }
 }
 function openDetail(id){ S.detailId = id; render(); }
-function showDl(){ S.dl = true; render(); }
-function hideDl(){ S.dl = false; render(); }
 
 /* ============================ 爱心动画 ============================ */
 function burst(el){
@@ -1016,8 +1020,6 @@ document.addEventListener("click", function(e){
   }
 
   /* 下载页开关 */
-  if((el = t.closest("#dlBtn"))){ showDl(); return; }
-  if((el = t.closest("#dlBack"))){ hideDl(); return; }
 
   /* 本命爱心 */
   if((el = t.closest("[data-heart]"))){
@@ -1111,13 +1113,13 @@ document.addEventListener("click", function(e){
   }
   /* 首页 tab */
   if((el = t.closest("[data-view]"))){
-    S.view = "home"; S.detailId = null; S.dl = false;
+    S.view = "home"; S.detailId = null;
     syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
   }
   /* 日历 tab */
   if((el = t.closest("[data-tab]"))){
     S.view = "calendar";
-    S.tab = el.getAttribute("data-tab"); S.detailId = null; S.dl = false;
+    S.tab = el.getAttribute("data-tab"); S.detailId = null;
     /* 「即将回归」「本月回归」不带筛选，各自用固定范围，
        所以这里的 S.range 只服务于「全部发布」。 */
     if(S.tab==="history" && S.range.kind==="f30" && S.range.mode==="quick"){
@@ -1140,7 +1142,7 @@ var qt;
 $("q").addEventListener("input", function(){
   var v = this.value; clearTimeout(qt);
   qt = setTimeout(function(){
-    S.q = v.trim(); S.dl = false;
+    S.q = v.trim();
     /* 在首页输入搜索 → 自动切到日历界面看结果 */
     if(S.q && S.view === "home"){ S.view = "calendar"; if(S.tab==="fav"||S.tab==="bias") S.tab="history"; syncTabs(); }
     render();
@@ -1240,7 +1242,7 @@ S.range = rangePreset("f30");
     return m ? decodeURIComponent(m[1]) : null;
   }
   var tab = arg("tab");
-  if(tab && ["upcoming","month","history","fav","bias"].indexOf(tab) >= 0){
+  if(tab && ["upcoming","month","history","fav","bias","more"].indexOf(tab) >= 0){
     S.tab = tab; S.view = "calendar";
   }
   if(arg("view") === "calendar") S.view = "calendar";

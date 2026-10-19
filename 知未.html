@@ -220,8 +220,12 @@ select:hover{border-color:var(--brand2);background-color:#fdfcff}
 select:focus{border-color:var(--brand);box-shadow:var(--ring)}
 select:focus:hover{border-color:var(--brand)}
 select option{background:#fff;color:var(--text)}
-.datebtn{padding:7px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;
-  font-size:12.5px;color:var(--text);font-weight:700;display:flex;align-items:center;gap:7px;
+/* 日期按钮：箭头与 select 用同一枚 SVG，视觉完全对齐 */
+.datebtn{padding:7px 30px 7px 13px;border:1px solid var(--line);border-radius:11px;background-color:#fff;
+  font-size:12.5px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:7px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%23696f83' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;background-size:12px;
+  transition:border-color .15s,box-shadow .15s,background-color .15s;
   transition:border-color .15s,box-shadow .15s}
 .datebtn:hover{border-color:var(--brand2)}
 .datebtn.on{border-color:var(--brand);color:var(--brand);background:var(--grad-soft);
@@ -260,7 +264,7 @@ a.btn{display:inline-flex;align-items:center}
 .calpop.on{display:block}
 .calh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .calh .mm{font-weight:800;font-size:14px;flex:1;text-align:center}
-.calh button{border:1px solid var(--line);background:#fff;border-radius:8px;height:28px;
+.calh button{border:1px solid var(--line);background:#fff;border-radius:10px;height:28px;
   font-size:14px;color:var(--sub);line-height:1}
 .calh button#calPrev,.calh button#calNext{width:28px}
 .calh button.mm{font-size:13.5px;color:var(--text);font-weight:800}
@@ -271,13 +275,14 @@ a.btn{display:inline-flex;align-items:center}
 .calpick.on{display:grid}
 .calpick .pyh{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .calpick .pyh span{flex:1;text-align:center;font-weight:800;font-size:13.5px}
-.calpick .pyh button{width:26px;height:26px;border:1px solid var(--line);background:#fff;
+.calpick .pyh button{width:26px;height:26px;border:1px solid var(--line);background:#fff;border-radius:8px;
   border-radius:7px;font-size:13px;color:var(--sub);line-height:1}
 .calpick .pyh button:hover{background:#f4f5fa}
-.calpick .mc{padding:7px 0;border:1px solid var(--line);background:#fff;border-radius:9px;
+.calpick .mc{padding:7px 0;border:1px solid var(--line);background:#fff;border-radius:10px;
   font-size:12.5px;font-weight:700;color:var(--text)}
 .calpick .mc:hover{background:#f4f5fa}
-.calpick .mc.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.calpick .mc.on{background:var(--grad);border-color:transparent;color:#fff;
+  box-shadow:0 2px 8px rgba(109,74,255,.30)}
 /* 已选范围提示 */
 .calrng{margin-top:10px;font-size:12px;color:var(--sub);text-align:center;font-weight:600;
   line-height:1.5}
@@ -285,7 +290,7 @@ a.btn{display:inline-flex;align-items:center}
 /* 整月 / 整年 快捷 */
 .caltools{display:flex;gap:6px;margin-top:8px}
 .caltools button{flex:1;padding:6px 0;border:1px solid var(--line);background:#fff;
-  border-radius:9px;font-size:12px;font-weight:700;color:var(--sub)}
+  border-radius:10px;font-size:12px;font-weight:700;color:var(--sub)}
 .caltools button:hover{background:#f1edff;border-color:var(--brand2);color:var(--brand)}
 .calw{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calw .wd{text-align:center;font-size:11px;color:var(--sub);font-weight:700;padding:3px 0}
@@ -303,9 +308,10 @@ a.btn{display:inline-flex;align-items:center}
 .cald.today{box-shadow:inset 0 0 0 1.5px var(--brand2)}
 .quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
 .calfoot{display:flex;gap:7px;margin-top:11px}
-.calfoot button{flex:1;padding:7px;border-radius:9px;border:1px solid var(--line);background:#fff;
+.calfoot button{flex:1;padding:7px;border-radius:10px;border:1px solid var(--line);background:#fff;
   font-size:12.5px;font-weight:700;color:var(--sub)}
-.calfoot button.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.calfoot button.pri{background:var(--grad);border-color:transparent;color:#fff;
+  box-shadow:0 2px 8px rgba(109,74,255,.30)}
 
 /* ================= sections & cards ================= */
 .sec-h{display:flex;align-items:center;gap:10px;margin:26px 0 13px}
@@ -501,20 +507,6 @@ footer a{color:var(--brand)}
 .sponqr img{width:172px;height:172px;object-fit:contain;display:block;border-radius:6px}
 .spontip{margin:9px 0 0;font-size:11px;color:var(--sub);text-align:center}
 
-/* ================= 下载页 ================= */
-.dlhead{max-width:760px;margin:4px auto 18px}
-.dlhead h2{margin:14px 0 6px;font-size:21px;font-weight:800}
-.dlhead p{margin:0;color:var(--sub);font-size:13px}
-.dlgrid{max-width:760px;margin:0 auto;display:grid;gap:12px}
-.dlcard{display:flex;align-items:center;gap:14px;background:var(--card);
-  border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-.dlicon{font-size:26px;flex:none;line-height:1}
-.dltxt{flex:1;min-width:0}
-.dltxt b{display:block;font-size:14.5px;font-weight:800}
-.dltxt > span{display:block;font-size:12px;color:var(--sub);margin-top:2px}
-.dlcard .btn{margin-left:auto;flex:none;min-width:86px;justify-content:center;text-align:center}
-.dlnote{max-width:760px;margin:16px auto 0;color:var(--sub);font-size:12px;line-height:1.7}
-
 @media(max-width:760px){
   .hwrap{padding:10px 12px} main{padding:14px 12px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -647,7 +639,6 @@ footer a{color:var(--brand)}
         <button class="clr" id="qclr" title="清空">✕</button>
       </div>
       <button class="btn" id="btnBiasMgr">💗 本命 <span id="biasN">0</span></button>
-      <button class="btn" id="dlBtn" title="下载桌面 / 手机版">⬇ 下载</button>
     </div>
     <div class="tabs">
       <button class="tab on" data-view="home">首页</button>
@@ -656,6 +647,7 @@ footer a{color:var(--brand)}
       <button class="tab" data-tab="history">全部发布<span class="n" id="nHi"></span></button>
       <button class="tab" data-tab="fav">我的收藏<span class="n" id="nFa"></span></button>
       <button class="tab" data-tab="bias">本命动态<span class="n" id="nBi"></span></button>
+      <button class="tab" data-tab="more">更多</button>
     </div>
   </div>
 </header>
@@ -733,7 +725,7 @@ footer a{color:var(--brand)}
       </div>
       <div class="fg" style="position:relative">
         <label>时间</label>
-        <button class="datebtn" id="dateBtn">📅 <span id="dateLabel">未来 30 天</span> ▾</button>
+        <button class="datebtn" id="dateBtn">📅 <span id="dateLabel">未来 30 天</span></button>
       </div>
       <div class="fg">
         <label>排序</label>
@@ -778,41 +770,6 @@ footer a{color:var(--brand)}
 
   <div id="detailView" style="display:none"></div>
 
-  <!-- 下载页：点击 header 的「⬇ 下载」进入。链接指向 ../downloads/（整站部署后生效）。
-       升版本号时记得同步改下面的文件名，或在 build_all.py 里自动重写。 -->
-  <div id="dlView" style="display:none">
-    <div class="dlhead">
-      <button class="btn" id="dlBack">‹ 返回</button>
-      <h2>下载「知未」客户端</h2>
-      <p>免费 · 无广告 · 不采集任何数据。当前版本 1.0.0。</p>
-    </div>
-    <div class="dlgrid">
-      <div class="dlcard">
-        <span class="dlicon">🖥️</span>
-        <span class="dltxt"><b>Windows 安装版</b><span>推荐 · 约 80MB · 建桌面快捷方式 · 支持检查数据更新</span></span>
-        <a class="btn pri" href="../downloads/知未-1.0.0-x64.exe">下载</a>
-      </div>
-      <div class="dlcard">
-        <span class="dlicon">📦</span>
-        <span class="dltxt"><b>Windows 便携版</b><span>单文件 · 双击即用 · 不写注册表</span></span>
-        <a class="btn" href="../downloads/知未-1.0.0-便携版.exe">下载</a>
-      </div>
-      <div class="dlcard">
-        <span class="dlicon">🤖</span>
-        <span class="dltxt"><b>Android</b><span>APK 约 3.2MB · 直接安装 · 无需应用商店</span></span>
-        <a class="btn" href="../downloads/知未-1.0.0.apk">下载</a>
-      </div>
-      <div class="dlcard">
-        <span class="dlicon">🍎</span>
-        <span class="dltxt"><b>iOS</b><span>尚未上架 · 可先用 Safari 打开本网页「添加到主屏幕」</span></span>
-        <button class="btn" disabled style="opacity:.5;cursor:default">敬请期待</button>
-      </div>
-    </div>
-    <p class="dlnote">
-      说明：安装包由本站直接分发，下载前请确认浏览器地址栏是本站域名。
-      手机端收藏数据保存在浏览器本地，桌面端可在菜单里「检查数据更新」。
-    </p>
-  </div>
 </main>
 
 <footer>
@@ -1388,8 +1345,15 @@ function detailHTML(r){
 /* ============================ 渲染 ============================ */
 /* 顶部「今天 · 打歌节目」条：默认只显示今天，点「本周」展开整周时间表。
    首页改版（P0）会直接复用这一段。 */
+/* 打歌节目条在首页和「更多」页各有一份。传 id 只刷那一个，
+   不传则两个都刷——点开关时必须都刷，否则点首页的开关会去刷新日历页那份，看起来像没反应。 */
+var SHOW_BOXES = ["homeShows", "showsBar"];
 function renderShows(boxId){
-  var box = $(boxId || "showsBar"); if(!box) return;
+  if(!boxId){
+    for(var i = 0; i < SHOW_BOXES.length; i++) renderShows(SHOW_BOXES[i]);
+    return;
+  }
+  var box = $(boxId); if(!box) return;
   var today = TODAY.getDay(), t = showsOn(today), head;
 
   if(t.length){
@@ -1564,7 +1528,6 @@ function renderList(){
   $("nBi").textContent = ALL.filter(function(r){ return isBias(r.artist); }).length;
 
   renderStats();
-  renderShows();
   renderBiasBox();
   $("biasBox").style.display = (S.tab==="bias" || S.showBiasMgr) ? "" : "none";
   $("dateLabel").textContent = S.range.label;
@@ -1572,6 +1535,11 @@ function renderList(){
 
   /* 控制条显隐：只有「全部发布」才有完整筛选 */
   var isUp = (S.tab==="upcoming"), isMo = (S.tab==="month"), isHi = (S.tab==="history");
+  var isMore = (S.tab === "more");
+  /* 打歌节目这类独立小工具只出现在「更多」页，不混进收藏 / 本命这些筛选视图 */
+  $("showsBar").style.display = isMore ? "" : "none";
+  $("stats").style.display     = isMore ? "none" : "";
+  if(isMore) renderShows("showsBar");
   $("upBar").classList.toggle("on", isUp);
   $("moBar").classList.toggle("on", isMo);
   $("filters").style.display = isHi ? "" : "none";
@@ -1615,6 +1583,10 @@ function renderList(){
     var fp = fl.filter(function(r){ return r._dd<0; });
     html = fl.length ? secHTML("收藏 · 即将发行", fu) + secHTML("收藏 · 已发行", fp)
       : '<div class="empty"><div class="e">★</div><h3>还没有收藏</h3><p>在卡片右上角点 ☆ 即可收藏</p></div>';
+  } else if(isMore){
+    /* 「更多」：放各种独立小工具。打歌节目时间表在上方那条，这里只是个说明 */
+    html = '<div class="empty"><div class="e">🧰</div><h3>小工具</h3>'
+         + '<p>打歌节目时间表在上方 · 后面还会往这里加别的</p></div>';
   } else if(S.tab==="bias"){
     if(!bias.length){
       html = '<div class="empty"><div class="e">&#10084;</div><h3>还没有设置本命</h3>'
@@ -1634,25 +1606,16 @@ function renderList(){
   $("qclr").classList.toggle("on", !!S.q);
 }
 function render(){
-  /* 首页（默认页）与日历界面互斥；打开详情 / 下载页时让位 */
-  var home = (S.view === "home" && !S.dl && !S.detailId);
+  /* 首页（默认页）与日历界面互斥；打开详情时让位 */
+  var home = (S.view === "home" && !S.detailId);
   $("homeView").style.display = home ? "" : "none";
   if(home){
     $("listView").style.display = "none";
     $("detailView").style.display = "none";
-    $("dlView").style.display = "none";
     renderHome();
     window.scrollTo({top:0,behavior:"instant"});
     return;
   }
-  if(S.dl){
-    $("listView").style.display = "none";
-    $("detailView").style.display = "none";
-    $("dlView").style.display = "";
-    window.scrollTo({top:0,behavior:"instant"});
-    return;
-  }
-  $("dlView").style.display = "none";
   if(S.detailId){
     $("listView").style.display = "none";
     $("detailView").style.display = "";
@@ -1668,8 +1631,6 @@ function render(){
   }
 }
 function openDetail(id){ S.detailId = id; render(); }
-function showDl(){ S.dl = true; render(); }
-function hideDl(){ S.dl = false; render(); }
 
 /* ============================ 爱心动画 ============================ */
 function burst(el){
@@ -1865,8 +1826,6 @@ document.addEventListener("click", function(e){
   }
 
   /* 下载页开关 */
-  if((el = t.closest("#dlBtn"))){ showDl(); return; }
-  if((el = t.closest("#dlBack"))){ hideDl(); return; }
 
   /* 本命爱心 */
   if((el = t.closest("[data-heart]"))){
@@ -1960,13 +1919,13 @@ document.addEventListener("click", function(e){
   }
   /* 首页 tab */
   if((el = t.closest("[data-view]"))){
-    S.view = "home"; S.detailId = null; S.dl = false;
+    S.view = "home"; S.detailId = null;
     syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
   }
   /* 日历 tab */
   if((el = t.closest("[data-tab]"))){
     S.view = "calendar";
-    S.tab = el.getAttribute("data-tab"); S.detailId = null; S.dl = false;
+    S.tab = el.getAttribute("data-tab"); S.detailId = null;
     /* 「即将回归」「本月回归」不带筛选，各自用固定范围，
        所以这里的 S.range 只服务于「全部发布」。 */
     if(S.tab==="history" && S.range.kind==="f30" && S.range.mode==="quick"){
@@ -1989,7 +1948,7 @@ var qt;
 $("q").addEventListener("input", function(){
   var v = this.value; clearTimeout(qt);
   qt = setTimeout(function(){
-    S.q = v.trim(); S.dl = false;
+    S.q = v.trim();
     /* 在首页输入搜索 → 自动切到日历界面看结果 */
     if(S.q && S.view === "home"){ S.view = "calendar"; if(S.tab==="fav"||S.tab==="bias") S.tab="history"; syncTabs(); }
     render();
@@ -2089,7 +2048,7 @@ S.range = rangePreset("f30");
     return m ? decodeURIComponent(m[1]) : null;
   }
   var tab = arg("tab");
-  if(tab && ["upcoming","month","history","fav","bias"].indexOf(tab) >= 0){
+  if(tab && ["upcoming","month","history","fav","bias","more"].indexOf(tab) >= 0){
     S.tab = tab; S.view = "calendar";
   }
   if(arg("view") === "calendar") S.view = "calendar";

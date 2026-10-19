@@ -55,7 +55,6 @@
         <button class="clr" id="qclr" title="清空">✕</button>
       </div>
       <button class="btn" id="btnBiasMgr">💗 本命 <span id="biasN">0</span></button>
-      <button class="btn" id="dlBtn" title="下载桌面 / 手机版">⬇ 下载</button>
     </div>
     <div class="tabs">
       <button class="tab on" data-view="home">首页</button>
@@ -64,6 +63,7 @@
       <button class="tab" data-tab="history">全部发布<span class="n" id="nHi"></span></button>
       <button class="tab" data-tab="fav">我的收藏<span class="n" id="nFa"></span></button>
       <button class="tab" data-tab="bias">本命动态<span class="n" id="nBi"></span></button>
+      <button class="tab" data-tab="more">更多</button>
     </div>
   </div>
 </header>
@@ -141,7 +141,7 @@
       </div>
       <div class="fg" style="position:relative">
         <label>时间</label>
-        <button class="datebtn" id="dateBtn">📅 <span id="dateLabel">未来 30 天</span> ▾</button>
+        <button class="datebtn" id="dateBtn">📅 <span id="dateLabel">未来 30 天</span></button>
       </div>
       <div class="fg">
         <label>排序</label>
@@ -186,41 +186,6 @@
 
   <div id="detailView" style="display:none"></div>
 
-  <!-- 下载页：点击 header 的「⬇ 下载」进入。链接指向 ../downloads/（整站部署后生效）。
-       升版本号时记得同步改下面的文件名，或在 build_all.py 里自动重写。 -->
-  <div id="dlView" style="display:none">
-    <div class="dlhead">
-      <button class="btn" id="dlBack">‹ 返回</button>
-      <h2>下载「知未」客户端</h2>
-      <p>免费 · 无广告 · 不采集任何数据。当前版本 1.0.0。</p>
-    </div>
-    <div class="dlgrid">
-      <div class="dlcard">
-        <span class="dlicon">🖥️</span>
-        <span class="dltxt"><b>Windows 安装版</b><span>推荐 · 约 80MB · 建桌面快捷方式 · 支持检查数据更新</span></span>
-        <a class="btn pri" href="../downloads/知未-1.0.0-x64.exe">下载</a>
-      </div>
-      <div class="dlcard">
-        <span class="dlicon">📦</span>
-        <span class="dltxt"><b>Windows 便携版</b><span>单文件 · 双击即用 · 不写注册表</span></span>
-        <a class="btn" href="../downloads/知未-1.0.0-便携版.exe">下载</a>
-      </div>
-      <div class="dlcard">
-        <span class="dlicon">🤖</span>
-        <span class="dltxt"><b>Android</b><span>APK 约 3.2MB · 直接安装 · 无需应用商店</span></span>
-        <a class="btn" href="../downloads/知未-1.0.0.apk">下载</a>
-      </div>
-      <div class="dlcard">
-        <span class="dlicon">🍎</span>
-        <span class="dltxt"><b>iOS</b><span>尚未上架 · 可先用 Safari 打开本网页「添加到主屏幕」</span></span>
-        <button class="btn" disabled style="opacity:.5;cursor:default">敬请期待</button>
-      </div>
-    </div>
-    <p class="dlnote">
-      说明：安装包由本站直接分发，下载前请确认浏览器地址栏是本站域名。
-      手机端收藏数据保存在浏览器本地，桌面端可在菜单里「检查数据更新」。
-    </p>
-  </div>
 </main>
 
 <footer>

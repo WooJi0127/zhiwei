@@ -29,6 +29,7 @@ EDGE_CANDIDATES = [
 INJECT = r"""
 <script>
 var LOG = [];
+var HW = [];
 function $(i){ return document.getElementById(i); }
 function QT(){ return document.querySelectorAll("#content .card").length; }
 function vis(id){ return getComputedStyle($(id)).display !== "none"; }
@@ -157,23 +158,43 @@ step(function(){
   document.querySelector('[data-tab="upcoming"]').click();
 });
 
-/* 打歌节目时间表：默认收起，点「本周」应展开 7 行并高亮今天 */
+/* 打歌节目只属于「更多」页，不该混进收藏 / 本命这些筛选视图
+   （showsBar 只在「更多」页渲染，其它页是空的，所以要先切过去） */
+step(function(){ document.querySelector('[data-tab="fav"]').click(); });
 step(function(){
-  var bar = $("showsBar");
-  if(!bar){ LOG.push("ERR:没有 #showsBar"); return; }
-  LOG.push("打歌节目=" + bar.querySelector(".shnow").textContent.trim()
-    + " 收起时=" + getComputedStyle(bar.querySelector(".shweek")).display);
-  bar.querySelector("[data-showtoggle]").click();
+  LOG.push("收藏页打歌条=" + getComputedStyle($("showsBar")).display);
+  document.querySelector('[data-tab="more"]').click();
 });
 step(function(){
-  var bar = $("showsBar"), rows = bar.querySelectorAll(".shrow"), td = bar.querySelector(".shrow.today");
-  LOG.push("展开后=" + getComputedStyle(bar.querySelector(".shweek")).display
-    + " 行数=" + rows.length
-    + " 今日=" + (td ? td.querySelector(".shw").textContent : "无高亮"));
-  bar.querySelector("[data-showtoggle]").click();
+  LOG.push("更多页打歌条=" + getComputedStyle($("showsBar")).display
+    + " 今日行=" + (document.querySelectorAll("#showsBar .shrow").length));
+  var b = document.querySelector("#showsBar [data-showtoggle]");
+  if(b) b.click();
 });
 step(function(){
-  LOG.push("再次收起=" + getComputedStyle($("showsBar").querySelector(".shweek")).display);
+  LOG.push("更多页展开=" + getComputedStyle(document.querySelector("#showsBar .shweek")).display);
+});
+
+/* 首页的开关必须真的能展开（以前只刷了日历页那份，点了像没反应）。
+   连点三次，验证「开→关→开」都能生效 */
+step(function(){ document.querySelector('[data-view="home"]').click(); });
+step(function(){
+  HW = [getComputedStyle(document.querySelector("#homeShows .shweek")).display];
+  document.querySelector("#homeShows [data-showtoggle]").click();
+});
+step(function(){
+  HW.push(getComputedStyle(document.querySelector("#homeShows .shweek")).display);
+  document.querySelector("#homeShows [data-showtoggle]").click();
+});
+step(function(){
+  HW.push(getComputedStyle(document.querySelector("#homeShows .shweek")).display);
+  LOG.push("首页开关=" + HW.join("/") + " 有效=" + (HW[0] !== HW[1] && HW[0] === HW[2]));
+});
+
+/* 下载页已移除 */
+step(function(){
+  LOG.push("下载入口=" + ($("dlBtn") ? "仍在" : "已移除")
+    + " 下载页=" + ($("dlView") ? "仍在" : "已移除"));
 });
 
 function next(){
