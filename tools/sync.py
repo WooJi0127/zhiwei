@@ -77,13 +77,27 @@ def sync_dir(dst):
         s, d = os.path.join(CORE, name), os.path.join(dst, name)
         shutil.copy2(s, d) if os.path.isfile(s) else shutil.copytree(s, d)
 
-    # 数据文件统一来自 data/data.js，保证各端数据一致
+    # 数据文件统一来自 data/，保证各端数据一致。
+    # data.js 是主文件（近一年），data-<年>.js 是按需加载的年份切片，全都要带上。
     if os.path.isfile(DATA):
         dd = os.path.join(dst, "data")
         os.makedirs(dd, exist_ok=True)
-        shutil.copy2(DATA, os.path.join(dd, "data.js"))
-        return os.path.getsize(DATA)
+        return copy_data(dd)
     return 0
+
+
+def copy_data(dd):
+    """把 data/ 下的 data.js + 所有年份切片复制到目标 data 目录，返回主文件字节数。"""
+    src = os.path.dirname(DATA)
+    os.makedirs(dd, exist_ok=True)
+    total = 0
+    for name in os.listdir(src):
+        if not name.endswith(".js"):
+            continue
+        shutil.copy2(os.path.join(src, name), os.path.join(dd, name))
+        if name == "data.js":
+            total = os.path.getsize(os.path.join(src, name))
+    return total
 
 
 def main():
@@ -102,9 +116,7 @@ def main():
         print("  ! 未找到 data/data.js，跳过数据同步（先跑一次 build.py）")
     else:
         # core 自己也放一份，直接双击 core/index.html 就能预览
-        cd = os.path.join(CORE, "data")
-        os.makedirs(cd, exist_ok=True)
-        shutil.copy2(DATA, os.path.join(cd, "data.js"))
+        copy_data(os.path.join(CORE, "data"))
 
     for name, dst in TARGETS.items():
         os.makedirs(dst, exist_ok=True)

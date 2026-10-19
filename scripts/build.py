@@ -29,6 +29,8 @@ LOG_PATH = os.path.join(ROOT, "update.log")
 
 # 历史归档回溯范围（天）
 HISTORY_DAYS = 730
+# 分片：主文件只装最近这么多天的发行，更早的按年份单独切片，用时再加载
+RECENT_DAYS = 365
 # Apple Music 请求间隔（秒），避免触发限流
 AM_SLEEP = 3.0
 # 艺人专辑缓存有效期（天）
@@ -97,6 +99,33 @@ CREATE TABLE IF NOT EXISTS tracks (
     genre       TEXT,
     preview     TEXT
 );
+CREATE TABLE IF NOT EXISTS members (
+    g   TEXT,          -- 本地艺人名（团体 / solo）
+    n   TEXT,          -- 成员名
+    alt TEXT,          -- 本名
+    b   TEXT,          -- 生日 YYYY-MM-DD
+    src TEXT,
+    PRIMARY KEY (g, n)
+);
+CREATE TABLE IF NOT EXISTS bili (
+    bvid    TEXT PRIMARY KEY,
+    artist  TEXT,
+    mid     TEXT,
+    uname   TEXT,
+    title   TEXT,
+    play    INTEGER,
+    pubdate INTEGER,
+    pic     TEXT,
+    dead    INTEGER DEFAULT 0,
+    updated TEXT
+);
+CREATE TABLE IF NOT EXISTS bili_mid (
+    mid      TEXT PRIMARY KEY,
+    name     TEXT,
+    official INTEGER,
+    fans     INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_bili_artist ON bili(artist);
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
 CREATE INDEX IF NOT EXISTS idx_rel_date ON releases(date);
 CREATE INDEX IF NOT EXISTS idx_rel_artist ON releases(artist);
@@ -1106,15 +1135,65 @@ def export_data(con):
         rel["fandom"] = a["fandom"] if a else None
         rel["zh"] = a["zh"] if a else None
 
+    # --- 成员生日（首页「今天生日」用；没有也不影响其它功能）---
+    members = []
+    try:
+        for r in con.execute("SELECT g,n,b FROM members ORDER BY g,n"):
+            if r[1] and r[2]:
+                members.append({"g": r[0], "n": r[1], "b": r[2]})
+    except Exception:                               # noqa: BLE001
+        members = []
+
+    # --- 分片：主文件只留最近 RECENT_DAYS 天，更早的按年份切片 ---
+    cutoff = (datetime.date.today() - datetime.timedelta(days=RECENT_DAYS)).isoformat()
+    recent, by_year = [], {}
+    for r in releases:
+        if r.get("date") and r["date"] >= cutoff:
+            recent.append(r)
+        else:
+            by_year.setdefault((r.get("date") or "0000")[:4], []).append(r)
+    years = {y: len(v) for y, v in sorted(by_year.items(), reverse=True)}
+    n_old = len(releases) - len(recent)
+
+    # --- B 站官方 MV（只收官方账号发布且校验过没失效的）---
+    mvs = []
+    try:
+        for r in con.execute("""SELECT bvid,artist,uname,title,play,pubdate,pic
+                                FROM bili WHERE dead=0 AND play>0
+                                ORDER BY play DESC"""):
+            mvs.append({"v": r[0], "a": r[1], "u": r[2], "t": r[3],
+                        "p": r[4], "d": r[5], "i": r[6] or ""})
+    except Exception:                               # noqa: BLE001
+        mvs = []
+
     payload = {
         "generated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "artists": artists,
-        "releases": releases,
+        "releases": recent,
         "events": events,
+        "members": members,
+        "mvs": mvs,
+        "years": years,          # {"2025": 523, ...} 供前端显示「加载某年」
+        "recentDays": RECENT_DAYS,
+        "olderCount": n_old,
     }
     blob = ("window.__KPOP_DATA__ = "
             + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
             + ";\n")
+
+    # 年份切片：全局变量带年份后缀，避免并发加载时互相覆盖
+    for y, lst in by_year.items():
+        cblob = ("window.__KPOP_CHUNK_%s__ = " % y
+                 + json.dumps({"y": y, "releases": lst},
+                              ensure_ascii=False, separators=(",", ":"))
+                 + ";\n")
+        cpath = os.path.join(DATA_DIR, "data-%s.js" % y)
+        ctmp = cpath + ".tmp"
+        with open(ctmp, "w", encoding="utf-8") as f:
+            f.write(cblob)
+        if os.path.exists(cpath):
+            os.remove(cpath)
+        os.replace(ctmp, cpath)
 
     tmp = OUT_JS + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -1125,13 +1204,22 @@ def export_data(con):
     n_tracks = sum(len(r.get("tracks", [])) for r in releases)
     n_zh = sum(1 for a in artists if a.get("zh"))
     log(f"  艺人 {len(artists)}（中文名 {n_zh}）/ 发行 {len(releases)} / "
-        f"曲目 {n_tracks} / 事件 {len(events)} "
-        f"-> {os.path.getsize(OUT_JS)/1024:.0f} KB"
+        f"曲目 {n_tracks} / 事件 {len(events)} / 成员生日 {len(members)} / 官方MV {len(mvs)}"
         + (f"（合作曲归主艺人 {n_rec[0]}）" if n_rec[0] else ""))
+    log(f"  分片：主文件 {len(recent)} 张（近 {RECENT_DAYS} 天）"
+        f" + {len(by_year)} 个年份切片共 {n_old} 张"
+        f" -> 主 {os.path.getsize(OUT_JS)/1024:.0f} KB"
+        + (f"，切片 {dict(list(years.items())[:4])}" if years else ""))
     return payload
 
 
 # ------------------------------------------------------------------ 主流程
+def step_birthdays(con):
+    """成员生日（kpopping 档案页 JSON-LD）。增量：只补库里还缺的艺人。"""
+    import birthdays  # noqa: PLC0415
+    birthdays.fetch_birthdays(con)
+
+
 def main():
     full = "--full" in sys.argv
     con = get_db()
@@ -1229,6 +1317,11 @@ def main():
         step_gender(con)
     except Exception:                               # noqa: BLE001
         log("  ! 性别分类失败: " + traceback.format_exc(limit=1).strip())
+
+    try:
+        step_birthdays(con)
+    except Exception:                               # noqa: BLE001
+        log("  ! 生日抓取失败: " + traceback.format_exc(limit=1).strip())
 
     try:
         step_purge_scope(con)

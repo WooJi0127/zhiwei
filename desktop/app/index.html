@@ -58,7 +58,8 @@
       <button class="btn" id="dlBtn" title="下载桌面 / 手机版">⬇ 下载</button>
     </div>
     <div class="tabs">
-      <button class="tab on" data-tab="upcoming">即将回归<span class="n" id="nUp"></span></button>
+      <button class="tab on" data-view="home">首页</button>
+      <button class="tab" data-tab="upcoming">即将回归<span class="n" id="nUp"></span></button>
       <button class="tab" data-tab="month">本月回归<span class="n" id="nMo"></span></button>
       <button class="tab" data-tab="history">全部发布<span class="n" id="nHi"></span></button>
       <button class="tab" data-tab="fav">我的收藏<span class="n" id="nFa"></span></button>
@@ -73,8 +74,14 @@
     <button id="noticeBtn">如何更新</button>
   </div>
 
+  <!-- 首页：内容型入口（默认页）。日历界面仍是下面那 5 个 tab -->
+  <div id="homeView" style="display:none"></div>
+
   <div id="listView">
     <div class="stats" id="stats"></div>
+
+    <!-- 打歌节目时间表：硬编码六档节目（播出日/时间固定），首页改版后直接复用 -->
+    <div class="showsbar" id="showsBar"></div>
 
     <div class="biasbox" id="biasBox" style="display:none">
       <div style="font-weight:800;font-size:14px">💗 本命团体管理</div>

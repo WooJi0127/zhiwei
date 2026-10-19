@@ -36,6 +36,14 @@ jobs:
           restore-keys: |
             kpop-db-
 
+      # B 站官方 MV：放在这里跑是因为 Actions 在境外，不会触发 B 站风控
+      # （本机连续请求会被 412）。
+      # 每次最多抓 40 个艺人（约 10 分钟），没抓完的下次接着补，几天就抓全了；
+      # 抓过的艺人记在 bili_seen 表里，不会重复重试。
+      - name: 抓取 B 站官方 MV
+        continue-on-error: true      # B 站挂了或被限流都不能影响主流程
+        run: python scripts/bilibili.py --limit 40
+
       # 有上次的数据库 → 增量抓取（约 3 分钟）
       # 没有（首次运行，或缓存被清理）→ 自动改全量抓取（约 25 分钟），保证历史完整
       - name: 抓取数据入库并导出 data.js

@@ -1,0 +1,60 @@
+name: 每周校验 B 站链接
+
+# 每周一北京时间 10:00 跑一次（UTC 02:00）。
+# B 站视频常因版权下架，链接会失效。这里每周把已收录的 MV 逐个问一遍，
+# 失效的标成 dead，导出时自动跳过——页面上就不会出现点开是「视频不存在」的按钮。
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check-mv:
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHONIOENCODING: utf-8
+      TZ: Asia/Shanghai
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 取出上次的数据库
+        uses: actions/cache@v4
+        with:
+          path: kpop.db
+          key: kpop-db-${{ github.run_id }}
+          restore-keys: |
+            kpop-db-
+
+      - name: 校验失效链接
+        continue-on-error: true
+        run: python scripts/bilibili.py --check
+
+      - name: 重新导出 data.js
+        run: python scripts/build.py --export-only
+
+      - name: 分发到各端
+        run: python tools/sync.py
+
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "chore(mv): 每周校验 B 站链接 $(date +'%Y-%m-%d')"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          else
+            echo "链接全部有效，跳过提交"
+          fi

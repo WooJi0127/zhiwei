@@ -39,8 +39,8 @@ function typeLabel(r){
   return "正规专";
 }
 
-/* 规范化 */
-ALL.forEach(function(r){
+/* 规范化：主数据和分片数据都要过一遍，抽成函数 */
+function normOne(r){
   r._cat = catOf(r);
   var a = ART[r.artist];
   r._kind = a&&a.kind ? a.kind : "";
@@ -59,16 +59,94 @@ ALL.forEach(function(r){
   if(!r._dur && r._tracks.length){
     r._dur = r._tracks.reduce(function(s,t){ return s + (t.ms||0); }, 0);
   }
-});
-/* 搜索索引 */
-ALL.forEach(function(r){
   var d = dispName(r.artist);
   r._hay = [r.artist, d.zh, r.title, r._agency, r._fandom,
             (ART[r.artist]&&ART[r.artist].name_ko)||"", r.rtype||"", r.genre||""]
            .join(" ").toLowerCase();
-});
+}
+ALL.forEach(normOne);
 var DATE_COUNT = {};
 ALL.forEach(function(r){ if(r.date) DATE_COUNT[r.date] = (DATE_COUNT[r.date]||0)+1; });
+
+/* ============================ 数据分片 ============================ */
+/* 主文件只带最近 RECENT_DAYS 天的发行，更早的按年份切成 data-<年>.js，
+   需要时才加载——否则补满 10 年历史后一次性 17MB 会把手机首屏拖死。 */
+var YEARS = DATA.years || {};      /* {"2025": 523, ...} */
+var LOADED = {}, PENDING = {};
+
+function loadYear(y, cb){
+  if(LOADED[y]){ if(cb) cb(); return; }
+  if(PENDING[y]) return;      /* 正在加载，等它自己的回调，别重复 render */
+  PENDING[y] = 1;
+  toast("正在加载 " + y + " 年数据…");
+  var s = document.createElement("script");
+  s.src = "data/data-" + y + ".js";
+  s.onload = function(){
+    var c = window["__KPOP_CHUNK_" + y + "__"] || {};
+    var arr = c.releases || [];
+    arr.forEach(normOne);
+    ALL = ALL.concat(arr);
+    arr.forEach(function(r){ if(r.date) DATE_COUNT[r.date] = (DATE_COUNT[r.date]||0)+1; });
+    LOADED[y] = 1; delete PENDING[y];
+    if(cb) cb();
+  };
+  s.onerror = function(){
+    delete PENDING[y];
+    toast("加载 " + y + " 年数据失败，请检查网络或刷新重试");
+    if(cb) cb();
+  };
+  document.head.appendChild(s);
+}
+/* 一次补齐多个年份（按顺序串行加载，避免同时打满请求） */
+function loadYears(list, done){
+  var i = 0;
+  (function next(){
+    if(i >= list.length){ if(done) done(); return; }
+    loadYear(list[i++], next);
+  })();
+}
+/* 选了更早的时间范围时，自动把涉及的年份补齐 */
+var CUTOFF_S = (function(){
+  var d = new Date(TODAY); d.setDate(d.getDate() - (DATA.recentDays || 365));
+  return d2s(d);
+})();
+function ensureYears(){
+  var f = S.range.from, need = [];
+  if(!f){
+    /* 「全部已发布」或在搜索 → 用户想要的就是全部，补齐所有年份 */
+    if(S.tab !== "history" && !S.q) return false;
+    need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y]; });
+  } else if(f < CUTOFF_S){
+    var y0 = +f.slice(0, 4), y1 = +((S.range.to || f).slice(0, 4));
+    for(var y = y1; y >= y0; y--){
+      var k = String(y);
+      if(YEARS[k] && !LOADED[k] && !PENDING[k]) need.push(k);
+    }
+  }
+  if(!need.length) return false;
+  loadYears(need, function(){ render(); });
+  return true;
+}
+
+/* 未加载的年份按钮条 */
+function yearBarHTML(){
+  var ks = Object.keys(YEARS).filter(function(y){ return !LOADED[y]; });
+  if(!ks.length){
+    return Object.keys(PENDING).length
+      ? '<div class="ybar"><span class="ybl">正在加载更早年份…</span></div>'
+      : "";
+  }
+  return '<div class="ybar">'
+    + '<span class="ybl">加载更早年份</span>'
+    + ks.map(function(y){
+        var busy = !!PENDING[y];
+        return '<button class="ybtn'+(busy ? ' busy' : '')+'"'
+             + (busy ? ' disabled' : ' data-year="'+esc(y)+'"') + '>'
+             + (busy ? '加载中…' : esc(y)+' 年')
+             + '<span class="yn">'+YEARS[y]+'</span></button>';
+      }).join("")
+    + '</div>';
+}
 
 /* ============================ 工具 ============================ */
 function $(id){ return document.getElementById(id); }
@@ -108,13 +186,104 @@ function isFav(id){ return favs.indexOf(id) >= 0; }
 function isBias(n){ return bias.indexOf(n) >= 0; }
 
 var S = {
+  view:"home",       /* home | calendar：首页是默认页 */
   tab:"upcoming", q:"", type:"", kind:"", agency:"", sort:"date_asc",
   onlyFav:false, onlyBias:false,
   range:{mode:"quick", from:null, to:null, label:"未来 30 天"},
   upRange:"f30",                       /* 即将回归：只能是 f7 / f30 */
   showBiasMgr:false, detailId:null,
+  showWeek:false,                      /* 打歌节目「本周时间表」是否展开 */
   calMonth:null, calFrom:null, calTo:null
 };
+
+/* ============================ 打歌节目 ============================ */
+/* 六档打歌节目的播出时间（2026-10 核实）。w = JS getDay()：0 周日 … 6 周六。
+   电视台会因节假日、特别节目临时调档，时间仅供参考。 */
+var SHOWS = [
+  { zh:"THE SHOW",      en:"The Show",         w:2, kst:"18:00", ch:"SBS LIFE" },
+  { zh:"冠军秀",         en:"Show Champion",    w:3, kst:"18:00", ch:"MBC M"    },
+  { zh:"M! Countdown",  en:"M Countdown",      w:4, kst:"18:00", ch:"Mnet"     },
+  { zh:"音乐银行",       en:"Music Bank",       w:5, kst:"17:15", ch:"KBS 2"    },
+  { zh:"音乐中心",       en:"Show! Music Core", w:6, kst:"15:15", ch:"MBC"      },
+  { zh:"人气歌谣",       en:"Inkigayo",         w:0, kst:"15:20", ch:"SBS"      }
+];
+var WK = ["周日","周一","周二","周三","周四","周五","周六"];
+
+/* KST → 北京时间：中国比韩国晚 1 小时 */
+function kst2cst(t){
+  var p = t.split(":"), h = (+p[0] + 23) % 24;
+  return (h<10 ? "0" : "") + h + ":" + p[1];
+}
+function showsOn(w){ return SHOWS.filter(function(s){ return s.w === w; }); }
+
+/* 成员生日：来自 kpopping 档案页（scripts/birthdays.py 抓取） */
+var MEMBERS = DATA.members || [];
+
+/* B 站官方 MV（scripts/bilibili.py 抓取，已按播放量降序） */
+var MVS = DATA.mvs || [];
+
+function mvURL(m){ return "https://www.bilibili.com/video/" + m.v; }
+function fmtPlay(n){
+  n = +n || 0;
+  if(n >= 100000000) return (n/100000000).toFixed(1) + " 亿";
+  if(n >= 10000)     return (n/10000).toFixed(1) + " 万";
+  return String(n);
+}
+/* 找这张专辑对应的官方 MV：同艺人 + MV 标题里带专辑名。
+   对不上就返回 null——用户明确说过，没有的就不显示。 */
+function mvOf(r){
+  var t = (r.title || "").toLowerCase();
+  if(!t) return null;
+  for(var i = 0; i < MVS.length; i++){
+    var m = MVS[i];
+    if(m.a !== r.artist) continue;
+    if((m.t || "").toLowerCase().indexOf(t) >= 0) return m;
+  }
+  return null;
+}
+/* 本月的官方 MV（按播放量降序，数据本来就是这个顺序） */
+function mvThisMonth(max){
+  var y = TODAY.getFullYear(), mo = TODAY.getMonth(), out = [];
+  for(var i = 0; i < MVS.length && out.length < (max || 8); i++){
+    var d = new Date((MVS[i].d || 0) * 1000);
+    if(d.getFullYear() === y && d.getMonth() === mo) out.push(MVS[i]);
+  }
+  return out;
+}
+
+/* 今天过生日的成员。b 形如 2000-04-11，比月日即可。
+   同一个人在原团和小分队里会重复出现（HeeJin @ ARTMS / LOONA 1/3），
+   这里按「姓名 + 生日」去重，把所属团体合并成一个字符串。 */
+function birthdaysToday(){
+  var md = TODAY_S.slice(5);
+  var out = [], seen = {};
+  for(var i=0;i<MEMBERS.length;i++){
+    var m = MEMBERS[i];
+    if(!m || !m.b || m.b.slice(5) !== md) continue;
+    var key = (m.n || "") + "@" + m.b;
+    var hit = seen[key];
+    if(hit){
+      if(hit.g2 === undefined && hit.g !== m.g) hit.g2 = m.g;
+      continue;
+    }
+    var o = { n:m.n, b:m.b, g:m.g, g2:undefined };
+    seen[key] = o; out.push(o);
+  }
+  return out;
+}
+/* 展示用的团名：'ARTMS · LOONA 1/3' */
+function groupLabel(m){
+  return m.g2 ? (m.g + " · " + m.g2) : m.g;
+}
+/* 年龄（按周岁算，生日当天已长一岁） */
+function ageOf(b){
+  if(!b) return null;
+  var y = +b.slice(0,4), m = +b.slice(5,7), d = +b.slice(8,10);
+  var a = THIS_YEAR - y;
+  var md = TODAY.getMonth()+1, dd = TODAY.getDate();
+  if(md < m || (md === m && dd < d)) a--;
+  return (a >= 0 && a < 100) ? a : null;
+}
 
 /* 时间范围预设 */
 function rangePreset(kind){
@@ -238,6 +407,17 @@ function secHTML(title, list){
 }
 
 /* ============================ 详情页 ============================ */
+/* 反馈邮箱：换邮箱只改这一行。社区功能先拿这个入口试水，
+   看看有没有人真的愿意反馈，有人再考虑上 Giscus / Twikoo。 */
+var REPORT_MAIL = "139567293@qq.com";
+function reportMail(r){
+  var subj = "【知未】信息有误：" + (r.artist || "") + " - " + (r.title || "");
+  var body = "页面：" + location.href + "\n专辑：" + (r.artist||"") + " - " + (r.title||"")
+           + "（" + (r.date||"") + "）\n哪里不对：\n正确信息应该是：\n";
+  return "mailto:" + REPORT_MAIL
+       + "?subject=" + encodeURIComponent(subj)
+       + "&body=" + encodeURIComponent(body);
+}
 function srcLabel(r){
   var s = r.source || "";
   if(s==="apple")   return "Apple Music";
@@ -285,9 +465,21 @@ function detailHTML(r){
     h += '<div class="ddesc"><span class="lb">专辑信息</span>' + esc(facts.join("　·　")) + '</div>';
   }
 
+  /* 官方 MV：只放官方账号发布的，标题对不上就不显示（宁缺毋滥） */
+  var mv = mvOf(r);
+  if(mv){
+    h += '<a class="dail mvbtn" href="'+mvURL(mv)+'" target="_blank" rel="noopener nofollow">'
+      +  '<span class="mvi">▶</span>'
+      +  '<span class="mvt"><b>官方 MV</b><span>'+esc(mv.t)+'</span></span>'
+      +  '<span class="mvp">'+fmtPlay(mv.p)+' 播放 · '+esc(mv.u)+'</span>'
+      +  '</a>';
+  }
+
   h += '<div class="dact">'
     +  '<button class="btn" id="favDetail" style="padding:10px 18px;border-radius:11px;font-size:13px">'
     +    (isFav(r.id) ? '★ 已收藏' : '☆ 收藏') + '</button>'
+    +  '<a class="btn" id="reportBtn" href="'+esc(reportMail(r))+'"'
+    +    ' style="padding:10px 16px;border-radius:11px;font-size:13px">信息有误？告诉我们</a>'
     +  '<span class="dsrc">数据来源：' + esc(srcLabel(r)) + '</span>'
     + '</div>';
 
@@ -345,6 +537,140 @@ function detailHTML(r){
 }
 
 /* ============================ 渲染 ============================ */
+/* 顶部「今天 · 打歌节目」条：默认只显示今天，点「本周」展开整周时间表。
+   首页改版（P0）会直接复用这一段。 */
+function renderShows(boxId){
+  var box = $(boxId || "showsBar"); if(!box) return;
+  var today = TODAY.getDay(), t = showsOn(today), head;
+
+  if(t.length){
+    head = t.map(function(s){
+      return '<b>'+esc(s.zh)+'</b> <span>'+s.kst+' KST</span> <i>北京 '+kst2cst(s.kst)+'</i>';
+    }).join(" · ");
+  } else {
+    var nx = showsOn((today+1) % 7);
+    head = '<span class="shnone">今天没有打歌节目</span>'
+         + (nx.length ? ' · 明天有 <b>'+esc(nx[0].zh)+'</b>' : '');
+  }
+
+  var rows = [1,2,3,4,5,6,0].map(function(w){
+    var ss = showsOn(w);
+    var nm = ss.length
+      ? ss.map(function(s){ return esc(s.zh)+' <em>'+s.kst+'</em>'; }).join("、")
+      : '<span class="shnone">—</span>';
+    return '<div class="shrow'+(w===today ? ' today' : '')+'">'
+         +   '<span class="shw">'+WK[w]+'</span>'
+         +   '<span class="shn">'+nm+'</span>'
+         +   '<span class="shc">'+(ss.length ? esc(ss[0].ch) : '')+'</span>'
+         + '</div>';
+  }).join("");
+
+  box.innerHTML =
+      '<div class="shhead">'
+    +   '<span class="shic">📺</span>'
+    +   '<span class="shtitle">今天 · 打歌节目</span>'
+    +   '<span class="shnow">'+head+'</span>'
+    +   '<button class="shmore" data-showtoggle>'+(S.showWeek ? '收起 ▴' : '本周 ▾')+'</button>'
+    + '</div>'
+    + '<div class="shweek" style="'+(S.showWeek ? '' : 'display:none')+'">'+rows
+    +   '<div class="shnote">播出时间为韩国时间（KST），中国时间比韩国晚 1 小时；'
+    +   '遇节假日或特别节目电视台可能临时调整。</div>'
+    + '</div>';
+}
+
+/* ============================ 首页 ============================ */
+/* 首页是默认页：今天发行 / 今天生日 / 打歌节目 / 未来 7 天倒计时。
+   点「查看完整日历」进原来的 5 个 tab 界面。 */
+function homeSec(title, sub, body){
+  return '<section class="hsec">'
+       +   '<div class="hsec-h"><h2>'+esc(title)+'</h2>'
+       +     (sub ? '<span class="hs">'+esc(sub)+'</span>' : '')
+       +   '</div>'
+       +   body
+       + '</section>';
+}
+function miniHTML(r){
+  var dn = dispName(r.artist);
+  return '<div class="mini'+(isBias(r.artist)?' bias':'')+'" data-open="'+esc(r.id)+'">'
+    + '<div class="mcov"><div class="ph">🎵</div>'
+    +   (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+    +   ddayHTML(r)
+    + '</div>'
+    + '<div class="mt">'+esc(dn.zh)+'</div>'
+    + '<div class="ms">'+esc(r.title)+'</div>'
+    + '</div>';
+}
+function renderHome(){
+  var box = $("homeView"); if(!box) return;
+
+  var todayRel = ALL.filter(function(r){ return r.date === TODAY_S; })
+                    .sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); });
+  var soon = ALL.filter(function(r){ return r._dd >= 0 && r._dd <= 7; })
+                .sort(function(a,b){ return a._dd - b._dd; });
+  var bds = birthdaysToday();
+  var tt = showsOn(TODAY.getDay());
+
+  /* 顶部一句话概览 */
+  var bits = [];
+  if(todayRel.length) bits.push('<b>'+todayRel.length+'</b> 张新发行');
+  if(bds.length)      bits.push('<b>'+bds.length+'</b> 位艺人过生日');
+  if(tt.length)       bits.push('今晚有 <b>'+esc(tt[0].zh)+'</b>');
+  var h = '<div class="hhero">'
+    + '<div class="hhd"><span class="hmd">'+(TODAY.getMonth()+1)+' 月 '+TODAY.getDate()+' 日</span>'
+    +   '<span class="hwk">'+WK[TODAY.getDay()]+'</span></div>'
+    + '<div class="hsum">' + (bits.length ? bits.join(" · ") : '今天没有新发行，看看下面的回归倒计时') + '</div>'
+    + '</div>';
+
+  /* 今天发行 */
+  h += homeSec("今天发行", todayRel.length ? "共 "+todayRel.length+" 张" : "",
+        todayRel.length ? gridHTML(todayRel) : '<div class="hempty">今天没有发行安排</div>');
+
+  /* 今天生日 */
+  h += homeSec("今天生日", bds.length ? "共 "+bds.length+" 位" : "",
+        bds.length
+          ? '<div class="bdaylist">' + bds.map(function(m){
+              var ag = ageOf(m.b);
+              return '<div class="bday'+(isBias(m.g)||isBias(m.g2)?' bias':'')+'">'
+                + '<span class="bav">🎂</span>'
+                + '<span class="bname">'+esc(m.n)+'</span>'
+                + '<span class="bgrp">'+heartHTML(m.g)+esc(plainName(m.g))
+                +   (m.g2 ? ' · '+esc(plainName(m.g2)) : '')+'</span>'
+                + (ag !== null ? '<span class="bage">'+ag+' 岁</span>' : '')
+                + '</div>';
+            }).join("") + '</div>'
+          : '<div class="hempty">今天没有收录到艺人生日</div>');
+
+  /* 本月 MV：官方账号发布，按播放量排序 */
+  var mm = mvThisMonth(8);
+  h += homeSec("本月 MV", mm.length ? "官方账号 · 按播放量" : "",
+        mm.length
+          ? '<div class="mvbar">' + mm.map(function(m){
+              return '<a class="mvmini" href="'+mvURL(m)+'" target="_blank" rel="noopener nofollow">'
+                + '<span class="mvcov">'
+                +   (m.i ? '<img loading="lazy" src="'+esc(m.i)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+                +   '<span class="mvplay">▶ '+fmtPlay(m.p)+'</span>'
+                + '</span>'
+                + '<span class="mvtt">'+esc(m.t)+'</span>'
+                + '<span class="mvau">'+esc(m.u)+'</span>'
+                + '</a>';
+            }).join("") + '</div>'
+          : '<div class="hempty">本月还没有收录到官方 MV</div>');
+
+  /* 打歌节目（复用列表页那一套） */
+  h += homeSec("打歌节目", "韩国时间 KST",
+        '<div class="showsbar" id="homeShows"></div>');
+
+  /* 未来 7 天倒计时 */
+  h += homeSec("即将回归", soon.length ? "未来 7 天 · "+soon.length+" 张" : "",
+        soon.length ? '<div class="minibar">'+soon.slice(0,12).map(miniHTML).join("")+'</div>'
+                    : '<div class="hempty">未来 7 天没有回归安排</div>');
+
+  h += '<div class="hfoot"><button class="btn pri" id="toCal">查看完整日历 →</button></div>';
+
+  box.innerHTML = h;
+  renderShows("homeShows");
+}
+
 function renderStats(){
   var up = ALL.filter(function(r){ return r._dd>=0 && r._dd<=30; });
   var bi = up.filter(function(r){ return isBias(r.artist); });
@@ -389,6 +715,7 @@ function renderList(){
   $("nBi").textContent = ALL.filter(function(r){ return isBias(r.artist); }).length;
 
   renderStats();
+  renderShows();
   renderBiasBox();
   $("biasBox").style.display = (S.tab==="bias" || S.showBiasMgr) ? "" : "none";
   $("dateLabel").textContent = S.range.label;
@@ -431,7 +758,8 @@ function renderList(){
         + '<p>数据每天自动更新</p></div>';
   } else if(S.tab==="history"){
     // 同理，切到全部发布后也可以看未来的
-    html = gridHTML(applyFilters(ALL));
+    ensureYears();
+    html = yearBarHTML() + gridHTML(applyFilters(ALL));
   } else if(S.tab==="fav"){
     var fl = ALL.filter(function(r){ return isFav(r.id); });
     var fu = fl.filter(function(r){ return r._dd>=0; }).sort(function(a,b){ return a._dd-b._dd; });
@@ -457,6 +785,17 @@ function renderList(){
   $("qclr").classList.toggle("on", !!S.q);
 }
 function render(){
+  /* 首页（默认页）与日历界面互斥；打开详情 / 下载页时让位 */
+  var home = (S.view === "home" && !S.dl && !S.detailId);
+  $("homeView").style.display = home ? "" : "none";
+  if(home){
+    $("listView").style.display = "none";
+    $("detailView").style.display = "none";
+    $("dlView").style.display = "none";
+    renderHome();
+    window.scrollTo({top:0,behavior:"instant"});
+    return;
+  }
   if(S.dl){
     $("listView").style.display = "none";
     $("detailView").style.display = "none";
@@ -636,7 +975,10 @@ function setQuick(kind){
 }
 function syncTabs(){
   document.querySelectorAll(".tab").forEach(function(x){
-    x.classList.toggle("on", x.getAttribute("data-tab") === S.tab);
+    var v = x.getAttribute("data-view");
+    var on = v ? (S.view === "home")
+                : (S.view === "calendar" && x.getAttribute("data-tab") === S.tab);
+    x.classList.toggle("on", on);
   });
 }
 
@@ -745,19 +1087,36 @@ document.addEventListener("click", function(e){
     return;
   }
   if(t.id === "backBtn"){ S.detailId = null; render(); return; }
-  if(t.id === "brandHome"){ S.detailId = null; render(); return; }
+  if(t.id === "toCal"){ S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
+  if(t.id === "brandHome"){ S.detailId = null; S.view = "home"; syncTabs(); render(); return; }
   /* 收藏按钮（详情页） */
   if(t.id === "favDetail"){
     var cur = S.detailId; var k = favs.indexOf(cur);
     if(k>=0){ favs.splice(k,1); toast("已取消收藏"); } else { favs.push(cur); toast("已收藏 ★"); }
     LS.set("favs", favs); render(); return;
   }
+  /* 加载某个年份的发行数据 */
+  if((el = t.closest("[data-year]"))){
+    var y = el.getAttribute("data-year");
+    loadYear(y, function(){ render(); });
+    return;
+  }
+  /* 打歌节目：展开 / 收起本周时间表 */
+  if((el = t.closest("[data-showtoggle]"))){
+    S.showWeek = !S.showWeek; renderShows(); return;
+  }
   /* 即将回归的 7 天 / 30 天切换 */
   if((el = t.closest("[data-up]"))){
     S.upRange = el.getAttribute("data-up"); render(); return;
   }
-  /* Tab */
-  if((el = t.closest(".tab"))){
+  /* 首页 tab */
+  if((el = t.closest("[data-view]"))){
+    S.view = "home"; S.detailId = null; S.dl = false;
+    syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
+  }
+  /* 日历 tab */
+  if((el = t.closest("[data-tab]"))){
+    S.view = "calendar";
     S.tab = el.getAttribute("data-tab"); S.detailId = null; S.dl = false;
     /* 「即将回归」「本月回归」不带筛选，各自用固定范围，
        所以这里的 S.range 只服务于「全部发布」。 */
@@ -780,7 +1139,12 @@ function addBias(n){ if(n && bias.indexOf(n)<0){ bias.push(n); LS.set("bias", bi
 var qt;
 $("q").addEventListener("input", function(){
   var v = this.value; clearTimeout(qt);
-  qt = setTimeout(function(){ S.q = v.trim(); S.dl = false; render(); }, 170);
+  qt = setTimeout(function(){
+    S.q = v.trim(); S.dl = false;
+    /* 在首页输入搜索 → 自动切到日历界面看结果 */
+    if(S.q && S.view === "home"){ S.view = "calendar"; if(S.tab==="fav"||S.tab==="bias") S.tab="history"; syncTabs(); }
+    render();
+  }, 170);
 });
 $("qclr").addEventListener("click", function(){ $("q").value = ""; S.q = ""; render(); });
 
@@ -876,15 +1240,19 @@ S.range = rangePreset("f30");
     return m ? decodeURIComponent(m[1]) : null;
   }
   var tab = arg("tab");
-  if(tab && ["upcoming","month","history","fav","bias"].indexOf(tab) >= 0) S.tab = tab;
+  if(tab && ["upcoming","month","history","fav","bias"].indexOf(tab) >= 0){
+    S.tab = tab; S.view = "calendar";
+  }
+  if(arg("view") === "calendar") S.view = "calendar";
+  if(arg("view") === "home"){ S.view = "home"; S.detailId = null; }
   var from = arg("from"), to = arg("to");
   if(from){
     S.range = {mode:"custom", kind:"custom", from:from,
                to:to || from, label:from + (to && to !== from ? " ~ " + to : "")};
   }
   var rid = arg("release");
-  if(rid){ S.detailId = rid; }
-  if(tab){ syncTabs(); }
+  if(rid){ S.detailId = rid; S.view = "calendar"; }
+  syncTabs();
 })();
 
 render();

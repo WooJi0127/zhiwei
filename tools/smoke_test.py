@@ -38,7 +38,27 @@ function txt(sel){ var e = document.querySelector(sel); return e ? e.textContent
 var steps = [], i = 0;
 function step(f){ steps.push(f); }
 
-step(function(){ document.querySelector('[data-tab="history"]').click(); });
+step(function(){
+  LOG.push("默认页=首页:" + ($("homeView").style.display !== "none")
+    + " tab高亮=" + (document.querySelector(".tab.on") || {}).textContent);
+  document.querySelector('[data-tab="history"]').click();
+});
+/* 数据分片：主文件只带近一年，更早的按年份切片按需加载 */
+step(function(){
+  var md = (window.__KPOP_DATA__ || {});
+  LOG.push("分片: 主文件发行=" + (md.releases || []).length
+    + " 待加载年份=" + JSON.stringify(md.years || {})
+    + " 年份按钮=" + document.querySelectorAll(".ybtn").length
+    + " 初始卡片=" + QT());
+  var b = document.querySelector(".ybtn");
+  if(b) b.click();
+});
+step(function(){});
+step(function(){});
+step(function(){
+  LOG.push("点一年份后: 剩余按钮=" + document.querySelectorAll(".ybtn").length
+    + " 卡片=" + QT());
+});
 step(function(){
   LOG.push("默认范围=" + QT() + " 角标=" + $("nHi").textContent);
   $("dateBtn").click();
@@ -107,6 +127,54 @@ step(function(){
   $("backBtn").click();
 });
 step(function(){ LOG.push("返回=" + ($("detailView").style.display === "none")); });
+
+/* 首页（默认页）：含今天发行 / 今天生日 / 打歌节目 / 即将回归 */
+step(function(){ document.querySelector('[data-view="home"]').click(); });
+step(function(){
+  LOG.push("首页可见=" + ($("homeView").style.display !== "none")
+    + " 列表页隐藏=" + ($("listView").style.display === "none")
+    + " 板块数=" + document.querySelectorAll("#homeView .hsec").length
+    + " 概览=" + (document.querySelector("#homeView .hsum") || {}).textContent);
+  LOG.push("生日条数=" + document.querySelectorAll("#homeView .bday").length
+    + " 迷你卡=" + document.querySelectorAll("#homeView .mini").length
+    + " 首页打歌条=" + (document.querySelector("#homeShows .shnow") ? "有" : "无"));
+  var mm = (window.__KPOP_DATA__ && window.__KPOP_DATA__.members) || [];
+  var md = new Date(); var key = ("0" + (md.getMonth()+1)).slice(-2) + "-" + ("0" + md.getDate()).slice(-2);
+  var exp = mm.filter(function(x){ return x.b && x.b.slice(5) === key; }).length;
+  LOG.push("members=" + mm.length + " 今天应过生日=" + exp
+    + " 生日区=" + ((document.querySelector("#homeView .bdaylist") || document.querySelectorAll("#homeView .hempty")[1] || {}).textContent || "").trim().slice(0, 20));
+  $("toCal").click();
+});
+step(function(){
+  LOG.push("跳转日历后 首页=" + ($("homeView").style.display === "none")
+    + " 列表页=" + ($("listView").style.display !== "none")
+    + " 高亮tab=" + (document.querySelector(".tab.on") || {}).textContent);
+  document.querySelector('[data-view="home"]').click();
+});
+step(function(){
+  LOG.push("回首页=" + ($("homeView").style.display !== "none")
+    + " 高亮tab=" + (document.querySelector(".tab.on") || {}).textContent);
+  document.querySelector('[data-tab="upcoming"]').click();
+});
+
+/* 打歌节目时间表：默认收起，点「本周」应展开 7 行并高亮今天 */
+step(function(){
+  var bar = $("showsBar");
+  if(!bar){ LOG.push("ERR:没有 #showsBar"); return; }
+  LOG.push("打歌节目=" + bar.querySelector(".shnow").textContent.trim()
+    + " 收起时=" + getComputedStyle(bar.querySelector(".shweek")).display);
+  bar.querySelector("[data-showtoggle]").click();
+});
+step(function(){
+  var bar = $("showsBar"), rows = bar.querySelectorAll(".shrow"), td = bar.querySelector(".shrow.today");
+  LOG.push("展开后=" + getComputedStyle(bar.querySelector(".shweek")).display
+    + " 行数=" + rows.length
+    + " 今日=" + (td ? td.querySelector(".shw").textContent : "无高亮"));
+  bar.querySelector("[data-showtoggle]").click();
+});
+step(function(){
+  LOG.push("再次收起=" + getComputedStyle($("showsBar").querySelector(".shweek")).display);
+});
 
 function next(){
   if(i >= steps.length){
