@@ -28,15 +28,18 @@ function plainName(n){ var d=dispName(n); return d.zh || n; }
    后续专、合辑归入正规专，避免筛选时多余一档。 */
 function catOf(r){
   var t = (r.rtype||"").toLowerCase();
+  if(!t) return "";                       /* 判不出来就留空，不硬猜成正规专 */
   if(t.indexOf("mini")>=0 || /\bep\b/.test(t) || t.indexOf("- ep")>=0) return "Mini";
   if(t.indexOf("single")>=0) return "Single";
-  return "Album";
+  if(t.indexOf("album")>=0) return "Album";
+  return "";
 }
 function typeLabel(r){
   var c = r._cat;
   if(c==="Mini") return "迷你专 EP";
   if(c==="Single") return "单曲";
-  return "正规专";
+  if(c==="Album") return "正规专";
+  return "";                              /* 空 → 调用方不显示类型标签 */
 }
 
 /* 规范化：主数据和分片数据都要过一遍，抽成函数 */
@@ -222,6 +225,34 @@ function showsOn(w){ return SHOWS.filter(function(s){ return s.w === w; }); }
 /* 成员生日：来自 kpopping 档案页（scripts/birthdays.py 抓取） */
 var MEMBERS = DATA.members || [];
 
+
+/* ============================ 图标 ============================ */
+/* 全站统一用这套线性图标（24 网格、1.9 描边），不再用 emoji——
+   emoji 各平台长得不一样，也是「AI 感」的主要来源。 */
+var ICON = {
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+  close :'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  heart :'<path d="M12 20.2s-7.2-4.6-7.2-9.7A4.2 4.2 0 0 1 12 8.2a4.2 4.2 0 0 1 7.2 2.3c0 5.1-7.2 9.7-7.2 9.7z"/>',
+  star  :'<path d="M12 3.9l2.6 5.3 5.8.85-4.2 4.1 1 5.75L12 17.1l-5.2 2.8 1-5.75L3.6 10.05l5.8-.85z"/>',
+  cal   :'<rect x="3.6" y="5.2" width="16.8" height="15.2" rx="3"/><path d="M8.4 3.2v3.6M15.6 3.2v3.6M3.6 10.2h16.8"/>',
+  note  :'<path d="M9.5 17.6V5.6l9.4-2v12"/><circle cx="6.9" cy="17.9" r="2.4"/><circle cx="16.2" cy="15.7" r="2.4"/>',
+  head  :'<path d="M4 15.6v-3.3a8 8 0 0 1 16 0v3.3"/><path d="M4 15.6h2.6a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4z"/><path d="M20 15.6h-2.6a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1H20z"/>',
+  cake  :'<path d="M4.6 20h14.8v-5.4H4.6z"/><path d="M4.6 14.6h14.8V9.9H4.6z"/><path d="M12 9.9V6.5"/><path d="M12 6.5c0-1.3 1-2.3 2.2-2.3 0 1.3-1 2.3-2.2 2.3z"/>',
+  grid  :'<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>',
+  tv    :'<rect x="3.4" y="5" width="17.2" height="12.8" rx="2.6"/><path d="M9 21h6M12 17.8V21"/>',
+  arrow :'<path d="M5 12h13.2M12.9 6.7l5.3 5.3-5.3 5.3"/>',
+  play  :'<path d="M8.5 5.6l11 6.4-11 6.4z"/>',
+  mv    :'<rect x="3" y="5.5" width="18" height="13" rx="2.6"/><path d="M10 9.6l5 2.4-5 2.4z"/>'
+};
+/* fill=true 时画实心（收藏已选、本命爱心） */
+function ico(name, size, solid){
+  var n = size || 16;
+  return '<svg class="ico" viewBox="0 0 24 24" width="'+n+'" height="'+n+'"'
+    + ' fill="'+(solid ? "currentColor" : "none")+'" stroke="currentColor"'
+    + ' stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + (ICON[name] || "") + "</svg>";
+}
+
 /* B 站官方 MV（scripts/bilibili.py 抓取，已按播放量降序） */
 var MVS = DATA.mvs || [];
 
@@ -390,10 +421,10 @@ function cardHTML(r){
   var badges = r._isNew ? '<span class="badge new">NEW</span>' : '';
   return '<div class="card'+(bi?' bias':'')+'" data-open="'+esc(r.id)+'">'
     + '<div class="cov">'
-    +   '<div class="ph">🎵</div>'
+    +   '<div class="ph">' + ico('note',22) + '</div>'
     +   (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
     +   ddayHTML(r)
-    +   '<button class="favbtn'+(fa?' on':'')+'" data-fav="'+esc(r.id)+'" title="收藏">'+(fa?'★':'☆')+'</button>'
+    +   '<button class="favbtn'+(fa?' on':'')+'" data-fav="'+esc(r.id)+'" title="收藏">'+(fa?ico('star',15,true):ico('star',15))+'</button>'
     +   badges
     + '</div>'
     + '<div class="cbody">'
@@ -402,14 +433,14 @@ function cardHTML(r){
     +     '<span class="zh">'+esc(dn.zh)+'</span>'
     +     (dn.en ? '<span class="en">'+esc(dn.en)+'</span>' : '')
     +   '</div>'
-    +   '<div class="cmeta"><span class="tag">'+esc(typeLabel(r))+'</span>'
+    +   '<div class="cmeta">'+(typeLabel(r) ? '<span class="tag">'+esc(typeLabel(r))+'</span>' : '')
     +     (r._tn ? '<span class="tag s">'+r._tn+' 首</span>' : '')
     +     (r._agency ? '<span>'+esc(r._agency)+'</span>' : '')
     +     '<span>'+esc(r.date)+'</span></div>'
     + '</div></div>';
 }
 function gridHTML(list){
-  if(!list.length) return '<div class="empty"><div class="e">🎧</div><h3>没有匹配的发行</h3>'
+  if(!list.length) return '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>没有匹配的发行</h3>'
     + '<p>试试调整时间范围或筛选条件</p></div>';
   return '<div class="grid">' + list.map(cardHTML).join("") + '</div>';
 }
@@ -450,7 +481,7 @@ function detailHTML(r){
         + '<span style="font-size:12.5px;color:var(--sub)">专辑详情</span></div>';
 
   h += '<div class="dhero">'
-    +  '<div class="art"><div class="ph">🎵</div>'
+    +  '<div class="art"><div class="ph">' + ico('note',22) + '</div>'
     +    (r._img ? '<img src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
     +  '</div>'
     +  '<div class="dinfo">'
@@ -464,7 +495,7 @@ function detailHTML(r){
     +      (r._tn ? '<span class="sep">·</span><span>'+r._tn+' 首歌曲</span>' : '')
     +      (r._dur ? '<span class="sep">·</span><span>'+esc(fmtDur(r._dur))+'</span>' : '')
     +      (r.genre ? '<span class="sep">·</span><span>'+esc(r.genre)+'</span>' : '')
-    +      '<span class="sep">·</span><span class="tag">'+esc(typeLabel(r))+'</span>'
+    +      (typeLabel(r) ? '<span class="sep">·</span><span class="tag">'+esc(typeLabel(r))+'</span>' : '')
     +      (r._isNew ? '<span class="tag s">NEW</span>' : '')
     +    '</div>';
 
@@ -490,7 +521,7 @@ function detailHTML(r){
 
   h += '<div class="dact">'
     +  '<button class="btn" id="favDetail" style="padding:10px 18px;border-radius:11px;font-size:13px">'
-    +    (isFav(r.id) ? '★ 已收藏' : '☆ 收藏') + '</button>'
+    +    (isFav(r.id) ? ico('star',14,true)+' 已收藏' : ico('star',14)+' 收藏') + '</button>'
     +  '<a class="btn" id="reportBtn" href="'+esc(reportMail(r))+'"'
     +    ' style="padding:10px 16px;border-radius:11px;font-size:13px">信息有误？告诉我们</a>'
     +  '<span class="dsrc">数据来源：' + esc(srcLabel(r)) + '</span>'
@@ -587,7 +618,7 @@ function renderShows(boxId){
 
   box.innerHTML =
       '<div class="shhead">'
-    +   '<span class="shic">📺</span>'
+    +   '<span class="shic">'+ico('tv',15)+'</span>'
     +   '<span class="shtitle">今天 · 打歌节目</span>'
     +   '<span class="shnow">'+head+'</span>'
     +   '<button class="shmore" data-showtoggle>'+(S.showWeek ? '收起 ▴' : '本周 ▾')+'</button>'
@@ -612,7 +643,7 @@ function homeSec(title, sub, body){
 function miniHTML(r){
   var dn = dispName(r.artist);
   return '<div class="mini'+(isBias(r.artist)?' bias':'')+'" data-open="'+esc(r.id)+'">'
-    + '<div class="mcov"><div class="ph">🎵</div>'
+    + '<div class="mcov"><div class="ph">' + ico('note',22) + '</div>'
     +   (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
     +   ddayHTML(r)
     + '</div>'
@@ -694,7 +725,7 @@ function bdayListHTML(bds){
   var h = '<div class="bdaylist">' + bds.slice(0, show).map(function(m){
       var ag = ageOf(m.b);
       return '<div class="bday'+(isBias(m.g)||isBias(m.g2)?' bias':'')+'">'
-        + '<span class="bav">🎂</span>'
+        + '<span class="bav">'+ico('cake',15)+'</span>'
         + '<span class="bname">'+esc(m.n)+'</span>'
         + '<span class="bgrp">'+heartHTML(m.g)+esc(plainName(m.g))
         +   (m.g2 ? ' · '+esc(plainName(m.g2)) : '')+'</span>'
@@ -776,7 +807,7 @@ function renderList(){
     if(S.frange === "month" || S.frange === "nmonth"){
       var nU = ul.filter(function(r){ return r._dd >= 0; }).length;
       html = ul.length ? gridHTML(ul)
-        : '<div class="empty"><div class="e">🎧</div><h3>' + esc(R.label) + '没有回归记录</h3>'
+        : '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>' + esc(R.label) + '没有回归记录</h3>'
           + '<p>数据每天自动更新</p></div>';
       html = '<div class="mohead"><b>' + esc(R.label) + '</b><span>共 ' + ul.length
            + ' 张 · 其中 ' + nU + ' 张还没发行</span></div>' + html;
@@ -784,7 +815,7 @@ function renderList(){
       html = ul.length
         ? '<div class="sec-h"><h2>即将回归 · 7 天</h2><span class="c">' + ul.length
           + '</span><span class="line"></span></div>' + gridHTML(ul)
-        : '<div class="empty"><div class="e">🎧</div><h3>未来 7 天没有回归</h3>'
+        : '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>未来 7 天没有回归</h3>'
           + '<p>换「本月」看看，或去「过去」翻历史</p></div>';
     }
   } else if(isPast){
@@ -795,20 +826,20 @@ function renderList(){
     var fu = fl.filter(function(r){ return r._dd>=0; }).sort(function(a,b){ return a._dd-b._dd; });
     var fp = fl.filter(function(r){ return r._dd<0; });
     html = fl.length ? secHTML("收藏 · 即将发行", fu) + secHTML("收藏 · 已发行", fp)
-      : '<div class="empty"><div class="e">★</div><h3>还没有收藏</h3><p>在卡片右上角点 ☆ 即可收藏</p></div>';
+      : '<div class="empty"><div class="e">' + ico('star',24) + '</div><h3>还没有收藏</h3><p>在卡片右上角点星标即可收藏</p></div>';
   } else if(isMore){
-    html = '<div class="empty"><div class="e">🧰</div><h3>小工具</h3>'
+    html = '<div class="empty"><div class="e">' + ico('grid',24) + '</div><h3>小工具</h3>'
          + '<p>打歌节目时间表在上方 · 后面还会往这里加别的</p></div>';
   } else if(isMine && S.mine === "bias"){
     if(!bias.length){
-      html = '<div class="empty"><div class="e">&#10084;</div><h3>还没有设置本命</h3>'
+      html = '<div class="empty"><div class="e">' + ico('heart',24) + '</div><h3>还没有设置本命</h3>'
            + '<p>在上方「本命团体管理」里添加，或点卡片上的爱心</p></div>';
     } else {
       var bl = ALL.filter(function(r){ return isBias(r.artist); });
       var bu = bl.filter(function(r){ return r._dd>=0; }).sort(function(a,b){ return a._dd-b._dd; });
       var bp = bl.filter(function(r){ return r._dd<0; });
       html = secHTML("本命 · 即将发行", bu) + secHTML("本命 · 已发行", bp);
-      if(!html) html = '<div class="empty"><div class="e">&#10084;</div><h3>本命暂无记录</h3><p>数据每天更新</p></div>';
+      if(!html) html = '<div class="empty"><div class="e">' + ico('heart',24) + '</div><h3>本命暂无记录</h3><p>数据每天更新</p></div>';
     }
   }
   $("content").innerHTML = html;
@@ -1124,7 +1155,7 @@ document.addEventListener("click", function(e){
     var art = el.getAttribute("data-heart");
     var i = bias.indexOf(art);
     if(i >= 0){ bias.splice(i,1); toast("已移出本命"); }
-    else { bias.push(art); el.classList.add("pop"); burst(el); toast("已加入本命 ❤"); }
+    else { bias.push(art); el.classList.add("pop"); burst(el); toast("已加入本命"); }
     LS.set("bias", bias);
     setTimeout(function(){ if(el && el.parentNode) el.classList.remove("pop"); }, 540);
     render();
@@ -1135,7 +1166,7 @@ document.addEventListener("click", function(e){
     e.stopPropagation();
     var id = el.getAttribute("data-fav");
     var j = favs.indexOf(id);
-    if(j >= 0){ favs.splice(j,1); toast("已取消收藏"); } else { favs.push(id); toast("已收藏 ★"); }
+    if(j >= 0){ favs.splice(j,1); toast("已取消收藏"); } else { favs.push(id); toast("已收藏"); }
     LS.set("favs", favs); render(); return;
   }
   if(t.closest("[data-stop]")) return;   /* 外链放行 */
@@ -1192,7 +1223,7 @@ document.addEventListener("click", function(e){
   /* 收藏按钮（详情页） */
   if(t.id === "favDetail"){
     var cur = S.detailId; var k = favs.indexOf(cur);
-    if(k>=0){ favs.splice(k,1); toast("已取消收藏"); } else { favs.push(cur); toast("已收藏 ★"); }
+    if(k>=0){ favs.splice(k,1); toast("已取消收藏"); } else { favs.push(cur); toast("已收藏"); }
     LS.set("favs", favs); render(); return;
   }
   /* 加载某个年份的发行数据 */
@@ -1234,10 +1265,10 @@ document.addEventListener("click", function(e){
 });
 function toggleBias(n){
   var i = bias.indexOf(n);
-  if(i>=0){ bias.splice(i,1); toast("已移出本命"); } else { bias.push(n); toast("已加入本命 ❤"); }
+  if(i>=0){ bias.splice(i,1); toast("已移出本命"); } else { bias.push(n); toast("已加入本命"); }
   LS.set("bias", bias); render();
 }
-function addBias(n){ if(n && bias.indexOf(n)<0){ bias.push(n); LS.set("bias", bias); toast("已加入本命 ❤"); render(); } }
+function addBias(n){ if(n && bias.indexOf(n)<0){ bias.push(n); LS.set("bias", bias); toast("已加入本命"); render(); } }
 
 /* 搜索 */
 var qt;

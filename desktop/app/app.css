@@ -131,6 +131,12 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 }
 
 
+
+/* 全站图标（替代 emoji）：24 网格线性风格，颜色跟随文字 */
+.ico{flex:none;display:inline-block;vertical-align:-.15em}
+.chip .ico{vertical-align:-.13em}
+.empty .e .ico{opacity:.55}
+
 /* ================= 自定义下拉 ================= */
 .selwrap{position:relative;display:inline-block;align-self:center;flex:none}
 .selbtn{display:inline-flex;align-items:center;gap:9px;min-width:112px;height:37px;

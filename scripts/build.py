@@ -75,7 +75,8 @@ CREATE TABLE IF NOT EXISTS releases (
     rtype       TEXT,
     image       TEXT,
     url         TEXT,
-    extra       TEXT
+    extra       TEXT,
+    rtype_src   TEXT        -- 数据源自己标的类型（kpopping 有，网易云/Apple 没有）
 );
 CREATE TABLE IF NOT EXISTS events (
     id          TEXT PRIMARY KEY,
@@ -147,6 +148,10 @@ def get_db():
         con.commit()
     if "coed_checked" not in have:
         con.execute("ALTER TABLE artists ADD COLUMN coed_checked INTEGER DEFAULT 0")
+        con.commit()
+    have = {r[1] for r in con.execute("PRAGMA table_info(releases)")}
+    if "rtype_src" not in have:
+        con.execute("ALTER TABLE releases ADD COLUMN rtype_src TEXT")
         con.commit()
     return con
 
@@ -252,18 +257,10 @@ def parse_subtype(title, rtype="", track_count=0):
     if re.search(r"\balbum\b", rt):
         return "Album"
 
-    # 5) 曲目数启发式（只有拿不到任何文字线索时才用）
-    try:
-        n = int(track_count or 0)
-    except (TypeError, ValueError):
-        n = 0
-    if n == 1 or n == 2:
-        return "Single"
-    if 3 <= n <= 7:
-        return "EP"
-    if n >= 8:
-        return "Album"
-    return "Album"
+    # 5) 拿不到任何明确线索 → 不记类型。
+    #    以前这里会用曲目数猜（8 首以上算 Album），结果把 NMIXX《Strange Muse》
+    #    这种 EP 误判成正规专。现在宁可留空，等每次跑数据时再重判（step_retype）。
+    return None
 
 
 # ---------------------------------------------------------- 各源入库
@@ -336,13 +333,17 @@ def step_kpopping(con, months):
             if not is_wanted(r["title"], r["type"]):
                 continue
             rid = f"kp:{r['source_id'] or (r['date'] + r['artist'] + r['title'])}"
-            con.execute("""INSERT INTO releases(id,source,date,artist,title,rtype,image,url,extra)
-                           VALUES(?,?,?,?,?,?,?,?,?)
+            src = map_src_type(r["type"])
+            con.execute("""INSERT INTO releases(id,source,date,artist,title,rtype,
+                                                image,url,extra,rtype_src)
+                           VALUES(?,?,?,?,?,?,?,?,?,?)
                            ON CONFLICT(id) DO UPDATE SET
                              date=excluded.date, title=excluded.title,
-                             rtype=excluded.rtype, image=excluded.image""",
+                             rtype=excluded.rtype, image=excluded.image,
+                             rtype_src=excluded.rtype_src""",
                         (rid, "kpopping", r["date"], r["artist"], r["title"],
-                         r["type"] or parse_subtype(r["title"]), r["image"], "", ""))
+                         src or parse_subtype(r["title"]), r["image"], "", "",
+                         r["type"] or ""))
             cnt += 1
         # 艺人入册
         for r in rels:
@@ -934,30 +935,86 @@ def step_purge_scope(con):
     return len(doomed)
 
 
+def map_src_type(raw):
+    """
+    把数据源自己标的类型归一化成 Single / EP / Album 三档。
+
+    kpopping 的日历里直接写着 "Mini Album" / "Single" / "EP" / "Album" / "OST"，
+    这是最可靠的来源——比从标题猜准得多。以前没单独存，被 step_retype 用标题
+    重判冲掉了，结果什么都被猜成 Album（NMIXX《Strange Muse》就这么变成正规专）。
+    """
+    s = (raw or "").strip().lower()
+    if not s:
+        return None
+    if "single" in s:                    # Single / Digital Single / Single Album
+        return "Single"
+    if "mini" in s or re.search(r"\bep\b", s):
+        return "EP"
+    # 后续专 / 合辑 / 现场版 都归到正规专这一档
+    if ("album" in s or "repackage" in s or "compilation" in s
+            or "live" in s):
+        return "Album"
+    return None                          # OST 之类不归三档，交给 is_wanted 过滤
+
+
+def _title_key(t):
+    """标题归一，用于跨源对齐：去掉形态后缀和所有标点空白，只留字母数字汉字。"""
+    t = (t or "").lower()
+    t = re.sub(r"[-–—]\s*(single|ep|album)\s*$", "", t)
+    t = re.sub(r"[^0-9a-z\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]+", "", t)
+    return t
+
+
 def step_retype(con):
     """
     用当前规则重算所有发行的形态（Single / EP / Album）。
 
-    规则升级后老数据的分类会过时，这里统一刷一遍。
-    Apple Music 的专辑把 trackCount 存在 extra 里，可以当兜底线索；
-    网易云没有曲目数，只能靠标题。
+    规则升级后老数据的分类会过时，这里统一刷一遍。同时兼做「补录」：
+    上一轮判不出来留空的条目，这一轮标题补全后可能就写得明白了，
+    重新判一遍即可；依然判不出来就继续留空（前端不显示类型标签）。
+
+    判据只有「标题里写明」才算数，不再用曲目数猜——
+    以前 8 首以上就当正规专，把 NMIXX《Strange Muse》这种 EP 误判成了正规专。
+
+    跨源对齐：同一张专辑常被多个源各抓一次，Apple 的标题带 "- Single"/"- EP"
+    后缀而 kpopping/网易云的没有。判不出来的条目去借同专辑别的源的类型；
+    只有所有匹配结果一致时才借，出现分歧（如 "Go in Blind" 既是 EP 又是单曲）
+    宁可留空。
     """
-    rows = list(con.execute("SELECT id,title,extra,rtype FROM releases"))
-    changed = 0
-    for rid, title, extra, old in rows:
-        n = 0
-        if extra:
-            try:
-                n = int((json.loads(extra) or {}).get("trackCount") or 0)
-            except Exception:                       # noqa: BLE001
-                n = 0
-        new = parse_subtype(title, "", n)
+    rows = list(con.execute(
+        "SELECT id,artist,title,rtype,rtype_src FROM releases"))
+    # 源生类型最可信，其次才是标题里的线索
+    got = {rid: (map_src_type(src) or parse_subtype(title))
+           for rid, _a, title, _o, src in rows}
+
+    # (艺人, 归一标题) -> 已确认的类型集合
+    seen = {}
+    for rid, artist, title, _o, _s in rows:
+        v = got[rid]
+        if v:
+            seen.setdefault((artist, _title_key(title)), set()).add(v)
+
+    borrowed = 0
+    for rid, artist, title, _o, _s in rows:
+        if got[rid]:
+            continue
+        vs = seen.get((artist, _title_key(title)))
+        if vs and len(vs) == 1:          # 有分歧就不猜
+            got[rid] = next(iter(vs))
+            borrowed += 1
+
+    changed = typed = 0
+    for rid, _a, _t, old, _s in rows:
+        new = got[rid]
+        if new:
+            typed += 1
         if new != old:
             con.execute("UPDATE releases SET rtype=? WHERE id=?", (new, rid))
             changed += 1
     if changed:
         con.commit()
-        log(f"  重新归类 {changed} 条发行")
+    log(f"  重新归类 {changed} 条（共 {len(rows)} 条，{typed} 条有明确类型，"
+        f"其中跨源补齐 {borrowed} 条）")
     return changed
 
 
@@ -1101,15 +1158,15 @@ def export_data(con):
                 hit.append(rel)
         for c in clusters:
             best = c[0]
-            # 形态以「标题里带明确线索」的那份为准。
+            # 只有当这份自己没类型时，才去借「标题里带明确线索」的那份。
             # 否则会出现同一个 EP，Apple 的裸标题靠曲目数猜成正规专、
             # 网易云的 "The 1st EP" 才是对的，两边打架。
-            for r in c:
-                if subtype_is_explicit(r["title"]):
-                    best = dict(best)
-                    best["rtype"] = parse_subtype(
-                        r["title"], "", r.get("trackCount") or 0)
-                    break
+            if not best.get("rtype"):
+                for r in c:
+                    if subtype_is_explicit(r["title"]):
+                        best = dict(best)
+                        best["rtype"] = parse_subtype(r["title"])
+                        break
             dedup.append(best)
     n_dup = len(releases) - len(dedup)
     if n_dup:
