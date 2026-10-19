@@ -799,6 +799,13 @@ function renderList(){
   $("cReset").style.display = (S.q||S.type||S.kind||S.agency||S.onlyFav||S.onlyBias) ? "" : "none";
   $("qclr").classList.toggle("on", !!S.q);
 }
+/* 切页时给容器重放一次淡入（先摘 class 再强制重排，动画才会重新跑） */
+function animIn(el){
+  if(!el) return;
+  el.classList.remove("rise");
+  void el.offsetWidth;
+  el.classList.add("rise");
+}
 function render(){
   /* 首页（默认页）与日历界面互斥；打开详情时让位 */
   var home = (S.view === "home" && !S.detailId);
@@ -807,6 +814,7 @@ function render(){
     $("listView").style.display = "none";
     $("detailView").style.display = "none";
     renderHome();
+    animIn($("homeView"));
     window.scrollTo({top:0,behavior:"instant"});
     return;
   }
@@ -817,11 +825,13 @@ function render(){
     for(var i=0;i<ALL.length;i++){ if(ALL[i].id===S.detailId){ r=ALL[i]; break; } }
     if(!r){ S.detailId=null; render(); return; }
     $("detailView").innerHTML = detailHTML(r);
+    animIn($("detailView"));
     window.scrollTo({top:0,behavior:"instant"});
   } else {
     $("listView").style.display = "";
     $("detailView").style.display = "none";
     renderList();
+    animIn($("content"));
   }
 }
 function openDetail(id){ S.detailId = id; render(); }

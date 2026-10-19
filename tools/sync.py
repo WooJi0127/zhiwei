@@ -56,6 +56,15 @@ def build_single_file():
     if not n:
         sys.exit("index.html 里没找到 app.js 的外链")
 
+    # 离线单文件版的 CSS 里写的是 fonts/xxx.woff2，它跟 知未.html 同级，
+    # 所以根目录也得放一份字体，否则离线版会掉回系统字体。
+    src_fonts = os.path.join(CORE, "fonts")
+    if os.path.isdir(src_fonts):
+        dst_fonts = os.path.join(ROOT, "fonts")
+        os.makedirs(dst_fonts, exist_ok=True)
+        for name in os.listdir(src_fonts):
+            shutil.copy2(os.path.join(src_fonts, name), os.path.join(dst_fonts, name))
+
     out = os.path.join(ROOT, "知未.html")
     write(out, page)
     return out, len(page)
