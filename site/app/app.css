@@ -75,9 +75,11 @@ header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.93);
 .searchcover input{flex:1;padding:9px 2px;border:0;outline:none;font-size:14px;
   background:transparent;color:var(--text)}
 .searchcover input::placeholder{color:#A8A498}
-.searchcover .ic{color:var(--sub);font-size:13px}
-.searchcover .sclose{border:0;background:var(--bg);color:var(--sub);border-radius:50%;
-  width:26px;height:26px;display:grid;place-items:center;font-size:12px;flex:none}
+.searchcover .ic{width:15px;height:15px;flex:none;color:var(--sub)}
+.searchcover .sclose{border:0;background:transparent;color:var(--sub);border-radius:50%;
+  width:28px;height:28px;display:grid;place-items:center;font-size:13px;flex:none;
+  transition:background .15s,color .15s}
+.searchcover .sclose:hover{background:#F2EFE8;color:var(--text)}
 .tabs{display:flex;gap:2px;flex:1;flex-wrap:wrap}
 .tab{padding:9px 17px;border-radius:10px;border:0;background:transparent;color:var(--sub);
   font-size:13.5px;font-weight:700;position:relative}
@@ -130,9 +132,9 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 
 
 /* ================= 自定义下拉 ================= */
-.selwrap{position:relative;display:inline-block}
-.selbtn{display:inline-flex;align-items:center;gap:9px;min-width:112px;
-  padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;
+.selwrap{position:relative;display:inline-block;align-self:center;flex:none}
+.selbtn{display:inline-flex;align-items:center;gap:9px;min-width:112px;height:37px;
+  padding:0 30px 0 12px;border:1px solid var(--line);border-radius:11px;background:#fff;
   font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;
   transition:border-color .15s,box-shadow .15s,background-color .15s;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%236E6A5F' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -530,9 +532,9 @@ footer a{color:var(--brand)}
 
 /* ================= 赞赏（悬浮按钮 + 弹层） ================= */
 .spon{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:120;
-  display:flex;align-items:center;gap:7px;
-  padding:10px 17px;border:0;border-radius:24px;
-  background:var(--grad);color:#fff;font-size:13px;font-weight:800;letter-spacing:.5px;
+  width:50px;height:50px;padding:0;border:0;border-radius:50%;
+  display:grid;place-items:center;
+  background:var(--grad);color:#fff;
   box-shadow:0 6px 20px rgba(51,71,58,.34);
   transition:transform .18s,box-shadow .18s,opacity .18s}
 .spon:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(51,71,58,.44)}

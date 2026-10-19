@@ -689,7 +689,7 @@ function renderHome(){
 
 /* 今日生日：默认只摆 5 位，多了给一个「展开」，别占满整屏 */
 function bdayListHTML(bds){
-  var lim = 5;
+  var lim = 4;   /* 首屏只摆 4 位，多了点「展开」 */
   var show = S.bdMore ? bds.length : Math.min(lim, bds.length);
   var h = '<div class="bdaylist">' + bds.slice(0, show).map(function(m){
       var ag = ageOf(m.b);
@@ -1271,8 +1271,12 @@ $("searchToggle").addEventListener("click", function(){
   c.style.display = c.style.display === "none" ? "" : "none";
   if(c.style.display !== "none") $("q").focus();
 });
-$("searchClose").addEventListener("click", function(){
-  $("searchCover").style.display = "none";
+$("qclr").addEventListener("click", function(){
+  if($("q").value){
+    $("q").value = ""; S.q = ""; render(); $("q").focus();
+  } else {
+    $("searchCover").style.display = "none";
+  }
 });
 /* 本命管理入口挪进了「我的」页的切换条上方按钮 */
 $("biasAdd").addEventListener("click", function(){ addBias($("biasInput").value.trim()); $("biasInput").value=""; });

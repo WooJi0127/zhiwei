@@ -206,7 +206,7 @@ step(function(){
     document.querySelectorAll("#homeView .hsec-h h2"),
     function(e){ return e.textContent.trim(); }).join("/"));
   LOG.push("今日生日默认=" + document.querySelectorAll("#homeView .bday").length
-    + " 展开按钮=" + ($("bdMore") ? "有" : "无"));
+    + " 展开按钮=" + ($("bdMore") ? $("bdMore").textContent : "无"));
   var b = $("bdMore"); if(b) b.click();
 });
 step(function(){
@@ -229,6 +229,12 @@ step(function(){
   LOG.push("选中后 select值=" + $("fType").value
     + " 面板关闭=" + (document.querySelectorAll(".selpop.on").length === 0));
 });
+step(function(){
+  var b = $("sponBtn");
+  LOG.push("赞赏按钮=" + (b ? b.textContent.trim() : "无")
+    + " 咖啡杯图标=" + (b && b.querySelector("svg") ? "有" : "无"));
+});
+
 /* 下载页已移除 */
 step(function(){
   LOG.push("下载入口=" + ($("dlBtn") ? "仍在" : "已移除")

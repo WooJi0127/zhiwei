@@ -87,9 +87,11 @@ header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.93);
 .searchcover input{flex:1;padding:9px 2px;border:0;outline:none;font-size:14px;
   background:transparent;color:var(--text)}
 .searchcover input::placeholder{color:#A8A498}
-.searchcover .ic{color:var(--sub);font-size:13px}
-.searchcover .sclose{border:0;background:var(--bg);color:var(--sub);border-radius:50%;
-  width:26px;height:26px;display:grid;place-items:center;font-size:12px;flex:none}
+.searchcover .ic{width:15px;height:15px;flex:none;color:var(--sub)}
+.searchcover .sclose{border:0;background:transparent;color:var(--sub);border-radius:50%;
+  width:28px;height:28px;display:grid;place-items:center;font-size:13px;flex:none;
+  transition:background .15s,color .15s}
+.searchcover .sclose:hover{background:#F2EFE8;color:var(--text)}
 .tabs{display:flex;gap:2px;flex:1;flex-wrap:wrap}
 .tab{padding:9px 17px;border-radius:10px;border:0;background:transparent;color:var(--sub);
   font-size:13.5px;font-weight:700;position:relative}
@@ -142,9 +144,9 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 
 
 /* ================= 自定义下拉 ================= */
-.selwrap{position:relative;display:inline-block}
-.selbtn{display:inline-flex;align-items:center;gap:9px;min-width:112px;
-  padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;
+.selwrap{position:relative;display:inline-block;align-self:center;flex:none}
+.selbtn{display:inline-flex;align-items:center;gap:9px;min-width:112px;height:37px;
+  padding:0 30px 0 12px;border:1px solid var(--line);border-radius:11px;background:#fff;
   font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;
   transition:border-color .15s,box-shadow .15s,background-color .15s;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%236E6A5F' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -542,9 +544,9 @@ footer a{color:var(--brand)}
 
 /* ================= 赞赏（悬浮按钮 + 弹层） ================= */
 .spon{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:120;
-  display:flex;align-items:center;gap:7px;
-  padding:10px 17px;border:0;border-radius:24px;
-  background:var(--grad);color:#fff;font-size:13px;font-weight:800;letter-spacing:.5px;
+  width:50px;height:50px;padding:0;border:0;border-radius:50%;
+  display:grid;place-items:center;
+  background:var(--grad);color:#fff;
   box-shadow:0 6px 20px rgba(51,71,58,.34);
   transition:transform .18s,box-shadow .18s,opacity .18s}
 .spon:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(51,71,58,.44)}
@@ -699,10 +701,12 @@ footer a{color:var(--brand)}
       <button class="btn stoggle" id="searchToggle" title="搜索" aria-label="搜索">🔍</button>
     </div>
     <div class="searchcover" id="searchCover" style="display:none">
-      <span class="ic">🔍</span>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>
+      </svg>
       <input id="q" type="text" placeholder="搜索团体 / 歌手 / 专辑 / 公司 / 粉丝名…" autocomplete="off">
-      <button class="clr" id="qclr" title="清空">✕</button>
-      <button class="sclose" id="searchClose" title="关闭">✕</button>
+      <button class="sclose" id="qclr" title="关闭">✕</button>
     </div>
   </div>
 </header>
@@ -836,16 +840,18 @@ footer a{color:var(--brand)}
   「知未」仅做信息聚合与外部跳转，不提供播放服务。
 </footer>
 
-<button class="spon" id="sponBtn" aria-label="赞赏支持">
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 20.7C12 20.7 3.9 15.8 3.9 10.4A4.7 4.7 0 0 1 12 7.2a4.7 4.7 0 0 1 8.1 3.2c0 5.4-8.1 10.3-8.1 10.3z"/>
+<button class="spon" id="sponBtn" aria-label="请我喝杯咖啡吧">
+  <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+       stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4.5 9h12v6.5A4.5 4.5 0 0 1 12 20h-1A4.5 4.5 0 0 1 6.5 15.5V9Z"/>
+    <path d="M16.5 10.6h1.1a2.35 2.35 0 0 1 0 4.7h-1.1"/>
+    <path d="M9 6.2c-.7-.8-.7-1.9 0-2.7M13 6.2c-.7-.8-.7-1.9 0-2.7"/>
   </svg>
-  <span>赞赏</span>
 </button>
 
 <div class="sponpop" id="sponPop" role="dialog" aria-label="赞赏支持">
   <div class="sponh">
-    <b>请我喝杯咖啡</b>
+    <b>请我喝杯咖啡吧</b>
     <button class="sponx" id="sponX" aria-label="关闭">✕</button>
   </div>
   <p class="spondesc">「知未」免费、无广告、不采集任何数据。<br>如果它帮到了你，欢迎随意支持一下。</p>
@@ -1552,7 +1558,7 @@ function renderHome(){
 
 /* 今日生日：默认只摆 5 位，多了给一个「展开」，别占满整屏 */
 function bdayListHTML(bds){
-  var lim = 5;
+  var lim = 4;   /* 首屏只摆 4 位，多了点「展开」 */
   var show = S.bdMore ? bds.length : Math.min(lim, bds.length);
   var h = '<div class="bdaylist">' + bds.slice(0, show).map(function(m){
       var ag = ageOf(m.b);
@@ -2134,8 +2140,12 @@ $("searchToggle").addEventListener("click", function(){
   c.style.display = c.style.display === "none" ? "" : "none";
   if(c.style.display !== "none") $("q").focus();
 });
-$("searchClose").addEventListener("click", function(){
-  $("searchCover").style.display = "none";
+$("qclr").addEventListener("click", function(){
+  if($("q").value){
+    $("q").value = ""; S.q = ""; render(); $("q").focus();
+  } else {
+    $("searchCover").style.display = "none";
+  }
 });
 /* 本命管理入口挪进了「我的」页的切换条上方按钮 */
 $("biasAdd").addEventListener("click", function(){ addBias($("biasInput").value.trim()); $("biasInput").value=""; });
