@@ -195,6 +195,7 @@ var S = {
   range:{mode:"quick", from:null, to:null, label:"未来 30 天"},
   showBiasMgr:false, detailId:null,
   showWeek:false,                      /* 打歌节目「本周时间表」是否展开 */
+  bdMore:false,                        /* 首页今日生日是否展开全部 */
   calMonth:null, calFrom:null, calTo:null
 };
 
@@ -645,28 +646,18 @@ function renderHome(){
     + '<div class="heroR" id="hstats"></div>'
     + '</div>';
 
-  /* 今天发行 */
+  /* 今天发行：横滑小卡，不占版面 */
   h += homeSec("今天发行", todayRel.length ? "共 "+todayRel.length+" 张" : "",
-        todayRel.length ? gridHTML(todayRel) : '<div class="hempty">今天没有发行安排</div>');
+        todayRel.length ? '<div class="minibar">'+todayRel.map(miniHTML).join("")+'</div>'
+                        : '<div class="hempty">今天没有发行安排</div>');
 
-  /* 今天生日 */
-  h += homeSec("今天生日", bds.length ? "共 "+bds.length+" 位" : "",
-        bds.length
-          ? '<div class="bdaylist">' + bds.map(function(m){
-              var ag = ageOf(m.b);
-              return '<div class="bday'+(isBias(m.g)||isBias(m.g2)?' bias':'')+'">'
-                + '<span class="bav">🎂</span>'
-                + '<span class="bname">'+esc(m.n)+'</span>'
-                + '<span class="bgrp">'+heartHTML(m.g)+esc(plainName(m.g))
-                +   (m.g2 ? ' · '+esc(plainName(m.g2)) : '')+'</span>'
-                + (ag !== null ? '<span class="bage">'+ag+' 岁</span>' : '')
-                + '</div>';
-            }).join("") + '</div>'
-          : '<div class="hempty">今天没有收录到艺人生日</div>');
+  /* 今日生日：默认 5 位，多了点「展开」 */
+  h += homeSec("今日生日", bds.length ? "共 "+bds.length+" 位" : "",
+        bds.length ? bdayListHTML(bds) : '<div class="hempty">今天没有收录到艺人生日</div>');
 
-  /* 本月 MV：官方账号发布，按播放量排序 */
+  /* 热门 MV：官方账号发布，按播放量排序 */
   var mm = mvThisMonth(8);
-  h += homeSec("本月 MV", mm.length ? "官方账号 · 按播放量" : "",
+  h += homeSec("热门 MV", mm.length ? "官方账号 · 按播放量" : "",
         mm.length
           ? '<div class="mvbar">' + mm.map(function(m){
               return '<a class="mvmini" href="'+mvURL(m)+'" target="_blank" rel="noopener nofollow">'
@@ -694,6 +685,28 @@ function renderHome(){
   box.innerHTML = h;
   renderShows("homeShows");
   renderStats();
+}
+
+/* 今日生日：默认只摆 5 位，多了给一个「展开」，别占满整屏 */
+function bdayListHTML(bds){
+  var lim = 5;
+  var show = S.bdMore ? bds.length : Math.min(lim, bds.length);
+  var h = '<div class="bdaylist">' + bds.slice(0, show).map(function(m){
+      var ag = ageOf(m.b);
+      return '<div class="bday'+(isBias(m.g)||isBias(m.g2)?' bias':'')+'">'
+        + '<span class="bav">🎂</span>'
+        + '<span class="bname">'+esc(m.n)+'</span>'
+        + '<span class="bgrp">'+heartHTML(m.g)+esc(plainName(m.g))
+        +   (m.g2 ? ' · '+esc(plainName(m.g2)) : '')+'</span>'
+        + (ag !== null ? '<span class="bage">'+ag+' 岁</span>' : '')
+        + '</div>';
+    }).join("") + '</div>';
+  if(bds.length > lim){
+    h += '<button class="morebtn" id="bdMore">'
+      + (S.bdMore ? '收起' : '还有 ' + (bds.length - lim) + ' 位 · 展开')
+      + '</button>';
+  }
+  return h;
 }
 
 function renderStats(){
@@ -804,6 +817,75 @@ function renderList(){
   $("cReset").style.display = (S.q||S.type||S.kind||S.agency||S.onlyFav||S.onlyBias) ? "" : "none";
   $("qclr").classList.toggle("on", !!S.q);
 }
+
+/* ============================ 自定义下拉 ============================ */
+/* 原生 <select> 展开后是浏览器画的下拉列表，CSS 管不到，跟页面风格对不上。
+   这里把 #filters 里的 select 全部换成自绘面板：底层 select 保留（值同步、
+   键盘可用），外观和弹出列表走我们自己的样式。 */
+function closeAllSels(){
+  document.querySelectorAll(".selpop.on").forEach(function(p){ p.classList.remove("on"); });
+}
+function initSelects(){
+  document.querySelectorAll("#filters select").forEach(function(sel){
+    if(sel.getAttribute("data-seldone")) return;
+    sel.setAttribute("data-seldone", "1");
+
+    var wrap = document.createElement("div");
+    wrap.className = "selwrap";
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    sel.style.display = "none";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "selbtn";
+    var txt = document.createElement("span");
+    txt.className = "seltxt";
+    btn.appendChild(txt);
+    var arw = document.createElement("span");
+    arw.className = "selarw";
+    btn.appendChild(arw);
+    wrap.appendChild(btn);
+
+    var pop = document.createElement("div");
+    pop.className = "selpop";
+    wrap.appendChild(pop);
+
+    function sync(){
+      var o = sel.options[sel.selectedIndex];
+      txt.textContent = o ? o.text : (sel.getAttribute("placeholder") || "");
+      btn.classList.toggle("empty", !!sel.value === false && sel.selectedIndex <= 0
+        && !!sel.options[0] && sel.options[0].value === "");
+    }
+    function fill(){
+      pop.innerHTML = "";
+      Array.prototype.forEach.call(sel.options, function(o){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "selopt" + (o.selected ? " on" : "");
+        b.setAttribute("data-selv", o.value);
+        b.textContent = o.text;
+        pop.appendChild(b);
+      });
+    }
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var open = pop.classList.contains("on");
+      closeAllSels();
+      if(!open){ fill(); pop.classList.add("on"); }
+    });
+    pop.addEventListener("click", function(e){
+      var b = e.target.closest(".selopt");
+      if(!b) return;
+      sel.value = b.getAttribute("data-selv");
+      sel.dispatchEvent(new Event("change"));
+      sync();
+      pop.classList.remove("on");
+    });
+    sync();
+  });
+}
+
 /* 切页时给容器重放一次淡入（先摘 class 再强制重排，动画才会重新跑） */
 function animIn(el){
   if(!el) return;
@@ -1104,6 +1186,7 @@ document.addEventListener("click", function(e){
     return;
   }
   if(t.id === "backBtn"){ S.detailId = null; render(); return; }
+  if(t.id === "bdMore"){ S.bdMore = !S.bdMore; render(); return; }
   if(t.id === "toCal"){ S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
   if(t.id === "brandHome"){ S.detailId = null; S.view = "home"; syncTabs(); render(); return; }
   /* 收藏按钮（详情页） */
@@ -1145,8 +1228,9 @@ document.addEventListener("click", function(e){
     }
     syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
   }
-  /* 点击空白关日历 */
+  /* 点击空白关日历与下拉 */
   if(!t.closest("#calPop") && !t.closest("#dateBtn")) closeCal();
+  if(!t.closest(".selwrap")) closeAllSels();
 });
 function toggleBias(n){
   var i = bias.indexOf(n);
@@ -1283,5 +1367,6 @@ S.range = rangePreset("f30");
   syncTabs();
 })();
 
+initSelects();
 render();
 })();

@@ -199,6 +199,36 @@ step(function(){
   LOG.push("首页开关=" + HW.join("/") + " 有效=" + (HW[0] !== HW[1] && HW[0] === HW[2]));
 });
 
+
+step(function(){ document.querySelector('[data-view="home"]').click(); });
+step(function(){
+  LOG.push("首页板块=" + Array.prototype.map.call(
+    document.querySelectorAll("#homeView .hsec-h h2"),
+    function(e){ return e.textContent.trim(); }).join("/"));
+  LOG.push("今日生日默认=" + document.querySelectorAll("#homeView .bday").length
+    + " 展开按钮=" + ($("bdMore") ? "有" : "无"));
+  var b = $("bdMore"); if(b) b.click();
+});
+step(function(){
+  LOG.push("展开后=" + document.querySelectorAll("#homeView .bday").length);
+});
+/* 自定义下拉：点开面板并选一项，值要同步回底层 select */
+step(function(){ document.querySelector('[data-tab="past"]').click(); });
+step(function(){
+  LOG.push("下拉自绘=" + (document.querySelectorAll(".selbtn").length)
+    + " 原生select隐藏=" + (getComputedStyle($("fType")).display));
+  var b = document.querySelector(".selbtn"); if(b) b.click();
+});
+step(function(){
+  var pop = document.querySelector(".selpop.on");
+  LOG.push("面板打开=" + !!pop + " 选项数=" + (pop ? pop.querySelectorAll(".selopt").length : 0));
+  var o = pop && pop.querySelectorAll(".selopt")[2];
+  if(o) o.click();
+});
+step(function(){
+  LOG.push("选中后 select值=" + $("fType").value
+    + " 面板关闭=" + (document.querySelectorAll(".selpop.on").length === 0));
+});
 /* 下载页已移除 */
 step(function(){
   LOG.push("下载入口=" + ($("dlBtn") ? "仍在" : "已移除")
