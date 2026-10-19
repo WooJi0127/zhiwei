@@ -42,7 +42,7 @@ function step(f){ steps.push(f); }
 step(function(){
   LOG.push("默认页=首页:" + ($("homeView").style.display !== "none")
     + " tab高亮=" + (document.querySelector(".tab.on") || {}).textContent);
-  document.querySelector('[data-tab="history"]').click();
+  document.querySelector('[data-tab="past"]').click();
 });
 /* 数据分片：主文件只带近一年，更早的按年份切片按需加载 */
 step(function(){
@@ -61,7 +61,7 @@ step(function(){
     + " 卡片=" + QT());
 });
 step(function(){
-  LOG.push("默认范围=" + QT() + " 角标=" + $("nHi").textContent);
+  LOG.push("默认范围=" + QT());
   $("dateBtn").click();
 });
 step(function(){
@@ -82,19 +82,27 @@ step(function(){
 });
 step(function(){
   LOG.push("列表无外链=" + (ext() === 0));
-  document.querySelector('[data-tab="upcoming"]').click();
+  document.querySelector('[data-tab="future"]').click();
 });
 step(function(){
-  LOG.push("即将回归=" + QT() + " upBar=" + vis("upBar") + " filters=" + vis("filters"));
-  document.querySelector('[data-up="f7"]').click();
+  LOG.push("未来7天=" + QT() + " 子条=" + vis("upBar"));
+  document.querySelector('[data-up="month"]').click();
 });
 step(function(){
-  LOG.push("未来7天=" + QT() + " 角标=" + $("nUp").textContent);
-  document.querySelector('[data-tab="month"]').click();
+  LOG.push("本月=" + QT());
+  document.querySelector('[data-up="nmonth"]').click();
 });
 step(function(){
-  LOG.push("本月=" + QT() + " " + $("moLabel").textContent + " " + $("moSub").textContent);
-  document.querySelector('[data-tab="history"]').click();
+  LOG.push("下月=" + QT());
+  document.querySelector('[data-tab="mine"]').click();
+});
+step(function(){
+  LOG.push("我的·收藏=" + QT() + " 子条=" + vis("mineBar"));
+  document.querySelector('[data-mine="bias"]').click();
+});
+step(function(){
+  LOG.push("我的·本命=" + QT() + " biasBox=" + vis("biasBox"));
+  document.querySelector('[data-tab="past"]').click();
 });
 step(function(){
   LOG.push("全部发布=" + QT() + " filters=" + vis("filters"));
@@ -155,12 +163,12 @@ step(function(){
 step(function(){
   LOG.push("回首页=" + ($("homeView").style.display !== "none")
     + " 高亮tab=" + (document.querySelector(".tab.on") || {}).textContent);
-  document.querySelector('[data-tab="upcoming"]').click();
+  document.querySelector('[data-tab="future"]').click();
 });
 
 /* 打歌节目只属于「更多」页，不该混进收藏 / 本命这些筛选视图
    （showsBar 只在「更多」页渲染，其它页是空的，所以要先切过去） */
-step(function(){ document.querySelector('[data-tab="fav"]').click(); });
+step(function(){ document.querySelector('[data-tab="mine"]').click(); });
 step(function(){
   LOG.push("收藏页打歌条=" + getComputedStyle($("showsBar")).display);
   document.querySelector('[data-tab="more"]').click();

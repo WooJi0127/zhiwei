@@ -114,7 +114,7 @@ function ensureYears(){
   var f = S.range.from, need = [];
   if(!f){
     /* 「全部已发布」或在搜索 → 用户想要的就是全部，补齐所有年份 */
-    if(S.tab !== "history" && !S.q) return false;
+    if(S.tab !== "past" && !S.q) return false;
     need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y]; });
   } else if(f < CUTOFF_S){
     var y0 = +f.slice(0, 4), y1 = +((S.range.to || f).slice(0, 4));
@@ -186,11 +186,13 @@ function isFav(id){ return favs.indexOf(id) >= 0; }
 function isBias(n){ return bias.indexOf(n) >= 0; }
 
 var S = {
-  view:"home",       /* home | calendar：首页是默认页 */
-  tab:"upcoming", q:"", type:"", kind:"", agency:"", sort:"date_asc",
+  view:"home",        /* home | calendar：首页是默认页 */
+  tab:"future",       /* future | past | mine | more */
+  frange:"f7",        /* 未来子选项：f7 | month | nmonth */
+  mine:"fav",         /* 我的子选项：fav | bias */
+  q:"", type:"", kind:"", agency:"", sort:"date_asc",
   onlyFav:false, onlyBias:false,
   range:{mode:"quick", from:null, to:null, label:"未来 30 天"},
-  upRange:"f30",                       /* 即将回归：只能是 f7 / f30 */
   showBiasMgr:false, detailId:null,
   showWeek:false,                      /* 打歌节目「本周时间表」是否展开 */
   calMonth:null, calFrom:null, calTo:null
@@ -304,10 +306,20 @@ function rangePreset(kind){
 
 /* ============================ 筛选 ============================ */
 /* 各页签实际生效的时间范围：
-   即将回归 → 只能 7 天 / 30 天；本月回归 → 固定当月；全部发布 → 用日历/预设。 */
+   未来 → 7 天 / 本月 / 下月；过去 → 用日历/预设；我的、更多 → 不限。 */
+function nextMonthRange(){
+  var t = TODAY, y = t.getFullYear(), m = t.getMonth() + 1;
+  if(m > 11){ m = 0; y++; }
+  var from = d2s(new Date(y, m, 1)), to = d2s(new Date(y, m + 1, 0));
+  return {mode:"quick", kind:"nmonth", from:from, to:to,
+          label:(y + " 年 " + (m + 1) + " 月")};
+}
 function activeRange(){
-  if(S.tab === "month")    return rangePreset("month");
-  if(S.tab === "upcoming") return rangePreset(S.upRange || "f30");
+  if(S.tab === "future"){
+    if(S.frange === "f7")    return rangePreset("f7");
+    if(S.frange === "month") return rangePreset("month");
+    return nextMonthRange();
+  }
   return S.range;
 }
 function inRange(r){
@@ -617,15 +629,20 @@ function renderHome(){
   var bds = birthdaysToday();
   var tt = showsOn(TODAY.getDay());
 
-  /* 顶部一句话概览 */
+  /* 欢迎区：大字「知未」+ 一句话概览，右侧统计卡 */
   var bits = [];
   if(todayRel.length) bits.push('<b>'+todayRel.length+'</b> 张新发行');
   if(bds.length)      bits.push('<b>'+bds.length+'</b> 位艺人过生日');
   if(tt.length)       bits.push('今晚有 <b>'+esc(tt[0].zh)+'</b>');
-  var h = '<div class="hhero">'
-    + '<div class="hhd"><span class="hmd">'+(TODAY.getMonth()+1)+' 月 '+TODAY.getDate()+' 日</span>'
-    +   '<span class="hwk">'+WK[TODAY.getDay()]+'</span></div>'
-    + '<div class="hsum">' + (bits.length ? bits.join(" · ") : '今天没有新发行，看看下面的回归倒计时') + '</div>'
+  var h = '<div class="hero">'
+    + '<div class="heroL">'
+    +   '<div class="wel">欢迎来到</div>'
+    +   '<div class="bigname">知未</div>'
+    +   '<div class="hhd"><span class="hmd">'+(TODAY.getMonth()+1)+' 月 '+TODAY.getDate()+' 日</span>'
+    +     '<span class="hwk">'+WK[TODAY.getDay()]+'</span></div>'
+    +   '<div class="hsum">' + (bits.length ? bits.join(" · ") : '今天没有新发行，看看下面的回归倒计时') + '</div>'
+    + '</div>'
+    + '<div class="heroR" id="hstats"></div>'
     + '</div>';
 
   /* 今天发行 */
@@ -676,19 +693,21 @@ function renderHome(){
 
   box.innerHTML = h;
   renderShows("homeShows");
+  renderStats();
 }
 
 function renderStats(){
+  var el = $("hstats"); if(!el) return;
   var up = ALL.filter(function(r){ return r._dd>=0 && r._dd<=30; });
   var bi = up.filter(function(r){ return isBias(r.artist); });
   var nw = ALL.filter(function(r){ return r._isNew && r._dd>=0; });
   var past = ALL.filter(function(r){ return r._dd<0; });
-  $("stats").innerHTML =
-      '<div class="stat"><div class="k">未来 30 天回归</div><div class="v">'+up.length+'</div></div>'
-    + '<div class="stat'+(bi.length?' hl':'')+'"><div class="k">本命即将回归</div><div class="v">'+bi.length+'</div></div>'
-    + '<div class="stat"><div class="k">新人待发</div><div class="v">'+nw.length+'</div></div>'
-    + '<div class="stat"><div class="k">已收录发行</div><div class="v">'+past.length+'</div></div>'
-    + '<div class="stat"><div class="k">追踪艺人</div><div class="v">'+Object.keys(ART).length+'</div></div>';
+  el.innerHTML =
+      '<div class="hstat"><div class="v">'+up.length+'</div><div class="k">未来 30 天回归</div></div>'
+    + '<div class="hstat'+(bi.length?' hl':'')+'"><div class="v">'+bi.length+'</div><div class="k">本命即将回归</div></div>'
+    + '<div class="hstat"><div class="v">'+nw.length+'</div><div class="k">新人待发</div></div>'
+    + '<div class="hstat"><div class="v">'+past.length+'</div><div class="k">已收录发行</div></div>'
+    + '<div class="hstat"><div class="v">'+Object.keys(ART).length+'</div><div class="k">追踪艺人</div></div>';
 }
 function renderBiasBox(){
   $("biasList").innerHTML = bias.length
@@ -710,78 +729,64 @@ function renderBiasBox(){
     : "";
 }
 function renderList(){
-  $("biasN").textContent = bias.length;
-  /* 角标跟页面实际展示的量对齐：切 7 天就显示 7 天的数 */
-  var upN = (S.upRange||"f30")==="f7"
-    ? ALL.filter(function(r){ return r._dd>=0 && r._dd<=7; }).length
-    : ALL.filter(function(r){ return r._dd>=0 && r._dd<=30; }).length;
-  $("nUp").textContent = upN;
-  $("nMo").textContent = ALL.filter(inThisMonth).length;
-  $("nHi").textContent = ALL.filter(function(r){ return r._dd<0; }).length;
-  $("nFa").textContent = favs.length;
-  $("nBi").textContent = ALL.filter(function(r){ return isBias(r.artist); }).length;
-
-  renderStats();
   renderBiasBox();
-  $("biasBox").style.display = (S.tab==="bias" || S.showBiasMgr) ? "" : "none";
+  $("biasBox").style.display = (S.tab==="mine" && S.mine==="bias" || S.showBiasMgr) ? "" : "none";
   $("dateLabel").textContent = S.range.label;
   $("dateBtn").classList.toggle("on", S.range.mode === "custom");
 
-  /* 控制条显隐：只有「全部发布」才有完整筛选 */
-  var isUp = (S.tab==="upcoming"), isMo = (S.tab==="month"), isHi = (S.tab==="history");
-  var isMore = (S.tab === "more");
-  /* 打歌节目这类独立小工具只出现在「更多」页，不混进收藏 / 本命这些筛选视图 */
+  /* 控制条显隐：未来有三档子选项，过去有完整筛选，我的有收藏/本命切换 */
+  var isFuture = (S.tab==="future"), isPast = (S.tab==="past");
+  var isMine = (S.tab==="mine"), isMore = (S.tab==="more");
   $("showsBar").style.display = isMore ? "" : "none";
-  $("stats").style.display     = isMore ? "none" : "";
   if(isMore) renderShows("showsBar");
-  $("upBar").classList.toggle("on", isUp);
-  $("moBar").classList.toggle("on", isMo);
-  $("filters").style.display = isHi ? "" : "none";
+  $("upBar").classList.toggle("on", isFuture);
+  $("mineBar").classList.toggle("on", isMine);
+  $("filters").style.display = isPast ? "" : "none";
+  $("biasBox").style.display = (isMine && S.mine==="bias") || S.showBiasMgr ? "" : "none";
 
-  if(isUp){
+  if(isFuture){
     document.querySelectorAll("#upBar [data-up]").forEach(function(b){
-      b.classList.toggle("on", b.getAttribute("data-up") === (S.upRange||"f30"));
+      b.classList.toggle("on", b.getAttribute("data-up") === S.frange);
     });
   }
-  if(isMo){
-    var R = monthRange();
-    var mn = ALL.filter(inThisMonth);
-    var nU = mn.filter(function(r){ return r._dd>=0; }).length;
-    $("moLabel").textContent = R.label;
-    $("moSub").textContent = "共 " + mn.length + " 张 · 其中 " + nU + " 张还没发行";
+  if(isMine){
+    document.querySelectorAll("#mineBar [data-mine]").forEach(function(b){
+      b.classList.toggle("on", b.getAttribute("data-mine") === S.mine);
+    });
   }
 
   var html = "";
-  if(isUp){
-    // 时间已由 upBar 限定为 7 / 30 天，这里只按日期排，不再分组
-    var ul = applyFilters(ALL).filter(function(r){ return r._dd >= 0; })
+  if(isFuture){
+    var R = activeRange();
+    var ul = applyFilters(ALL).filter(function(r){ return r._dd >= -0.5; })
                .sort(function(a,b){ return a._dd - b._dd; });
-    html = ul.length
-      ? '<div class="sec-h"><h2>' + esc((S.upRange||"f30")==="f7" ? "未来 7 天" : "未来 30 天")
-        + '</h2><span class="c">' + ul.length + '</span><span class="line"></span></div>'
-        + gridHTML(ul)
-      : '<div class="empty"><div class="e">🎧</div><h3>这段时间没有回归</h3>'
-        + '<p>换「未来 30 天」看看，或去「全部发布」翻历史</p></div>';
-  } else if(isMo){
-    var ml = applyFilters(ALL).sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); });
-    html = ml.length ? gridHTML(ml)
-      : '<div class="empty"><div class="e">🎧</div><h3>本月还没有回归记录</h3>'
-        + '<p>数据每天自动更新</p></div>';
-  } else if(S.tab==="history"){
-    // 同理，切到全部发布后也可以看未来的
+    if(S.frange === "month" || S.frange === "nmonth"){
+      var nU = ul.filter(function(r){ return r._dd >= 0; }).length;
+      html = ul.length ? gridHTML(ul)
+        : '<div class="empty"><div class="e">🎧</div><h3>' + esc(R.label) + '没有回归记录</h3>'
+          + '<p>数据每天自动更新</p></div>';
+      html = '<div class="mohead"><b>' + esc(R.label) + '</b><span>共 ' + ul.length
+           + ' 张 · 其中 ' + nU + ' 张还没发行</span></div>' + html;
+    } else {
+      html = ul.length
+        ? '<div class="sec-h"><h2>即将回归 · 7 天</h2><span class="c">' + ul.length
+          + '</span><span class="line"></span></div>' + gridHTML(ul)
+        : '<div class="empty"><div class="e">🎧</div><h3>未来 7 天没有回归</h3>'
+          + '<p>换「本月」看看，或去「过去」翻历史</p></div>';
+    }
+  } else if(isPast){
     ensureYears();
     html = yearBarHTML() + gridHTML(applyFilters(ALL));
-  } else if(S.tab==="fav"){
+  } else if(isMine && S.mine === "fav"){
     var fl = ALL.filter(function(r){ return isFav(r.id); });
     var fu = fl.filter(function(r){ return r._dd>=0; }).sort(function(a,b){ return a._dd-b._dd; });
     var fp = fl.filter(function(r){ return r._dd<0; });
     html = fl.length ? secHTML("收藏 · 即将发行", fu) + secHTML("收藏 · 已发行", fp)
       : '<div class="empty"><div class="e">★</div><h3>还没有收藏</h3><p>在卡片右上角点 ☆ 即可收藏</p></div>';
   } else if(isMore){
-    /* 「更多」：放各种独立小工具。打歌节目时间表在上方那条，这里只是个说明 */
     html = '<div class="empty"><div class="e">🧰</div><h3>小工具</h3>'
          + '<p>打歌节目时间表在上方 · 后面还会往这里加别的</p></div>';
-  } else if(S.tab==="bias"){
+  } else if(isMine && S.mine === "bias"){
     if(!bias.length){
       html = '<div class="empty"><div class="e">&#10084;</div><h3>还没有设置本命</h3>'
            + '<p>在上方「本命团体管理」里添加，或点卡片上的爱心</p></div>';
@@ -982,7 +987,7 @@ function closeCal(){ $("calPop").classList.remove("on"); }
 function setQuick(kind){
   /* 快捷预设只作用于「全部发布」——日历就在那一页的筛选栏里 */
   S.range = rangePreset(kind);
-  if(S.tab !== "history"){ S.tab = "history"; syncTabs(); }
+  if(S.tab !== "past"){ S.tab = "past"; syncTabs(); }
   CAL.y = TODAY.getFullYear(); CAL.m = TODAY.getMonth();
   CAL.from = S.range.from; CAL.to = S.range.to; CAL.picking = false;
   renderCal(); render();
@@ -1119,7 +1124,10 @@ document.addEventListener("click", function(e){
   }
   /* 即将回归的 7 天 / 30 天切换 */
   if((el = t.closest("[data-up]"))){
-    S.upRange = el.getAttribute("data-up"); render(); return;
+    S.frange = el.getAttribute("data-up"); render(); return;
+  }
+  if((el = t.closest("[data-mine]"))){
+    S.mine = el.getAttribute("data-mine"); render(); return;
   }
   /* 首页 tab */
   if((el = t.closest("[data-view]"))){
@@ -1132,7 +1140,7 @@ document.addEventListener("click", function(e){
     S.tab = el.getAttribute("data-tab"); S.detailId = null;
     /* 「即将回归」「本月回归」不带筛选，各自用固定范围，
        所以这里的 S.range 只服务于「全部发布」。 */
-    if(S.tab==="history" && S.range.kind==="f30" && S.range.mode==="quick"){
+    if(S.tab==="past" && S.range.kind==="f30" && S.range.mode==="quick"){
       S.range = rangePreset("p365");
     }
     syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
@@ -1154,7 +1162,7 @@ $("q").addEventListener("input", function(){
   qt = setTimeout(function(){
     S.q = v.trim();
     /* 在首页输入搜索 → 自动切到日历界面看结果 */
-    if(S.q && S.view === "home"){ S.view = "calendar"; if(S.tab==="fav"||S.tab==="bias") S.tab="history"; syncTabs(); }
+    if(S.q && S.view === "home"){ S.view = "calendar"; if(S.tab!=="past") S.tab="past"; syncTabs(); }
     render();
   }, 170);
 });
@@ -1174,11 +1182,15 @@ $("cReset").addEventListener("click", function(){
   $("q").value=""; $("fType").value=""; $("fKind").value=""; $("fAgency").value="";
   render(); renderCal();
 });
-$("btnBiasMgr").addEventListener("click", function(){
-  S.showBiasMgr = !S.showBiasMgr;
-  if(S.showBiasMgr){ S.tab = "bias"; syncTabs(); }
-  render();
+$("searchToggle").addEventListener("click", function(){
+  var c = $("searchCover");
+  c.style.display = c.style.display === "none" ? "" : "none";
+  if(c.style.display !== "none") $("q").focus();
 });
+$("searchClose").addEventListener("click", function(){
+  $("searchCover").style.display = "none";
+});
+/* 本命管理入口挪进了「我的」页的切换条上方按钮 */
 $("biasAdd").addEventListener("click", function(){ addBias($("biasInput").value.trim()); $("biasInput").value=""; });
 $("biasInput").addEventListener("keydown", function(e){
   if(e.key === "Enter"){ addBias(this.value.trim()); this.value = ""; }
@@ -1198,7 +1210,7 @@ $("calNext").addEventListener("click", function(){
   renderCal();
 });
 $("calClear").addEventListener("click", function(){
-  S.range = rangePreset(S.tab === "history" ? "pall" : "f30");
+  S.range = rangePreset(S.tab === "past" ? "pall" : "f30");
   CAL.view = "day"; calInit(); renderCal(); render();
 });
 $("calApply").addEventListener("click", function(){
@@ -1207,7 +1219,7 @@ $("calApply").addEventListener("click", function(){
   S.range = {mode:"custom", kind:"custom", from:from, to:to,
              label:(from === to) ? from : (from + " ~ " + to)};
   /* 日历只在「全部发布」里，自定义区间一律留在本页（该页本来就前后都能看） */
-  if(S.tab !== "history"){ S.tab = "history"; syncTabs(); }
+  if(S.tab !== "past"){ S.tab = "past"; syncTabs(); }
   closeCal(); render();
 });
 /* 注意：绝不能在 #calPop 上 stopPropagation，否则弹层内部的
@@ -1252,9 +1264,13 @@ S.range = rangePreset("f30");
     return m ? decodeURIComponent(m[1]) : null;
   }
   var tab = arg("tab");
-  if(tab && ["upcoming","month","history","fav","bias","more"].indexOf(tab) >= 0){
+  if(["future","past","mine","more"].indexOf(tab) >= 0){
     S.tab = tab; S.view = "calendar";
-  }
+  } else if(["upcoming","month"].indexOf(tab) >= 0){
+    S.tab = "future"; S.frange = tab === "month" ? "month" : "f7"; S.view = "calendar";
+  } else if(tab === "history"){ S.tab = "past"; S.view = "calendar"; }
+  else if(tab === "fav"){ S.tab = "mine"; S.mine = "fav"; S.view = "calendar"; }
+  else if(tab === "bias"){ S.tab = "mine"; S.mine = "bias"; S.view = "calendar"; }
   if(arg("view") === "calendar") S.view = "calendar";
   if(arg("view") === "home"){ S.view = "home"; S.detailId = null; }
   var from = arg("from"), to = arg("to");

@@ -17,53 +17,49 @@
 <header>
   <div class="hwrap">
     <div class="htop">
-      <div class="brand" id="brandHome">
+      <div class="brand" id="brandHome" title="知未">
         <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
-          <defs>
-            <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#ff5c9d"/>
-            </linearGradient>
-            <linearGradient id="bg2" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0" stop-color="#b47aff"/><stop offset="1" stop-color="#ff7ab8"/>
-            </linearGradient>
-          </defs>
-          <circle cx="50" cy="50" r="44.5" fill="#fff" stroke="url(#bg1)" stroke-width="7"/>
-          <g font-family="-apple-system,'Segoe UI',sans-serif" font-weight="700"
-             dominant-baseline="central" text-anchor="middle" font-size="15.5">
-            <text x="50"  y="17"  fill="#7c5cff">12</text>
-            <text x="66.5" y="21.4" fill="#8367ff">11</text>
-            <text x="78.6" y="33.5" fill="#8f6bff">10</text>
-            <text x="83"  y="50"  fill="#9d6bff">9</text>
-            <text x="78.6" y="66.5" fill="#b46bff">8</text>
-            <text x="66.5" y="78.6" fill="#d16bf5">7</text>
-            <text x="50"  y="83"  fill="#ec66d4">6</text>
-            <text x="33.5" y="78.6" fill="#ff66b0">5</text>
-            <text x="21.4" y="66.5" fill="#ff6b95">4</text>
-            <text x="17"  y="50"  fill="#ff6b7e">3</text>
-            <text x="21.4" y="33.5" fill="#ff6b6b">2</text>
-            <text x="33.5" y="21.4" fill="#ff6b6b">1</text>
+          <rect x="3" y="3" width="94" height="94" rx="20" fill="#33473A"/>
+          <circle cx="45" cy="50" r="35" fill="#1C251F"/>
+          <circle cx="45" cy="50" r="31" fill="none" stroke="#3E5446" stroke-width="1"/>
+          <circle cx="45" cy="50" r="25" fill="none" stroke="#3E5446" stroke-width="0.7"/>
+          <g font-family="Inter,sans-serif" font-weight="600" font-size="9.5" fill="#FAF6EE" text-anchor="middle">
+            <text x="45" y="27.5">12</text>
+            <text x="58.5" y="31.5">11</text>
+            <text x="68.5" y="38.5">10</text>
+            <text x="72.5" y="50">9</text>
+            <text x="68.5" y="61.5">8</text>
+            <text x="58.5" y="68.5">7</text>
+            <text x="45" y="72.5">6</text>
+            <text x="31.5" y="68.5">5</text>
+            <text x="21.5" y="61.5">4</text>
+            <text x="17.5" y="50">3</text>
+            <text x="21.5" y="38.5">2</text>
+            <text x="31.5" y="31.5">1</text>
           </g>
-          <line x1="50" y1="50" x2="50" y2="30" stroke="url(#bg2)" stroke-width="4.2" stroke-linecap="round"/>
-          <line x1="50" y1="50" x2="65" y2="58" stroke="#ffb3cd" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="50" cy="50" r="4.2" fill="url(#bg1)"/>
+          <circle cx="45" cy="50" r="8.5" fill="#B5764F"/>
+          <circle cx="45" cy="50" r="2.2" fill="#FAF6EE"/>
+          <g>
+            <line x1="84" y1="16" x2="66" y2="38" stroke="#FAF6EE" stroke-width="2.6" stroke-linecap="round"/>
+            <circle cx="84" cy="16" r="4.5" fill="#B5764F"/>
+            <circle cx="66" cy="38" r="2.6" fill="#FAF6EE"/>
+          </g>
         </svg>
-        <span class="nm"><b>知未</b><i>K-POP 回归日历</i></span>
       </div>
-      <div class="search">
-        <span class="ic">🔍</span>
-        <input id="q" type="text" placeholder="搜索团体 / 歌手 / 专辑 / 公司 / 粉丝名…" autocomplete="off">
-        <button class="clr" id="qclr" title="清空">✕</button>
-      </div>
-      <button class="btn" id="btnBiasMgr">💗 本命 <span id="biasN">0</span></button>
+      <nav class="tabs">
+        <button class="tab on" data-view="home">首页</button>
+        <button class="tab" data-tab="future">未来</button>
+        <button class="tab" data-tab="past">过去</button>
+        <button class="tab" data-tab="mine">我的</button>
+        <button class="tab" data-tab="more">更多</button>
+      </nav>
+      <button class="btn stoggle" id="searchToggle" title="搜索" aria-label="搜索">🔍</button>
     </div>
-    <div class="tabs">
-      <button class="tab on" data-view="home">首页</button>
-      <button class="tab" data-tab="upcoming">即将回归<span class="n" id="nUp"></span></button>
-      <button class="tab" data-tab="month">本月回归<span class="n" id="nMo"></span></button>
-      <button class="tab" data-tab="history">全部发布<span class="n" id="nHi"></span></button>
-      <button class="tab" data-tab="fav">我的收藏<span class="n" id="nFa"></span></button>
-      <button class="tab" data-tab="bias">本命动态<span class="n" id="nBi"></span></button>
-      <button class="tab" data-tab="more">更多</button>
+    <div class="searchcover" id="searchCover" style="display:none">
+      <span class="ic">🔍</span>
+      <input id="q" type="text" placeholder="搜索团体 / 歌手 / 专辑 / 公司 / 粉丝名…" autocomplete="off">
+      <button class="clr" id="qclr" title="清空">✕</button>
+      <button class="sclose" id="searchClose" title="关闭">✕</button>
     </div>
   </div>
 </header>
@@ -78,8 +74,6 @@
   <div id="homeView" style="display:none"></div>
 
   <div id="listView">
-    <div class="stats" id="stats"></div>
-
     <!-- 打歌节目时间表：硬编码六档节目（播出日/时间固定），首页改版后直接复用 -->
     <div class="showsbar" id="showsBar"></div>
 
@@ -96,19 +90,23 @@
       <div class="sugg" id="biasSugg"></div>
     </div>
 
-    <!-- 即将回归：只能选 7 天 / 30 天 -->
+    <!-- 未来：7 天 / 本月 / 下月 三档 -->
     <div class="simplebar" id="upBar">
-      <span class="sbl">时间范围</span>
+      <span class="sbl">范围</span>
       <div class="seg">
-        <button data-up="f7">未来 7 天</button>
-        <button data-up="f30">未来 30 天</button>
+        <button data-up="f7">即将回归 · 7 天</button>
+        <button data-up="month">本月</button>
+        <button data-up="nmonth">下月</button>
       </div>
     </div>
 
-    <!-- 本月回归：只看当月，无需筛选 -->
-    <div class="simplebar" id="moBar">
-      <span class="sbl" id="moLabel">本月回归</span>
-      <span class="sbsub" id="moSub"></span>
+    <!-- 我的：收藏 / 本命 切换 -->
+    <div class="simplebar" id="mineBar">
+      <span class="sbl">查看</span>
+      <div class="seg">
+        <button data-mine="fav">我的收藏</button>
+        <button data-mine="bias">本命动态</button>
+      </div>
     </div>
 
     <!-- 全部发布：完整筛选 -->
