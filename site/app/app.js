@@ -712,7 +712,7 @@ function renderHome(){
         soon.length ? '<div class="minibar">'+soon.slice(0,12).map(miniHTML).join("")+'</div>'
                     : '<div class="hempty">未来 7 天没有回归安排</div>');
 
-  h += '<div class="hfoot"><button class="btn pri" id="toCal">查看完整日历 →</button></div>';
+  h += '<div class="hfoot"><button class="btn pri" id="toCal">查看完整日历</button></div>';
 
   box.innerHTML = h;
   renderShows("homeShows");

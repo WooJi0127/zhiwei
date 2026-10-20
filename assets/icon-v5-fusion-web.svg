@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+  <!-- 融合版（浅色·网页）：米白纸底 + 墨绿描边唱片 + 彗星唱臂 -->
+  <defs>
+    <linearGradient id="trailFW" gradientUnits="userSpaceOnUse" x1="89" y1="15" x2="46" y2="52">
+      <stop offset="0%"   stop-color="#33473A" stop-opacity="0.18"/>
+      <stop offset="45%"  stop-color="#B5764F" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#C9885A" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="orbFW" cx="46" cy="52" r="11" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#F4D2A8"/>
+      <stop offset="60%"  stop-color="#C9885A"/>
+      <stop offset="100%" stop-color="#9E5F38"/>
+    </radialGradient>
+    <filter id="glowFW" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+  </defs>
+
+  <rect x="3" y="3" width="94" height="94" rx="20" fill="#FAF6EE"/>
+
+  <!-- 唱片（描边式，呼应网页纸感） -->
+  <circle cx="46" cy="52" r="34"   fill="none" stroke="#33473A" stroke-width="1.2" stroke-opacity="0.35"/>
+  <circle cx="46" cy="52" r="29"   fill="none" stroke="#33473A" stroke-width="1"   stroke-opacity="0.30"/>
+  <circle cx="46" cy="52" r="25"   fill="none" stroke="#33473A" stroke-width="0.9" stroke-opacity="0.45"/>
+  <circle cx="46" cy="52" r="21.5" fill="none" stroke="#33473A" stroke-width="0.9" stroke-opacity="0.62"/>
+  <circle cx="46" cy="52" r="18.5" fill="none" stroke="#33473A" stroke-width="0.9" stroke-opacity="0.8"/>
+
+  <path d="M89,15 C74,25 57,41 49,55 L38,46 C56,32 72,20 87,13 Z" fill="url(#trailFW)"/>
+  <circle cx="75.4" cy="25.4" r="1.5" fill="#33473A" opacity="0.45"/>
+  <circle cx="62.8" cy="36.8" r="2.1" fill="#B5764F" opacity="0.85"/>
+  <circle cx="52.3" cy="46.3" r="2.7" fill="#D89B6A"/>
+
+  <circle cx="46" cy="52" r="17" fill="#B5764F" opacity="0.26" filter="url(#glowFW)"/>
+  <circle cx="46" cy="52" r="15" fill="none" stroke="#B5764F" stroke-width="1.5" stroke-opacity="0.65"/>
+  <circle cx="46" cy="52" r="11" fill="url(#orbFW)"/>
+  <circle cx="46" cy="52" r="2.4" fill="#FAF6EE"/>
+
+  <path d="M31,41 L32.1,43.5 L34.6,44.6 L32.1,45.7 L31,48.2 L29.9,45.7 L27.4,44.6 L29.9,43.5 Z"
+        fill="#B5764F" opacity="0.9"/>
+</svg>

@@ -1,10 +1,10 @@
 const sharp = require('sharp');
 const path = require('path');
 const files = [
-  ['assets/icon-v4-vision.svg', 512, '_icon-v4-vision_512.png'],
-  ['assets/icon-v4-vision.svg', 64,  '_icon-v4-vision_64.png'],
-  ['assets/icon-v4-vision-web.svg', 512, '_icon-v4-vision-web_512.png'],
-  ['assets/icon-v4-vision-web.svg', 64,  '_icon-v4-vision-web_64.png'],
+  ['assets/icon-v5-fusion.svg', 512, '_icon-v5-fusion_512.png'],
+  ['assets/icon-v5-fusion.svg', 64,  '_icon-v5-fusion_64.png'],
+  ['assets/icon-v5-fusion-web.svg', 512, '_icon-v5-fusion-web_512.png'],
+  ['assets/icon-v5-fusion-web.svg', 64,  '_icon-v5-fusion-web_64.png'],
 ];
 (async () => {
   for (const [svg, size, out] of files) {
