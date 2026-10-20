@@ -2356,6 +2356,10 @@ S.range = rangePreset("f30");
   var tab = arg("tab");
   if(["future","past","mine","more"].indexOf(tab) >= 0){
     S.tab = tab; S.view = "calendar";
+    /* 直链进过去时和点击标签一样纠正范围，否则默认「未来 30 天」会显示未来的专辑 */
+    if(tab === "past" && S.range.kind === "f30" && S.range.mode === "quick"){
+      S.range = rangePreset("p365");
+    }
   } else if(["upcoming","month"].indexOf(tab) >= 0){
     S.tab = "future"; S.frange = tab === "month" ? "month" : "f7"; S.view = "calendar";
   } else if(tab === "history"){ S.tab = "past"; S.view = "calendar"; }
