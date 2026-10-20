@@ -23,15 +23,22 @@
 :root{
   /* 米白偏黄的纸感底色 + 墨绿主色 + 赭石强调 */
   --bg:#FAF6EE; --card:#fff; --line:#E9E5DC; --text:#22251F; --sub:#6E6A5F;
+  /* 纸白面板 + 深一档的描边：面板不能和卡片一样纯白，
+     纯白浮在米底上像贴片，暖白+实边才有「纸叠纸」的厚度 */
+  --paper:#FFFDF8; --line2:#DFD8C6;
   --brand:#33473A; --brand2:#B5764F; --gold:#B5764F; --heart:#A8503C;
-  --ok:#3F6B4F; --radius:14px;
+  --ok:#3F6B4F; --radius:12px;
   --grad:linear-gradient(135deg,#33473A,#5B7263);
   --grad-soft:linear-gradient(135deg,#EDF0EA,#F8F2E7);
   /* 阴影压到几乎看不见，层级靠 1px 描边和留白 */
-  --shadow:0 1px 2px rgba(34,37,31,.03),0 4px 12px rgba(34,37,31,.04);
-  --shadow-md:0 2px 6px rgba(34,37,31,.05),0 10px 26px rgba(34,37,31,.07);
+  --shadow:0 1px 2px rgba(34,37,31,.05),0 3px 10px rgba(34,37,31,.05);
+  --shadow-md:0 2px 4px rgba(34,37,31,.06),0 8px 20px rgba(34,37,31,.07);
   --shadow-lg:0 8px 30px rgba(34,37,31,.10);
   --ring:0 0 0 3px rgba(51,71,58,.12);
+  /* 凸版印刷质感：顶部一线受光、底部一线背光，再垫一层短而实的落影。
+     以前是「平面色块 + 大范围泛光」，像 SaaS 模板按钮 */
+  --relief:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1.5px 0 rgba(0,0,0,.22);
+  --drop:0 2px 6px rgba(34,37,31,.22);
   --font:"Inter","PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
   --font-title:"Noto Serif SC","Songti SC",Georgia,serif;
   --ease:cubic-bezier(.2,.8,.3,1);
@@ -140,7 +147,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 /* ================= 自定义下拉 ================= */
 .selwrap{position:relative;display:inline-block;align-self:center;flex:none}
 .selbtn{display:inline-flex;align-items:center;gap:9px;min-width:112px;height:37px;
-  padding:0 30px 0 12px;border:1px solid var(--line);border-radius:11px;background:#fff;
+  padding:0 30px 0 12px;border:1px solid var(--line2);border-radius:11px;background:#fff;
   font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;
   transition:border-color .15s,box-shadow .15s,background-color .15s;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%236E6A5F' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -166,10 +173,10 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .morebtn:hover{border-color:var(--brand);color:var(--brand)}
 
 /* ================= 分片：加载更早年份 ================= */
-.ybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--card);
-  border:1px dashed var(--line);border-radius:12px;padding:9px 12px;margin-bottom:14px}
+.ybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--paper);
+  border:1px solid var(--line2);border-radius:var(--radius);padding:9px 12px;margin-bottom:14px}
 .ybl{font-size:11.5px;color:var(--sub);font-weight:700;margin-right:2px}
-.ybtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);
+.ybtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:#fff;
   background:#fff;color:var(--text);border-radius:9px;padding:5px 11px;font-size:12.5px;font-weight:700;
   transition:border-color .15s,color .15s}
 .ybtn:hover{border-color:var(--brand);color:var(--brand)}
@@ -267,21 +274,21 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .mvbtn .mvp{flex:none;font-size:11px;color:var(--sub);font-weight:700}
 
 .hfoot{margin:26px 0 8px;text-align:center}
-.hfoot .btn{font-size:14px;padding:10px 22px;border-radius:12px;color:#fff;border:0;
-  background:var(--grad);box-shadow:0 6px 18px rgba(51,71,58,.28);font-weight:700}
+.hfoot .btn{font-size:15.5px;padding:13px 30px;border-radius:12px;color:#FAF6EE;border:0;
+  background:var(--grad);box-shadow:var(--relief),var(--drop);font-weight:800;letter-spacing:.02em}
 @media (max-width:520px){
   .hhd .hmd{font-size:24px}
   .mini{width:100px}
 }
 
 /* ================= filters ================= */
-.filters{position:relative;background:var(--card);border:1px solid var(--line);
+.filters{position:relative;background:var(--paper);border:1px solid var(--line2);
   border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;display:flex;gap:9px;
   flex-wrap:wrap;align-items:center;box-shadow:var(--shadow)}
 .fg{display:flex;align-items:center;gap:7px}
 .fg label{font-size:11.5px;color:var(--sub);font-weight:700;letter-spacing:.3px}
 select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
-  padding:8px 30px 8px 12px;border:1px solid var(--line);border-radius:11px;background-color:#fff;
+  padding:8px 30px 8px 12px;border:1px solid var(--line2);border-radius:11px;background-color:#fff;
   font-size:12.5px;color:var(--text);outline:none;font-weight:600;cursor:pointer;
   transition:border-color .15s,box-shadow .15s,background-color .15s;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%23696f83' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -301,31 +308,32 @@ select option{background:#fff;color:var(--text)}
 .datebtn.on{border-color:var(--brand);color:var(--brand);background:var(--grad-soft);
   box-shadow:var(--ring)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{padding:6px 13px;border-radius:20px;border:1px solid var(--line);background:#fff;
+.chip{padding:6px 13px;border-radius:20px;border:1px solid var(--line2);background:#fff;
   font-size:12.5px;color:var(--sub);font-weight:700;transition:all .15s}
 .chip:hover{border-color:var(--brand2);color:var(--text)}
 .chip.on{background:var(--grad);border-color:transparent;color:#fff;
-  box-shadow:0 3px 12px rgba(51,71,58,.28)}
+  box-shadow:var(--relief),var(--drop)}
 .spacer{flex:1}
-.btn{padding:7px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;
+.btn{padding:7px 14px;border-radius:10px;border:1px solid var(--line2);background:#fff;
   color:var(--text);font-size:12.5px;font-weight:700;transition:all .15s}
-.btn:hover{background:#f6f7fc;border-color:#d3d7e8}
+.btn:hover{background:#FBF8F0;border-color:var(--brand2)}
 .btn.pri{background:var(--grad);border-color:transparent;color:#fff;
-  box-shadow:0 3px 12px rgba(51,71,58,.28)}
+  box-shadow:var(--relief),var(--drop)}
 a.btn{display:inline-flex;align-items:center}
 
 /* ================= 简易控制条（即将回归 / 本月回归） ================= */
-.simplebar{display:none;align-items:center;gap:10px;background:var(--card);
-  border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;
+.simplebar{display:none;align-items:center;gap:10px;background:var(--paper);
+  border:1px solid var(--line2);border-radius:var(--radius);padding:10px 14px;
   margin-bottom:16px;box-shadow:var(--shadow);flex-wrap:wrap}
 .simplebar.on{display:flex}
 .sbl{font-size:12px;color:var(--sub);font-weight:700}
 .sbsub{font-size:12px;color:var(--sub);font-weight:600;margin-left:auto}
-.seg{display:inline-flex;background:#F2EFE8;border-radius:10px;padding:3px;gap:3px}
+.seg{display:inline-flex;background:#EDE9DE;border-radius:11px;padding:3px;gap:3px;
+  box-shadow:inset 0 1px 2px rgba(34,37,31,.06)}
 .seg button{border:0;background:transparent;border-radius:8px;padding:6px 16px;
   font-size:12.5px;font-weight:700;color:var(--sub)}
 .seg button:hover{color:var(--text)}
-.seg button.on{background:var(--grad);color:#fff;box-shadow:0 3px 11px rgba(51,71,58,.30)}
+.seg button.on{background:var(--grad);color:#fff;box-shadow:var(--relief),0 1px 3px rgba(34,37,31,.25)}
 
 /* ================= calendar popup ================= */
 .calpop{position:absolute;z-index:90;background:#fff;border:1px solid var(--line);
@@ -549,8 +557,8 @@ footer a{color:var(--brand)}
 .spon{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:120;
   width:50px;height:50px;padding:0;border:0;border-radius:50%;
   display:grid;place-items:center;
-  background:var(--grad);color:#fff;
-  box-shadow:0 6px 20px rgba(51,71,58,.34);
+  background:var(--grad);color:#FAF6EE;
+  box-shadow:var(--relief),0 4px 14px rgba(51,71,58,.30);
   transition:transform .18s,box-shadow .18s,opacity .18s}
 .spon:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(51,71,58,.44)}
 .spon:active{transform:translateY(0)}
