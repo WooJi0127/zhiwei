@@ -132,24 +132,6 @@ function ensureYears(){
   return true;
 }
 
-/* 未加载年份 → 并进筛选面板末尾的一行（横向滚动），不再单独占一块面板 */
-function renderYearRow(){
-  var el = $("fyear"); if(!el) return;
-  var ks = Object.keys(YEARS).filter(function(y){ return !LOADED[y]; });
-  var busy = Object.keys(PENDING).length > 0;
-  if(!ks.length && !busy){ el.style.display = "none"; return; }
-  var h = '<span class="fyl">' + (ks.length ? "更早年份" : "正在加载年份…") + '</span>'
-        + '<div class="fys">';
-  ks.forEach(function(y){
-    var b = !!PENDING[y];
-    h += '<button class="ybtn'+(b ? ' busy' : '')+'"'
-       + (b ? ' disabled' : ' data-year="'+esc(y)+'"') + '>'
-       + (busy ? '加载中…' : esc(y)+' 年')
-       + '<span class="yn">'+YEARS[y]+'</span></button>';
-  });
-  el.innerHTML = h + '</div>';
-  el.style.display = "";
-}
 
 /* ============================ 工具 ============================ */
 function $(id){ return document.getElementById(id); }
@@ -852,7 +834,6 @@ function renderList(){
     }
   } else if(isPast){
     ensureYears();
-    renderYearRow();
     var sig = listSignature();
     if(sig !== listSig){ page = 1; listSig = sig; }
     var pl = applyFilters(ALL);
@@ -933,14 +914,26 @@ function initSelects(){
     }
     function fill(){
       pop.innerHTML = "";
-      Array.prototype.forEach.call(sel.options, function(o){
+      /* optgroup 渲染成分组标题（fKind 的 团体>男团/女团 就是靠它分级） */
+      Array.prototype.forEach.call(sel.children, function(n){
+        if(n.tagName === "OPTGROUP"){
+          var hd = document.createElement("div");
+          hd.className = "selgrp";
+          hd.textContent = n.label;
+          pop.appendChild(hd);
+          Array.prototype.forEach.call(n.children, function(o){ addItem(o); });
+        } else if(n.tagName === "OPTION"){
+          addItem(n);
+        }
+      });
+      function addItem(o){
         var b = document.createElement("button");
         b.type = "button";
         b.className = "selopt" + (o.selected ? " on" : "");
         b.setAttribute("data-selv", o.value);
         b.textContent = o.text;
         pop.appendChild(b);
-      });
+      }
     }
     btn.addEventListener("click", function(e){
       e.stopPropagation();

@@ -158,13 +158,13 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 
 /* ================= 自定义下拉 ================= */
 .selwrap{position:relative;display:inline-block;align-self:center;flex:none}
-.selbtn{display:inline-flex;align-items:center;gap:9px;min-width:112px;height:37px;
-  padding:0 30px 0 12px;border:1px solid var(--line2);border-radius:11px;background:#fff;
-  font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;
-  transition:border-color .15s,box-shadow .15s,background-color .15s;
+.selbtn{display:inline-flex;align-items:center;gap:9px;min-width:0;height:auto;
+  padding:7px 26px 7px 4px;border:0;border-radius:9px;background:transparent;
+  font-size:13px;font-weight:700;color:var(--text);cursor:pointer;
+  transition:color .15s,background-color .15s;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%236E6A5F' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 11px center;background-size:12px}
-.selbtn:hover{border-color:var(--brand2);background-color:#FBF9F2}
+.selbtn:hover{background-color:#F4F0E6;color:var(--brand)}
 .selbtn:focus-visible{outline:none;border-color:var(--brand);box-shadow:var(--ring)}
 .seltxt{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
 .selarw{display:none}
@@ -172,6 +172,9 @@ main{max-width:1280px;margin:0 auto;padding:18px}
   background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;
   box-shadow:var(--shadow-lg);max-height:320px;overflow:auto}
 .selpop.on{display:block;animation:rise .18s var(--ease) both}
+.selgrp{padding:7px 14px 3px;font-size:10.5px;color:var(--sub);font-weight:800;
+  letter-spacing:.12em;border-top:1px solid var(--line)}
+.selgrp:first-child{border-top:0}
 .selopt{display:block;width:100%;text-align:left;border:0;background:transparent;
   padding:8px 11px;border-radius:8px;font-size:12.5px;color:var(--text);white-space:nowrap;
   font-family:var(--font)}
@@ -330,19 +333,19 @@ select:focus{border-color:var(--brand);box-shadow:var(--ring)}
 select:focus:hover{border-color:var(--brand)}
 select option{background:#fff;color:var(--text)}
 /* 日期按钮：箭头与 select 用同一枚 SVG，视觉完全对齐 */
-.datebtn{padding:7px 30px 7px 13px;border:1px solid var(--line);border-radius:11px;background-color:#fff;
-  font-size:12.5px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:7px;cursor:pointer;
+.datebtn{padding:7px 26px 7px 4px;border:0;border-radius:9px;background-color:transparent;
+  font-size:13px;color:var(--text);font-weight:700;display:flex;align-items:center;gap:7px;cursor:pointer;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%23696f83' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 11px center;background-size:12px;
   transition:border-color .15s,box-shadow .15s,background-color .15s;
   transition:border-color .15s,box-shadow .15s}
-.datebtn:hover{border-color:var(--brand2)}
+.datebtn:hover{background-color:#F4F0E6;color:var(--brand)}
 .datebtn.on{border-color:var(--brand);color:var(--brand);background:var(--grad-soft);
   box-shadow:var(--ring)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{padding:6px 13px;border-radius:20px;border:1px solid var(--line2);background:#fff;
+.chip{padding:6px 12px;border-radius:18px;border:0;background:transparent;
   font-size:12.5px;color:var(--sub);font-weight:700;transition:all .15s}
-.chip:hover{border-color:var(--brand2);color:var(--text)}
+.chip:hover{color:var(--text);background-color:#F4F0E6}
 .chip.on{background:var(--grad);border-color:transparent;color:#fff;
   box-shadow:var(--relief),var(--drop)}
 .spacer{flex:1}
@@ -818,13 +821,17 @@ footer a{color:var(--brand)}
         <label>艺人</label>
         <select id="fKind">
           <option value="">全部艺人</option>
-          <option value="group">团体</option>
-          <option value="solo">Solo</option>
-          <option value="gg">女团</option>
-          <option value="bg">男团</option>
-          <option value="coed">混声团</option>
-          <option value="female">女歌手</option>
-          <option value="male">男歌手</option>
+          <optgroup label="团体">
+            <option value="group">全部团体</option>
+            <option value="gg">女团</option>
+            <option value="bg">男团</option>
+            <option value="coed">混声团</option>
+          </optgroup>
+          <optgroup label="个人">
+            <option value="solo">全部个人</option>
+            <option value="female">女歌手</option>
+            <option value="male">男歌手</option>
+          </optgroup>
         </select>
       </div>
       <div class="fg">
@@ -846,7 +853,6 @@ footer a{color:var(--brand)}
       <div class="chips">
         <button class="chip" id="cFav"><svg class="ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.9l2.6 5.3 5.8.85-4.2 4.1 1 5.75L12 17.1l-5.2 2.8 1-5.75L3.6 10.05l5.8-.85z"/></svg> 只看收藏</button>
         <button class="chip" id="cBias"><svg class="ico" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.2s-7.2-4.6-7.2-9.7A4.2 4.2 0 0 1 12 8.2a4.2 4.2 0 0 1 7.2 2.3c0 5.1-7.2 9.7-7.2 9.7z"/></svg> 只看本命</button>
-        <div class="fyr" id="fyear" style="display:none"></div>
         <button class="chip" id="cReset" style="display:none">重置</button>
       </div>
 
@@ -1049,24 +1055,6 @@ function ensureYears(){
   return true;
 }
 
-/* 未加载年份 → 并进筛选面板末尾的一行（横向滚动），不再单独占一块面板 */
-function renderYearRow(){
-  var el = $("fyear"); if(!el) return;
-  var ks = Object.keys(YEARS).filter(function(y){ return !LOADED[y]; });
-  var busy = Object.keys(PENDING).length > 0;
-  if(!ks.length && !busy){ el.style.display = "none"; return; }
-  var h = '<span class="fyl">' + (ks.length ? "更早年份" : "正在加载年份…") + '</span>'
-        + '<div class="fys">';
-  ks.forEach(function(y){
-    var b = !!PENDING[y];
-    h += '<button class="ybtn'+(b ? ' busy' : '')+'"'
-       + (b ? ' disabled' : ' data-year="'+esc(y)+'"') + '>'
-       + (busy ? '加载中…' : esc(y)+' 年')
-       + '<span class="yn">'+YEARS[y]+'</span></button>';
-  });
-  el.innerHTML = h + '</div>';
-  el.style.display = "";
-}
 
 /* ============================ 工具 ============================ */
 function $(id){ return document.getElementById(id); }
@@ -1769,7 +1757,6 @@ function renderList(){
     }
   } else if(isPast){
     ensureYears();
-    renderYearRow();
     var sig = listSignature();
     if(sig !== listSig){ page = 1; listSig = sig; }
     var pl = applyFilters(ALL);
@@ -1850,14 +1837,26 @@ function initSelects(){
     }
     function fill(){
       pop.innerHTML = "";
-      Array.prototype.forEach.call(sel.options, function(o){
+      /* optgroup 渲染成分组标题（fKind 的 团体>男团/女团 就是靠它分级） */
+      Array.prototype.forEach.call(sel.children, function(n){
+        if(n.tagName === "OPTGROUP"){
+          var hd = document.createElement("div");
+          hd.className = "selgrp";
+          hd.textContent = n.label;
+          pop.appendChild(hd);
+          Array.prototype.forEach.call(n.children, function(o){ addItem(o); });
+        } else if(n.tagName === "OPTION"){
+          addItem(n);
+        }
+      });
+      function addItem(o){
         var b = document.createElement("button");
         b.type = "button";
         b.className = "selopt" + (o.selected ? " on" : "");
         b.setAttribute("data-selv", o.value);
         b.textContent = o.text;
         pop.appendChild(b);
-      });
+      }
     }
     btn.addEventListener("click", function(e){
       e.stopPropagation();
