@@ -106,7 +106,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.93);
 /* ================= main ================= */
 main{max-width:1280px;margin:0 auto;padding:18px}
 .notice{display:none;align-items:center;gap:10px;padding:11px 15px;margin-bottom:14px;
-  background:linear-gradient(135deg,#FDF9F0,#FBF4E6);border:1px solid #ffe2a8;
+  background:#FBF6EC;border:1px solid #E3D8C6;
   border-radius:12px;font-size:13px;color:#8A5A2B;box-shadow:var(--shadow)}
 .notice.on{display:flex}
 .notice button{margin-left:auto;border:1px solid #e8c777;background:#fff;color:#8A5A2B;
@@ -201,20 +201,22 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .hero{display:flex;gap:26px;align-items:flex-start;margin:10px 0 34px;flex-wrap:wrap}
 .wel{font-size:13px;color:var(--sub);letter-spacing:.18em;font-weight:500}
 .bigname{font-family:var(--font-title);font-size:64px;font-weight:700;line-height:1.02;
-  letter-spacing:.04em;margin:6px 0 10px;
-  background:linear-gradient(120deg,#33473A 30%,#B5764F 90%);
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+  letter-spacing:.04em;margin:6px 0 10px;color:var(--brand)}
 .hhd{display:flex;align-items:baseline;gap:8px}
 .hhd .hmd{font-family:var(--font-title);font-size:32px;font-weight:700;letter-spacing:-.02em;
   color:var(--text);line-height:1.15}
 .hhd .hwk{font-size:12.5px;color:var(--sub);font-weight:700}
 .hsum{margin-top:2px;font-size:13px;color:var(--sub)}
 .hsum b{color:var(--brand);font-size:15px}
-.heroR{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:9px;margin-left:auto}
-.hstat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
-.hstat .v{font-size:22px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
-.hstat .k{font-size:11px;color:var(--sub);margin-top:3px}
-.hstat.hl{border-color:#E3D8C6;background:#FBF6EC}
+/* 统计：不用一张张小白卡（那是后台仪表盘的画法），用发丝线分隔的
+   一行数据——宋体数字 + 小标签，像刊物页眉。窄屏自动换行。 */
+.heroR{display:flex;flex-wrap:wrap;margin-left:auto;row-gap:12px}
+.hstat{border-left:1px solid var(--line);padding:2px 18px}
+.hstat:first-child{border-left:0;padding-left:0}
+.hstat .v{font-family:var(--font-title);font-size:27px;font-weight:700;line-height:1.1;
+  letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.hstat .k{font-size:11px;color:var(--sub);margin-top:4px;letter-spacing:.02em}
+.hstat.hl{border-left-color:#E3D8C6}
 .hstat.hl .v{color:#9E4B38}
 .hsec{margin-bottom:30px}
 .hsec-h{display:flex;align-items:baseline;gap:9px;margin-bottom:10px}
@@ -415,11 +417,9 @@ a.btn{display:inline-flex;align-items:center}
 .dday{position:absolute;left:9px;top:9px;padding:4px 9px;border-radius:9px;
   background:rgba(18,20,31,.88);color:#fff;font-size:11.5px;font-weight:800;
   backdrop-filter:blur(6px);letter-spacing:.2px}
-.dday.soon{background:linear-gradient(135deg,#B5764F,#e9285f);
-  box-shadow:0 3px 12px rgba(255,47,82,.36)}
-.dday.today{background:linear-gradient(135deg,#3F6B4F,#0d8a3c);
-  box-shadow:0 3px 12px rgba(22,163,74,.34)}
-.dday.past{background:rgba(18,20,31,.46)}
+.dday.soon{background:var(--brand)}
+.dday.today{background:var(--brand2)}
+.dday.past{background:rgba(34,37,31,.5)}
 .favbtn{position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:50%;border:0;
   background:rgba(255,255,255,.94);color:#8C8878;font-size:15px;display:grid;place-items:center;
   box-shadow:0 2px 8px rgba(0,0,0,.16);backdrop-filter:blur(4px);
@@ -428,7 +428,7 @@ a.btn{display:inline-flex;align-items:center}
 .favbtn.on{color:var(--gold);background:#fff}
 .badge{position:absolute;left:9px;bottom:9px;padding:3px 9px;border-radius:7px;font-size:10.5px;
   font-weight:800;letter-spacing:.5px}
-.badge.new{background:var(--grad);color:#fff;box-shadow:0 2px 10px rgba(51,71,58,.35)}
+.badge.new{background:var(--brand);color:#FAF6EE}
 
 .cbody{padding:12px 13px 13px;display:flex;flex-direction:column;gap:3px;flex:1}
 .ctitle{font-size:14px;font-weight:800;letter-spacing:-.2px;line-height:1.35;
@@ -438,8 +438,10 @@ a.btn{display:inline-flex;align-items:center}
 .car .en{font-size:11.5px;opacity:.7}
 .cmeta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;font-size:11px;color:var(--sub)}
 .tag{padding:2px 7px;background:#F4F1EA;border-radius:6px;font-weight:700}
-.tag.k{background:#eef4ff;color:#3557b7}
-.tag.s{background:#f3efff;color:#6741d9}
+/* 「N 首」/NEW 这类次要信息：和类型标签同底，字用次级灰。
+   以前一个紫一个蓝（.tag.s 紫罗兰 / .tag.k Tailwind 蓝），是全页最跳的两个色块；
+   .tag.k 没有任何地方在用，直接删了。 */
+.tag.s{background:#EFEAE0;color:var(--sub)}
 
 /* 红爱心 */
 .heart{border:0;background:transparent;padding:1px;font-size:15px;line-height:1;
@@ -535,9 +537,9 @@ a.btn{display:inline-flex;align-items:center}
   padding:15px;margin-bottom:16px;box-shadow:var(--shadow)}
 .biaslist{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .btag{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:20px;
-  background:linear-gradient(135deg,#fff0f3,#ffe3e9);border:1px solid #D6C4A8;color:#c11f3d;
+  background:#FBF6EC;border:1px solid #E3D8C6;color:var(--heart);
   font-size:12.5px;font-weight:800}
-.btag button{border:0;background:transparent;color:#d9627a;font-size:14px;line-height:1;padding:0}
+.btag button{border:0;background:transparent;color:var(--heart);opacity:.65;font-size:14px;line-height:1;padding:0}
 .addrow{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
 .addrow input{flex:1;min-width:180px;padding:8px 11px;border:1px solid var(--line);
   border-radius:10px;font-size:13px;outline:none}
