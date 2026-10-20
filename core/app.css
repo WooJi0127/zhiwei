@@ -165,9 +165,9 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .selgrp:first-child{border-top:0}
 .selopt{display:block;width:100%;text-align:left;border:0;background:transparent;
   padding:8px 11px;border-radius:8px;font-size:12.5px;color:var(--text);white-space:nowrap;
-  font-family:var(--font)}
+  font-family:var(--font-title)}
 .selopt:hover{background:#F2EFE8}
-.selopt.on{background:#EDF0EA;color:var(--brand);font-weight:600}
+.selopt.on{background:#EDF0EA;color:var(--brand);font-weight:700}
 
 /* 首页：展开更多按钮 */
 .morebtn{margin-top:9px;padding:7px 15px;border-radius:999px;border:1px solid var(--line);
@@ -304,12 +304,16 @@ main{max-width:1280px;margin:0 auto;padding:18px}
   .mini{width:128px}
 }
 
-/* ================= filters ================= */
+/* ================= filters =================
+   整条筛选栏（含时间日历弹层、下拉面板）走宋体——和板块标题、「查看完整日历」
+   同一套文字语言；黑体只留给正文和卡片。子集已覆盖这些汉字，
+   「→」等少量符号由字体回退链里的 Georgia 顶上。 */
 .filters{position:relative;background:var(--paper);border:1px solid var(--line2);
   border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;display:flex;gap:9px;
-  flex-wrap:wrap;align-items:center;box-shadow:var(--shadow)}
+  flex-wrap:wrap;align-items:center;box-shadow:var(--shadow);
+  font-family:var(--font-title)}
 .fg{display:flex;align-items:center;gap:7px}
-.fg label{font-size:11.5px;color:var(--sub);font-weight:700;letter-spacing:.3px}
+.fg label{font-size:12px;color:var(--sub);font-weight:700;letter-spacing:.3px}
 select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
   padding:8px 30px 8px 12px;border:1px solid var(--line2);border-radius:11px;background-color:#fff;
   font-size:12.5px;color:var(--text);outline:none;font-weight:600;cursor:pointer;
@@ -407,7 +411,6 @@ a.btn{display:inline-flex;align-items:center}
   box-shadow:0 2px 8px rgba(51,71,58,.30)}
 .cald.sel::after{background:#fff}
 .cald.today{box-shadow:inset 0 0 0 1.5px var(--brand2)}
-.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
 .calfoot{display:flex;gap:7px;margin-top:11px}
 .calfoot button{flex:1;padding:7px;border-radius:10px;border:1px solid var(--line);background:#fff;
   font-size:12.5px;font-weight:700;color:var(--sub)}

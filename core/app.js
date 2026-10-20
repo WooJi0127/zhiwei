@@ -301,26 +301,23 @@ function ageOf(b){
   return (a >= 0 && a < 100) ? a : null;
 }
 
-/* 时间范围预设 */
+/* 时间范围预设。日历弹层里的快捷胶囊行已删（逛日历本身就能选任意范围，
+   还有整月 / 整年两个工具），这里只留页面自己还在用的几档。 */
 function rangePreset(kind){
   var t = new Date(TODAY), f, to, lb;
   if(kind==="f7"){ f=d2s(t); var e=new Date(t); e.setDate(e.getDate()+7); to=d2s(e); lb="未来 7 天"; }
   else if(kind==="f30"){ f=d2s(t); var e2=new Date(t); e2.setDate(e2.getDate()+30); to=d2s(e2); lb="未来 30 天"; }
-  else if(kind==="f90"){ f=d2s(t); var e3=new Date(t); e3.setDate(e3.getDate()+90); to=d2s(e3); lb="未来 90 天"; }
-  else if(kind==="all"){ f=null; to=null; lb="全部未来"; }
-  else if(kind==="p30"){ var s1=new Date(t); s1.setDate(s1.getDate()-30); f=d2s(s1); to=d2s(t); lb="过去 30 天"; }
   else if(kind==="p365"){ var s2=new Date(t); s2.setDate(s2.getDate()-365); f=d2s(s2); to=d2s(t); lb="过去 1 年"; }
   else if(kind==="pall"){ f=null; to=null; lb="全部已发布"; }
   else if(kind==="month"){ var y=t.getFullYear(), m=t.getMonth(); f=d2s(new Date(y,m,1)); to=d2s(new Date(y,m+1,0)); lb=y+" 年 "+(m+1)+" 月"; }
-  else if(kind==="ytd"){ var y2=t.getFullYear(); f=y2+"-01-01"; to=d2s(t); lb=y2+" 年至今"; }
-  else if(kind==="lyr"){ var y3=t.getFullYear()-1; f=y3+"-01-01"; to=y3+"-12-31"; lb=y3+" 年"; }
   else { f=d2s(t); var e4=new Date(t); e4.setDate(e4.getDate()+30); to=d2s(e4); lb="未来 30 天"; }
   return {mode:"quick", kind:kind, from:f, to:to, label:lb};
 }
 
 /* ============================ 筛选 ============================ */
 /* 各页签实际生效的时间范围：
-   未来 → 7 天 / 本月 / 下月；过去 → 用日历/预设；我的、更多 → 不限。 */
+   未来 → 7 天 / 本月 / 下月；过去 → 日历自选（默认过去 1 年，「清除」即全部已发布）；
+   我的、更多 → 不限。 */
 function nextMonthRange(){
   var t = TODAY, y = t.getFullYear(), m = t.getMonth() + 1;
   if(m > 11){ m = 0; y++; }
@@ -338,7 +335,6 @@ function activeRange(){
 }
 function inRange(r){
   var R = activeRange();
-  if(R.kind==="all") return r._dd >= 0;
   if(R.kind==="pall") return r._dd < 0;
   if(R.from && r.date < R.from) return false;
   if(R.to && r.date > R.to) return false;
@@ -1087,16 +1083,6 @@ function renderCal(){
     grid.setAttribute("data-key", key);
   }
 
-  var qs = [
-    ["f7","未来 7 天"],["f30","未来 30 天"],["f90","未来 90 天"],["all","全部未来"],
-    ["p30","过去 30 天"],["month","本月"],["p365","过去 1 年"],["pall","全部已发布"],
-    ["ytd","今年至今"],["lyr","去年"]
-  ];
-  $("calQuick").innerHTML = qs.map(function(q){
-    var on = (S.range.kind === q[0]);
-    return '<button class="chip'+(on?' on':'')+'" data-quick="'+q[0]+'">'+q[1]+'</button>';
-  }).join("");
-
   /* ---- 已选范围提示 + 确定按钮可用性 ---- */
   var F = CAL.from, T = CAL.to;
   if(F && T && F !== T)   $("calRng").innerHTML = '已选 <b>'+F+'</b> → <b>'+T+'</b>　共 '+daySpan(F,T)+' 天';
@@ -1133,14 +1119,6 @@ function openCal(){
   pop.scrollTop = 0;
 }
 function closeCal(){ $("calPop").classList.remove("on"); }
-function setQuick(kind){
-  /* 快捷预设只作用于「全部发布」——日历就在那一页的筛选栏里 */
-  S.range = rangePreset(kind);
-  if(S.tab !== "past"){ S.tab = "past"; syncTabs(); }
-  CAL.y = TODAY.getFullYear(); CAL.m = TODAY.getMonth();
-  CAL.from = S.range.from; CAL.to = S.range.to; CAL.picking = false;
-  renderCal(); render();
-}
 function syncTabs(){
   document.querySelectorAll(".tab").forEach(function(x){
     var v = x.getAttribute("data-view");
@@ -1235,7 +1213,6 @@ document.addEventListener("click", function(e){
   }
   /* 日历：整月 / 整年 / 清空 */
   if((el = t.closest("[data-calsel]"))){ calSelRange(el.getAttribute("data-calsel")); return; }
-  if((el = t.closest("[data-quick]"))){ setQuick(el.getAttribute("data-quick")); closeCal(); return; }
   if((el = t.closest("[data-day]"))){
     var ds = el.getAttribute("data-day");
     if(!CAL.picking || !CAL.from || (CAL.from && CAL.to)){
@@ -1388,7 +1365,7 @@ $("calApply").addEventListener("click", function(){
   closeCal(); render();
 });
 /* 注意：绝不能在 #calPop 上 stopPropagation，否则弹层内部的
-   data-day / data-quick / data-cal* 点击全部到不了下面的 document 委托。 */
+   data-day / data-cal* 点击全部到不了下面的 document 委托。 */
 
 /* 公司下拉 */
 (function(){

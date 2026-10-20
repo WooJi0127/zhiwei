@@ -8,6 +8,7 @@ __pycache__/
 .stale/
 _m/
 assets/_icon_tmp/
+.workbuddy/shots/
 
 # 脚本运行日志（每天变化，不该进仓库）
 update.log

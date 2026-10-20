@@ -23,12 +23,14 @@ EDGE_CANDIDATES = [
 ]
 
 # (标签, 宽, 高, 期望的最少列数, 期望的最多列数)
+# 列数跟 .grid 的 minmax(244px,1fr) 绑定：卡片放大后（208→244px）iPad/桌面各少一列，
+# 预期值随之更新；上下各留一列余量，防字体四舍五入误报。
 VIEWPORTS = [
     ("iPhone SE   ", 375, 667, 2, 2),
     ("iPhone 14   ", 390, 844, 2, 2),
     ("iPhone 横屏 ", 844, 390, 3, 5),
-    ("iPad 竖屏   ", 768, 1024, 3, 4),
-    ("桌面 1280   ", 1280, 800, 5, 6),
+    ("iPad 竖屏   ", 768, 1024, 2, 3),
+    ("桌面 1280   ", 1280, 800, 4, 5),
 ]
 
 PROBE = r"""
@@ -39,53 +41,60 @@ PROBE = r"""
  * 所以能在一次浏览器启动里测完所有视口。
  */
 (function(){
-  var de = document.documentElement;
+  function measure(){
+    var de = document.documentElement;
 
-  // 1) 横向溢出：手机上一旦出现横向滚动条，体验就毁了
-  var out = { overflowX: Math.max(0, de.scrollWidth - de.clientWidth) };
+    // 1) 横向溢出：手机上一旦出现横向滚动条，体验就毁了
+    var out = { overflowX: Math.max(0, de.scrollWidth - de.clientWidth) };
 
-  // 2) 卡片列数：从第一张卡的宽度反推
-  var grid = document.querySelector(".grid");
-  var card = document.querySelector(".grid .card");
-  if (grid && card) {
-    out.cols = Math.round(grid.getBoundingClientRect().width
-                          / card.getBoundingClientRect().width);
-    out.cardW = Math.round(card.getBoundingClientRect().width);
-  } else { out.cols = 0; }
+    // 2) 卡片列数：从第一张卡的宽度反推
+    var grid = document.querySelector(".grid");
+    var card = document.querySelector(".grid .card");
+    if (grid && card) {
+      out.cols = Math.round(grid.getBoundingClientRect().width
+                            / card.getBoundingClientRect().width);
+      out.cardW = Math.round(card.getBoundingClientRect().width);
+    } else { out.cols = 0; }
 
-  // 3) 触摸目标：页签 / 收藏 / 爱心 都不能太小
-  function minSide(sel){
-    var m = 999;
-    document.querySelectorAll(sel).forEach(function(e){
-      var r = e.getBoundingClientRect();
-      if (r.width > 0) m = Math.min(m, Math.min(r.width, r.height));
-    });
-    return m === 999 ? 0 : Math.round(m);
-  }
-  out.tabH = minSide(".tab");
-  out.favSide = minSide(".favbtn");
-  out.heartSide = minSide(".heart");
-
-  // 4) 关键元素必须在可视宽度内
-  out.wideEls = [];
-  document.querySelectorAll("header, main, .hwrap, .stats, .filters").forEach(function(e){
-    var r = e.getBoundingClientRect();
-    if (r.width > de.clientWidth + 1) {
-      out.wideEls.push((e.className || e.tagName) + ":" + Math.round(r.width));
+    // 3) 触摸目标：页签 / 收藏 / 爱心 都不能太小
+    function minSide(sel){
+      var m = 999;
+      document.querySelectorAll(sel).forEach(function(e){
+        var r = e.getBoundingClientRect();
+        if (r.width > 0) m = Math.min(m, Math.min(r.width, r.height));
+      });
+      return m === 999 ? 0 : Math.round(m);
     }
-  });
+    out.tabH = minSide(".tab");
+    out.favSide = minSide(".favbtn");
+    out.heartSide = minSide(".heart");
 
-  out.vw = de.clientWidth;
+    // 4) 关键元素必须在可视宽度内
+    out.wideEls = [];
+    document.querySelectorAll("header, main, .hwrap, .stats, .filters").forEach(function(e){
+      var r = e.getBoundingClientRect();
+      if (r.width > de.clientWidth + 1) {
+        out.wideEls.push((e.className || e.tagName) + ":" + Math.round(r.width));
+      }
+    });
 
-  if (window.parent !== window) {
-    window.parent.__R__ = window.parent.__R__ || [];
-    window.parent.__R__.push(out);
-  } else {
-    var d = document.createElement("div");
-    d.id = "LAYOUTOUT";
-    d.textContent = "@@" + JSON.stringify([out]) + "@@";
-    document.body.appendChild(d);
+    out.vw = de.clientWidth;
+
+    if (window.parent !== window) {
+      window.parent.__R__ = window.parent.__R__ || [];
+      window.parent.__R__.push(out);
+    } else {
+      var d = document.createElement("div");
+      d.id = "LAYOUTOUT";
+      d.textContent = "@@" + JSON.stringify([out]) + "@@";
+      document.body.appendChild(d);
+    }
   }
+
+  /* 默认页是首页，卡片网格和收藏/爱心按钮都在「过去」页——
+     先切过去再量，否则量到的永远是 0（首页优先改版后这里没跟上过）。 */
+  var t = document.querySelector('[data-tab="past"]');
+  if (t) { t.click(); setTimeout(measure, 500); } else { setTimeout(measure, 300); }
 })();
 </script>
 """

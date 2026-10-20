@@ -177,9 +177,9 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .selgrp:first-child{border-top:0}
 .selopt{display:block;width:100%;text-align:left;border:0;background:transparent;
   padding:8px 11px;border-radius:8px;font-size:12.5px;color:var(--text);white-space:nowrap;
-  font-family:var(--font)}
+  font-family:var(--font-title)}
 .selopt:hover{background:#F2EFE8}
-.selopt.on{background:#EDF0EA;color:var(--brand);font-weight:600}
+.selopt.on{background:#EDF0EA;color:var(--brand);font-weight:700}
 
 /* 首页：展开更多按钮 */
 .morebtn{margin-top:9px;padding:7px 15px;border-radius:999px;border:1px solid var(--line);
@@ -316,12 +316,16 @@ main{max-width:1280px;margin:0 auto;padding:18px}
   .mini{width:128px}
 }
 
-/* ================= filters ================= */
+/* ================= filters =================
+   整条筛选栏（含时间日历弹层、下拉面板）走宋体——和板块标题、「查看完整日历」
+   同一套文字语言；黑体只留给正文和卡片。子集已覆盖这些汉字，
+   「→」等少量符号由字体回退链里的 Georgia 顶上。 */
 .filters{position:relative;background:var(--paper);border:1px solid var(--line2);
   border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;display:flex;gap:9px;
-  flex-wrap:wrap;align-items:center;box-shadow:var(--shadow)}
+  flex-wrap:wrap;align-items:center;box-shadow:var(--shadow);
+  font-family:var(--font-title)}
 .fg{display:flex;align-items:center;gap:7px}
-.fg label{font-size:11.5px;color:var(--sub);font-weight:700;letter-spacing:.3px}
+.fg label{font-size:12px;color:var(--sub);font-weight:700;letter-spacing:.3px}
 select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
   padding:8px 30px 8px 12px;border:1px solid var(--line2);border-radius:11px;background-color:#fff;
   font-size:12.5px;color:var(--text);outline:none;font-weight:600;cursor:pointer;
@@ -419,7 +423,6 @@ a.btn{display:inline-flex;align-items:center}
   box-shadow:0 2px 8px rgba(51,71,58,.30)}
 .cald.sel::after{background:#fff}
 .cald.today{box-shadow:inset 0 0 0 1.5px var(--brand2)}
-.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
 .calfoot{display:flex;gap:7px;margin-top:11px}
 .calfoot button{flex:1;padding:7px;border-radius:10px;border:1px solid var(--line);background:#fff;
   font-size:12.5px;font-weight:700;color:var(--sub)}
@@ -872,7 +875,6 @@ footer a{color:var(--brand)}
           </div>
         </div>
         <div class="calrng" id="calRng">点击日期选择范围，可跨月</div>
-        <div class="quick" id="calQuick"></div>
         <div class="calfoot">
           <button id="calClear">清除</button>
           <button class="pri" id="calApply">确定</button>
@@ -1224,26 +1226,23 @@ function ageOf(b){
   return (a >= 0 && a < 100) ? a : null;
 }
 
-/* 时间范围预设 */
+/* 时间范围预设。日历弹层里的快捷胶囊行已删（逛日历本身就能选任意范围，
+   还有整月 / 整年两个工具），这里只留页面自己还在用的几档。 */
 function rangePreset(kind){
   var t = new Date(TODAY), f, to, lb;
   if(kind==="f7"){ f=d2s(t); var e=new Date(t); e.setDate(e.getDate()+7); to=d2s(e); lb="未来 7 天"; }
   else if(kind==="f30"){ f=d2s(t); var e2=new Date(t); e2.setDate(e2.getDate()+30); to=d2s(e2); lb="未来 30 天"; }
-  else if(kind==="f90"){ f=d2s(t); var e3=new Date(t); e3.setDate(e3.getDate()+90); to=d2s(e3); lb="未来 90 天"; }
-  else if(kind==="all"){ f=null; to=null; lb="全部未来"; }
-  else if(kind==="p30"){ var s1=new Date(t); s1.setDate(s1.getDate()-30); f=d2s(s1); to=d2s(t); lb="过去 30 天"; }
   else if(kind==="p365"){ var s2=new Date(t); s2.setDate(s2.getDate()-365); f=d2s(s2); to=d2s(t); lb="过去 1 年"; }
   else if(kind==="pall"){ f=null; to=null; lb="全部已发布"; }
   else if(kind==="month"){ var y=t.getFullYear(), m=t.getMonth(); f=d2s(new Date(y,m,1)); to=d2s(new Date(y,m+1,0)); lb=y+" 年 "+(m+1)+" 月"; }
-  else if(kind==="ytd"){ var y2=t.getFullYear(); f=y2+"-01-01"; to=d2s(t); lb=y2+" 年至今"; }
-  else if(kind==="lyr"){ var y3=t.getFullYear()-1; f=y3+"-01-01"; to=y3+"-12-31"; lb=y3+" 年"; }
   else { f=d2s(t); var e4=new Date(t); e4.setDate(e4.getDate()+30); to=d2s(e4); lb="未来 30 天"; }
   return {mode:"quick", kind:kind, from:f, to:to, label:lb};
 }
 
 /* ============================ 筛选 ============================ */
 /* 各页签实际生效的时间范围：
-   未来 → 7 天 / 本月 / 下月；过去 → 用日历/预设；我的、更多 → 不限。 */
+   未来 → 7 天 / 本月 / 下月；过去 → 日历自选（默认过去 1 年，「清除」即全部已发布）；
+   我的、更多 → 不限。 */
 function nextMonthRange(){
   var t = TODAY, y = t.getFullYear(), m = t.getMonth() + 1;
   if(m > 11){ m = 0; y++; }
@@ -1261,7 +1260,6 @@ function activeRange(){
 }
 function inRange(r){
   var R = activeRange();
-  if(R.kind==="all") return r._dd >= 0;
   if(R.kind==="pall") return r._dd < 0;
   if(R.from && r.date < R.from) return false;
   if(R.to && r.date > R.to) return false;
@@ -2010,16 +2008,6 @@ function renderCal(){
     grid.setAttribute("data-key", key);
   }
 
-  var qs = [
-    ["f7","未来 7 天"],["f30","未来 30 天"],["f90","未来 90 天"],["all","全部未来"],
-    ["p30","过去 30 天"],["month","本月"],["p365","过去 1 年"],["pall","全部已发布"],
-    ["ytd","今年至今"],["lyr","去年"]
-  ];
-  $("calQuick").innerHTML = qs.map(function(q){
-    var on = (S.range.kind === q[0]);
-    return '<button class="chip'+(on?' on':'')+'" data-quick="'+q[0]+'">'+q[1]+'</button>';
-  }).join("");
-
   /* ---- 已选范围提示 + 确定按钮可用性 ---- */
   var F = CAL.from, T = CAL.to;
   if(F && T && F !== T)   $("calRng").innerHTML = '已选 <b>'+F+'</b> → <b>'+T+'</b>　共 '+daySpan(F,T)+' 天';
@@ -2056,14 +2044,6 @@ function openCal(){
   pop.scrollTop = 0;
 }
 function closeCal(){ $("calPop").classList.remove("on"); }
-function setQuick(kind){
-  /* 快捷预设只作用于「全部发布」——日历就在那一页的筛选栏里 */
-  S.range = rangePreset(kind);
-  if(S.tab !== "past"){ S.tab = "past"; syncTabs(); }
-  CAL.y = TODAY.getFullYear(); CAL.m = TODAY.getMonth();
-  CAL.from = S.range.from; CAL.to = S.range.to; CAL.picking = false;
-  renderCal(); render();
-}
 function syncTabs(){
   document.querySelectorAll(".tab").forEach(function(x){
     var v = x.getAttribute("data-view");
@@ -2158,7 +2138,6 @@ document.addEventListener("click", function(e){
   }
   /* 日历：整月 / 整年 / 清空 */
   if((el = t.closest("[data-calsel]"))){ calSelRange(el.getAttribute("data-calsel")); return; }
-  if((el = t.closest("[data-quick]"))){ setQuick(el.getAttribute("data-quick")); closeCal(); return; }
   if((el = t.closest("[data-day]"))){
     var ds = el.getAttribute("data-day");
     if(!CAL.picking || !CAL.from || (CAL.from && CAL.to)){
@@ -2311,7 +2290,7 @@ $("calApply").addEventListener("click", function(){
   closeCal(); render();
 });
 /* 注意：绝不能在 #calPop 上 stopPropagation，否则弹层内部的
-   data-day / data-quick / data-cal* 点击全部到不了下面的 document 委托。 */
+   data-day / data-cal* 点击全部到不了下面的 document 委托。 */
 
 /* 公司下拉 */
 (function(){

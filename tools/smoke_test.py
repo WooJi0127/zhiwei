@@ -65,8 +65,12 @@ step(function(){
   $("dateBtn").click();
 });
 step(function(){
-  var b = document.querySelector('[data-quick="pall"]');
-  if(!b){ LOG.push("ERR:日历里没有「全部已发布」"); return; }
+  /* 日历弹层里的快捷预设行已删（逛日历本身就能选范围，还有整月/整年工具）：
+     过去页点「清除」= 回到「全部已发布」，用它验证这条路径 */
+  LOG.push("快捷行=" + (document.querySelector("#calQuick") ? "还在" : "已删")
+    + " 范围工具=" + document.querySelectorAll(".caltools button").length);
+  var b = $("calClear");
+  if(!b){ LOG.push("ERR:日历里没有「清除」按钮"); return; }
   b.click();
 });
 step(function(){
@@ -219,7 +223,8 @@ step(function(){
 step(function(){ document.querySelector('[data-tab="past"]').click(); });
 step(function(){
   LOG.push("下拉自绘=" + (document.querySelectorAll(".selbtn").length)
-    + " 原生select隐藏=" + (getComputedStyle($("fType")).display));
+    + " 原生select隐藏=" + (getComputedStyle($("fType")).display)
+    + " 筛选栏字体=" + getComputedStyle(document.querySelector(".selbtn")).fontFamily);
   var b = document.querySelector(".selbtn"); if(b) b.click();
 });
 step(function(){
@@ -267,6 +272,7 @@ REQUIRED = [
     ("详情=true",        "详情页打不开"),
     ("返回=true",        "详情页返回不了"),
     (" 合理=1",          "A2O 搜索结果异常（0 张=搜索坏，>300=分页上限没生效）"),
+    ("Noto Serif SC",    "筛选栏字体没换成宋体（用户明确要求过）"),
 ]
 
 
