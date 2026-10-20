@@ -2,7 +2,7 @@
   <!-- 融合版（浅色·网页）：米白纸底 + 墨绿描边唱片 + 彗星唱臂 -->
   <defs>
     <linearGradient id="trailFW" gradientUnits="userSpaceOnUse" x1="89" y1="15" x2="46" y2="52">
-      <stop offset="0%"   stop-color="#33473A" stop-opacity="0.18"/>
+      <stop offset="0%"   stop-color="#33473A" stop-opacity="0.30"/>
       <stop offset="45%"  stop-color="#B5764F" stop-opacity="0.55"/>
       <stop offset="100%" stop-color="#C9885A" stop-opacity="0.95"/>
     </linearGradient>

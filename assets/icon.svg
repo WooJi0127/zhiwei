@@ -1,38 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
-  <!-- 墨绿圆角底 -->
+  <!--
+    知未 · 图标（融合版）：唱片 + 化作彗星的唱臂
+
+    唱片同心环由外向内收紧（越内越密、越清晰）= 时间由远及近；
+    唱臂被换成彗星尾巴，彗核落在唱片中心的铜色标签上 = 回归日。
+    叙事：唱针落下的那一刻，就是回归开始。
+
+    小尺寸（≤64px）走 icon-mini.svg，那边元素更少更重。
+    上一版图标存档在 assets/icon-v1-original.svg，想回头看去那边拿。
+  -->
+  <defs>
+    <linearGradient id="trailF" gradientUnits="userSpaceOnUse" x1="89" y1="15" x2="46" y2="52">
+      <stop offset="0%"   stop-color="#FAF6EE" stop-opacity="0.30"/>
+      <stop offset="45%"  stop-color="#B5764F" stop-opacity="0.50"/>
+      <stop offset="100%" stop-color="#D89B6A" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="orbF" cx="46" cy="52" r="11" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#F4D2A8"/>
+      <stop offset="60%"  stop-color="#C9885A"/>
+      <stop offset="100%" stop-color="#9E5F38"/>
+    </radialGradient>
+    <filter id="glowF" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+
   <rect x="3" y="3" width="94" height="94" rx="20" fill="#33473A"/>
 
-  <!-- 唱片：深色盘面 + 两道纹路 -->
-  <circle cx="45" cy="50" r="35" fill="#1C251F"/>
-  <circle cx="45" cy="50" r="31" fill="none" stroke="#3E5446" stroke-width="1"/>
-  <circle cx="45" cy="50" r="25" fill="none" stroke="#3E5446" stroke-width="0.7"/>
+  <!-- 唱片盘面 -->
+  <circle cx="46" cy="52" r="34" fill="#1C251F"/>
+  <!-- 环间距由外向内递减、越内越清晰：时间收紧 -->
+  <circle cx="46" cy="52" r="29"   fill="none" stroke="#46604E" stroke-width="1"   stroke-opacity="0.35"/>
+  <circle cx="46" cy="52" r="25"   fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="0.55"/>
+  <circle cx="46" cy="52" r="21.5" fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="0.75"/>
+  <circle cx="46" cy="52" r="18.5" fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="1"/>
 
-  <!-- 倒着数的钟面：12 在顶，顺读向左，取其「回归倒计时」的意思。
-       注意这里的数字顺序和站内 header 完全一致，不要两边各改各的。 -->
-  <g font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif"
-     font-weight="600" font-size="9.5" fill="#FAF6EE" text-anchor="middle">
-    <text x="45" y="30.5">12</text>
-    <text x="58.5" y="34.5">11</text>
-    <text x="68.5" y="41.5">10</text>
-    <text x="72.5" y="53">9</text>
-    <text x="68.5" y="64.5">8</text>
-    <text x="58.5" y="71.5">7</text>
-    <text x="45" y="75.5">6</text>
-    <text x="31.5" y="71.5">5</text>
-    <text x="21.5" y="64.5">4</text>
-    <text x="17.5" y="53">3</text>
-    <text x="21.5" y="41.5">2</text>
-    <text x="31.5" y="34.5">1</text>
-  </g>
+  <!-- 彗星尾巴（取代唱臂）：远端细弱 → 近端粗亮，由远及近 -->
+  <path d="M89,15 C74,25 57,41 49,55 L38,46 C56,32 72,20 87,13 Z" fill="url(#trailF)"/>
+  <!-- 里程碑刻度 -->
+  <circle cx="75.4" cy="25.4" r="1.5" fill="#FAF6EE" opacity="0.5"/>
+  <circle cx="62.8" cy="36.8" r="2.1" fill="#D89B6A" opacity="0.85"/>
+  <circle cx="52.3" cy="46.3" r="2.7" fill="#E9B074"/>
 
-  <!-- 铜色标签 + 中轴 -->
-  <circle cx="45" cy="50" r="8.5" fill="#B5764F"/>
-  <circle cx="45" cy="50" r="2.2" fill="#FAF6EE"/>
+  <!-- 彗核 = 唱片中心铜标 = 回归日 -->
+  <circle cx="46" cy="52" r="17" fill="#B5764F" opacity="0.30" filter="url(#glowF)"/>
+  <circle cx="46" cy="52" r="15" fill="none" stroke="#B5764F" stroke-width="1.3" stroke-opacity="0.5"/>
+  <circle cx="46" cy="52" r="11" fill="url(#orbF)"/>
+  <circle cx="46" cy="52" r="2.4" fill="#FAF6EE"/>
 
-  <!-- 唱臂：从右上角伸向盘面 -->
-  <g>
-    <line x1="84" y1="16" x2="66" y2="38" stroke="#FAF6EE" stroke-width="2.6" stroke-linecap="round"/>
-    <circle cx="84" cy="16" r="4.5" fill="#B5764F"/>
-    <circle cx="66" cy="38" r="2.6" fill="#FAF6EE"/>
-  </g>
+  <!-- 星芒：落针瞬间的光 -->
+  <path d="M31,41 L32.1,43.5 L34.6,44.6 L32.1,45.7 L31,48.2 L29.9,45.7 L27.4,44.6 L29.9,43.5 Z"
+        fill="#FAF6EE" opacity="0.85"/>
 </svg>

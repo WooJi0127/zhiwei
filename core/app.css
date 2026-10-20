@@ -274,15 +274,21 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .mvbtn .mvp{flex:none;font-size:11px;color:var(--sub);font-weight:700}
 
 .hfoot{margin:26px 0 8px;text-align:center}
-/* 「查看完整日历」：不要框，融进背景——就是一行安静的墨绿文字，
-   hover 时变赭石 + 细下划线（用户明确要求：去框去箭头）。
+/* 「查看完整日历」：对齐板块标题（.hsec-h）的质感——宋体 + 墨绿，
+   前后各一条「——」做边界，hover 只加暖柔光，不加下划线（用户要求）。
    注意必须用 .btn.pri 双类压过后面的 .btn.pri 通栏样式，否则绿底会回来 */
-.hfoot .btn.pri{font-size:14px;padding:6px 10px;border-radius:8px;color:var(--brand);border:0;
-  background:transparent;box-shadow:none;font-weight:700;letter-spacing:.02em;
-  text-decoration:none;transition:color .15s}
+.hfoot .btn.pri{font-family:var(--font-title);font-size:15px;font-weight:700;
+  padding:6px 10px;border-radius:8px;color:var(--brand);border:0;
+  background:transparent;box-shadow:none;letter-spacing:.04em;
+  text-decoration:none;
+  text-shadow:0 1px 0 rgba(255,255,255,.65),0 2px 10px rgba(51,71,58,.12);
+  transition:color .15s,text-shadow .15s}
+.hfoot .btn.pri::before,.hfoot .btn.pri::after{
+  content:"——";color:#BFB7A2;margin:0 12px;letter-spacing:0;
+  font-family:var(--font);font-weight:600;
+  text-shadow:0 1px 0 rgba(255,255,255,.65)}
 .hfoot .btn.pri:hover{color:var(--brand2);background:transparent;
-  text-decoration:underline;text-underline-offset:5px;
-  text-decoration-thickness:1.5px;text-decoration-color:var(--brand2)}
+  text-shadow:0 1px 0 rgba(255,255,255,.65),0 2px 12px rgba(181,118,79,.30)}
 @media (max-width:520px){
   .hhd .hmd{font-size:24px}
   .mini{width:100px}

@@ -2,7 +2,7 @@
   <!-- 融合版（深色·应用）：唱片 + 唱臂化作彗星，彗核落在中心铜标 = 回归日 -->
   <defs>
     <linearGradient id="trailF" gradientUnits="userSpaceOnUse" x1="89" y1="15" x2="46" y2="52">
-      <stop offset="0%"   stop-color="#FAF6EE" stop-opacity="0.16"/>
+      <stop offset="0%"   stop-color="#FAF6EE" stop-opacity="0.30"/>
       <stop offset="45%"  stop-color="#B5764F" stop-opacity="0.50"/>
       <stop offset="100%" stop-color="#D89B6A" stop-opacity="0.95"/>
     </linearGradient>

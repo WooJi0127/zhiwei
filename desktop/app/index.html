@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#6d4aff">
+<meta name="theme-color" content="#33473A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>知未 · K-POP 回归日历</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='3' y='3' width='94' height='94' rx='20' fill='%2333473A'/%3E%3Ccircle cx='45' cy='50' r='34' fill='%231C251F'/%3E%3Ccircle cx='45' cy='50' r='34' fill='none' stroke='%23FAF6EE' stroke-opacity='0.22' stroke-width='2.4'/%3E%3Ccircle cx='45' cy='50' r='20' fill='none' stroke='%23FAF6EE' stroke-opacity='0.18' stroke-width='1.6'/%3E%3Ccircle cx='45' cy='50' r='9.5' fill='%23B5764F'/%3E%3Ccircle cx='45' cy='50' r='3' fill='%23FAF6EE'/%3E%3Cline x1='84' y1='16' x2='66' y2='38' stroke='%23FAF6EE' stroke-width='3.4' stroke-linecap='round'/%3E%3Ccircle cx='84' cy='16' r='5.2' fill='%23B5764F'/%3E%3Ccircle cx='66' cy='38' r='3.2' fill='%23FAF6EE'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20x='3'%20y='3'%20width='94'%20height='94'%20rx='20'%20fill='%2333473A'/%3E%3Ccircle%20cx='46'%20cy='52'%20r='34'%20fill='%231C251F'/%3E%3Ccircle%20cx='46'%20cy='52'%20r='26'%20fill='none'%20stroke='%2346604E'%20stroke-width='1.6'%20stroke-opacity='.5'/%3E%3Ccircle%20cx='46'%20cy='52'%20r='19.5'%20fill='none'%20stroke='%2346604E'%20stroke-width='1.6'%20stroke-opacity='.85'/%3E%3Cpath%20d='M89,15%20C74,25%2057,41%2050,57%20L36,44%20C56,30%2072,20%2087,13%20Z'%20fill='%23D89B6A'%20opacity='.75'/%3E%3Ccircle%20cx='63'%20cy='37'%20r='3'%20fill='%23E9B074'/%3E%3Ccircle%20cx='46'%20cy='52'%20r='17'%20fill='none'%20stroke='%23B5764F'%20stroke-width='1.8'%20stroke-opacity='.6'/%3E%3Ccircle%20cx='46'%20cy='52'%20r='13'%20fill='%23C9885A'/%3E%3Ccircle%20cx='46'%20cy='52'%20r='3'%20fill='%23FAF6EE'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="app.css">
 
 </head>
@@ -18,32 +18,36 @@
   <div class="hwrap">
     <div class="htop">
       <div class="brand" id="brandHome" title="知未">
+        <!-- 图标（融合版）：唱片同心环由外向内收紧 = 时间由远及近；
+             唱臂化作彗星，彗核落在中心铜标 = 回归日。
+             跟 assets/icon.svg 保持一致，改图标时两边一起改。 -->
         <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="trailF" gradientUnits="userSpaceOnUse" x1="89" y1="15" x2="46" y2="52">
+              <stop offset="0%"   stop-color="#FAF6EE" stop-opacity="0.30"/>
+              <stop offset="45%"  stop-color="#B5764F" stop-opacity="0.50"/>
+            </linearGradient>
+            <radialGradient id="orbF" cx="46" cy="52" r="11" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stop-color="#F4D2A8"/>
+              <stop offset="60%"  stop-color="#C9885A"/>
+              <stop offset="100%" stop-color="#9E5F38"/>
+            </radialGradient>
+          </defs>
           <rect x="3" y="3" width="94" height="94" rx="20" fill="#33473A"/>
-          <circle cx="45" cy="50" r="35" fill="#1C251F"/>
-          <circle cx="45" cy="50" r="31" fill="none" stroke="#3E5446" stroke-width="1"/>
-          <circle cx="45" cy="50" r="25" fill="none" stroke="#3E5446" stroke-width="0.7"/>
-          <g font-family="Inter,sans-serif" font-weight="600" font-size="9.5" fill="#FAF6EE" text-anchor="middle">
-            <text x="45" y="27.5">12</text>
-            <text x="58.5" y="31.5">11</text>
-            <text x="68.5" y="38.5">10</text>
-            <text x="72.5" y="50">9</text>
-            <text x="68.5" y="61.5">8</text>
-            <text x="58.5" y="68.5">7</text>
-            <text x="45" y="72.5">6</text>
-            <text x="31.5" y="68.5">5</text>
-            <text x="21.5" y="61.5">4</text>
-            <text x="17.5" y="50">3</text>
-            <text x="21.5" y="38.5">2</text>
-            <text x="31.5" y="31.5">1</text>
-          </g>
-          <circle cx="45" cy="50" r="8.5" fill="#B5764F"/>
-          <circle cx="45" cy="50" r="2.2" fill="#FAF6EE"/>
-          <g>
-            <line x1="84" y1="16" x2="66" y2="38" stroke="#FAF6EE" stroke-width="2.6" stroke-linecap="round"/>
-            <circle cx="84" cy="16" r="4.5" fill="#B5764F"/>
-            <circle cx="66" cy="38" r="2.6" fill="#FAF6EE"/>
-          </g>
+          <circle cx="46" cy="52" r="34" fill="#1C251F"/>
+          <circle cx="46" cy="52" r="29"   fill="none" stroke="#46604E" stroke-width="1"   stroke-opacity="0.35"/>
+          <circle cx="46" cy="52" r="25"   fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="0.55"/>
+          <circle cx="46" cy="52" r="21.5" fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="0.75"/>
+          <circle cx="46" cy="52" r="18.5" fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="1"/>
+          <path d="M89,15 C74,25 57,41 49,55 L38,46 C56,32 72,20 87,13 Z" fill="url(#trailF)"/>
+          <circle cx="75.4" cy="25.4" r="1.5" fill="#FAF6EE" opacity="0.5"/>
+          <circle cx="62.8" cy="36.8" r="2.1" fill="#D89B6A" opacity="0.85"/>
+          <circle cx="52.3" cy="46.3" r="2.7" fill="#E9B074"/>
+          <circle cx="46" cy="52" r="15" fill="none" stroke="#B5764F" stroke-width="1.3" stroke-opacity="0.5"/>
+          <circle cx="46" cy="52" r="11" fill="url(#orbF)"/>
+          <circle cx="46" cy="52" r="2.4" fill="#FAF6EE"/>
+          <path d="M31,41 L32.1,43.5 L34.6,44.6 L32.1,45.7 L31,48.2 L29.9,45.7 L27.4,44.6 L29.9,43.5 Z"
+                fill="#FAF6EE" opacity="0.85"/>
         </svg>
       </div>
       <nav class="tabs">
