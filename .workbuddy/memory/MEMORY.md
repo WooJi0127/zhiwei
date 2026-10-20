@@ -39,6 +39,19 @@
   `.btn.pri` 通栏样式盖掉。
 - 中文标题字体 = 思源宋体 700（已子集化到 214KB）。
 
+## 图标定稿（v5 融合版，2026-10-20 已全端替换）
+概念：**唱片 + 化作彗星的唱臂**。唱片同心环由外向内收紧（越内越密、越清晰）
+= 时间由远及近；唱臂换成彗星尾巴（远端细淡→近端粗亮），彗核落在唱片正中
+铜色标签 = 回归日。叙事：唱针落下的那一刻，就是回归开始。
+- 母本：`assets/icon.svg`（完整版）、`assets/icon-mini.svg`（≤64px 简化版，元素更少更重）
+- 历史版本留档：`icon-v1-original` / `icon-v2-*` / `icon-v3-*` / `icon-v4-*`（勿删）
+- **改图标的固定流程**：改 assets 两个 svg → 改 `core/index.html` 页头内联
+  `<svg class="mark">` + `<link rel="icon">` 的 data URI → 跑 `tools/make_icons.py`
+  → 跑 `tools/sync.py`（自动同步 desktop/mobile/site/app 并重建 知未.html）
+- 注意：`site/index.html` 是独立的紫粉系营销页，**不跟 app 走墨绿品牌色**，
+  它的 theme-color 保持紫色，别顺手改绿。
+- 顺带修掉的旧 bug：5 个 app 页面 `theme-color` 曾是紫色 `#6d4aff`，已统一为墨绿。
+
 ## 待办主线
 备案（管局审核中）→ 国内部署 → 才轮到术语词典 / 视频推广。
 详见 WILLDO.md。
