@@ -27,8 +27,11 @@ DATA_DIR = os.path.join(ROOT, "data")
 OUT_JS = os.path.join(DATA_DIR, "data.js")
 LOG_PATH = os.path.join(ROOT, "update.log")
 
-# 历史归档回溯范围（天）
-HISTORY_DAYS = 730
+# 历史归档回溯范围（天）。2026-10-20 从 730 提到 3650（10 年）：
+# 「过去」页要能翻到 K-POP 三代团之前的专辑。Apple / 网易云本来就是按艺人
+# 整表拉专辑列表（分页拉全），回溯深度只影响入库行数，不增加请求量。
+# 导出时超出 RECENT_DAYS 的按年份切片（data-2024.js ...），主文件不涨。
+HISTORY_DAYS = 3650
 # 分片：主文件只装最近这么多天的发行，更早的按年份单独切片，用时再加载
 RECENT_DAYS = 365
 # Apple Music 请求间隔（秒），避免触发限流
