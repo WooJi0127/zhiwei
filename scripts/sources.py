@@ -382,8 +382,12 @@ def netease_album_detail(nid):
     专辑详情：曲目、时长、唱片公司、曲目数。
 
     用 /api/v1/album/{id}——老的 /api/album/{id} 会返回 code=-462（需要风控参数）。
-    album.type 只有「Single / 专辑」两档，区分不出 EP，所以类型还是交给标题判断；
-    这里的 value 主要在 size（曲目数）和 songs（曲目列表）。
+
+    关于类型：**album.type 实测有三档** —— "Single" / "EP" / "专辑"。
+    以前这里写着「只有 Single / 专辑 两档，区分不出 EP」是**错的**（2026-10-20 抽样核实），
+    差点白扔了一个可用的类型源。网易云标题几乎不带 "- Single" 后缀，
+    所以它是唯一能救网易云 90% 无类型条目的办法，已在 build.py 里接上 `rtype_src`。
+    除类型外，这里的 value 主要在 size（曲目数）和 songs（曲目列表）。
     """
     if not nid:
         return None

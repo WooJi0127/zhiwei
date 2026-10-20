@@ -13,6 +13,7 @@
 import io
 import math
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -206,8 +207,8 @@ def load_png(data):
 
 
 # ---------------------------------------------------------------- 渲染 SVG
-def render_svg(svg_path, size, transparent=True):
-    """用无头 Edge 把 SVG 渲染成 RGBA 位图。"""
+def render_svg(svg_path, size, transparent=True, svg_text=None):
+    """用无头 Edge 把 SVG 渲染成 RGBA 位图。svg_text 传入时直接用，不读文件。"""
     edge = next((p for p in EDGE if os.path.isfile(p)), None)
     if not edge:
         sys.exit("找不到 Microsoft Edge，无法渲染图标")
@@ -215,7 +216,7 @@ def render_svg(svg_path, size, transparent=True):
     tmp = os.path.join(ROOT, "assets", "_icon_tmp")
     os.makedirs(tmp, exist_ok=True)
     html = os.path.join(tmp, "icon.html")
-    svg = io.open(svg_path, encoding="utf-8").read()
+    svg = svg_text if svg_text is not None else io.open(svg_path, encoding="utf-8").read()
     io.open(html, "w", encoding="utf-8").write(
         '<html><head><meta charset="utf-8"><style>'
         'html,body{margin:0;padding:0;width:%dpx;height:%dpx;overflow:hidden;'
@@ -256,11 +257,33 @@ def main():
         sys.exit("缺少 assets/icon.svg")
 
     print("· 渲染 512×512 母图")
-    base = render_svg(svg, 512)
-    if base.w != 512:                       # Edge 可能按 DPI 缩放
-        base = base.resize(512, 512)
 
-    def scaled(n):
+    def master(path, bleed):
+        """渲染一张 512 母图。bleed=True 时把四周留白抹掉铺满画布——
+        给 iOS / Android 用：系统自己会做圆角遮罩，图标里不该再自带透明边距，
+        否则压平后透明角会被填成白色，装到手机上就是一圈白边。"""
+        txt = io.open(path, encoding="utf-8").read()
+        if bleed:
+            txt = re.sub(r'<rect x="3" y="3" width="94" height="94" rx="20"',
+                         '<rect x="0" y="0" width="100" height="100"',
+                         txt, count=1)
+        img = render_svg(path, 512, svg_text=txt)
+        return img if img.w == 512 else img.resize(512, 512)
+
+    svg_mini = os.path.join(ASSETS, "icon-mini.svg")
+    full = master(svg, False)               # 完整版（带钟面数字）
+    mini = master(svg_mini, False)          # 简化版（≤64px 用，数字会糊）
+    full_b = master(svg, True)              # 满幅出血版
+    mini_b = master(svg_mini, True)
+    print("· 完整版 / 简化版 / 出血版母图就绪")
+    MINI_MAX = 64
+
+    def scaled(n, bleed=False):
+        """小尺寸走简化母图，大尺寸走完整母图；OS 图标走出血版。"""
+        if bleed:
+            base = full_b if n > MINI_MAX else mini_b
+        else:
+            base = full if n > MINI_MAX else mini
         return base if n == 512 else base.resize(n, n)
 
     def save(rel, img, opaque=False):
@@ -276,27 +299,29 @@ def main():
     write_ico(icons, p)
     print(f"· Windows  desktop\\build\\icon.ico  {len(icons)} 个尺寸")
 
-    # --- Android ---
+    # --- Android（系统会遮圆角，用出血版）---
     for d, s in ANDROID_SIZES.items():
-        save(f"mobile/android/app/src/main/res/mipmap-{d}/ic_launcher.png", scaled(s))
-        save(f"mobile/android/app/src/main/res/mipmap-{d}/ic_launcher_round.png", scaled(s))
-        save(f"mobile/android/app/src/main/res/mipmap-{d}/ic_launcher_foreground.png", scaled(s))
+        save(f"mobile/android/app/src/main/res/mipmap-{d}/ic_launcher.png", scaled(s, bleed=True))
+        save(f"mobile/android/app/src/main/res/mipmap-{d}/ic_launcher_round.png", scaled(s, bleed=True))
+        save(f"mobile/android/app/src/main/res/mipmap-{d}/ic_launcher_foreground.png", scaled(s, bleed=True))
     print(f"· Android  5 档密度 × 3 种图标")
 
     # --- iOS ---
     # Xcode 14 之后 AppIcon.appiconset 默认只认一张 1024 的 "AppIcon-512@2x.png"，
     # 多尺寸那套是旧写法。两套都生成，新旧 Xcode 都能用。
-    # 苹果拒收带 alpha 的 App 图标，所以这里全部压到白底。
+    # 苹果拒收带 alpha 的 App 图标，所以这里全部压到白底；出血版保证压平后没有白角。
     icon_dir = "mobile/ios/App/App/Assets.xcassets/AppIcon.appiconset"
-    save(f"{icon_dir}/AppIcon-512@2x.png", scaled(1024).flatten(), opaque=True)
+    save(f"{icon_dir}/AppIcon-512@2x.png", scaled(1024, bleed=True).flatten(), opaque=True)
     for s in IOS_SIZES:
-        save(f"{icon_dir}/Icon-{s}.png", scaled(s).flatten(), opaque=True)
+        save(f"{icon_dir}/Icon-{s}.png", scaled(s, bleed=True).flatten(), opaque=True)
     print(f"· iOS      1024 主图 + {len(IOS_SIZES)} 个兼容尺寸（白底 RGB，无 alpha）")
 
     # --- Web ---
+    # 浏览器标签页 favicon 用带留白的圆角方块（缩小后更好认）；
+    # apple-touch / PWA 是系统级图标，iOS 会自己遮圆角，用出血版。
     save("site/favicon.png", scaled(64))
-    save("site/apple-touch-icon.png", scaled(180).flatten(), opaque=True)
-    save("site/app/icon.png", scaled(192))
+    save("site/apple-touch-icon.png", scaled(180, bleed=True).flatten(), opaque=True)
+    save("site/app/icon.png", scaled(192, bleed=True))
     print("· Web      favicon / apple-touch-icon / pwa-192")
 
     print("\n完成")

@@ -534,25 +534,36 @@ def step_netease_fill(con, cap=70):
     return added
 
 
-def step_netease_tracks(con, cap=400):
+def step_netease_tracks(con, cap=600):
     """
-    补网易云专辑的曲目。
+    补网易云专辑的曲目 + 类型。
 
     网易云的专辑列表接口不返回曲目，详情页才有，每张专辑要单独请求一次。
     因此只补**没补过**的（用 extra.ne_detail 标记），跑过一遍之后每天只需请求新增的几张。
     extra.trackCount 顺便给形态判断提供曲目数线索。
+
+    类型：网易云详情页直接写了 Single / EP / 专辑 三档，是源生的明确标注，
+    比从标题猜可靠得多（网易云标题基本不带 "- Single" 后缀，所以过去 90% 没类型）。
+    这里存进 rtype_src（永不被标题猜测覆盖），step_retype 会按它算最终 rtype。
+
+    注意判断是否要抓：以前只看 ne_detail 标记，导致**抓好曲目但没类型的老条目
+    永远不会被补类型**。现在改成两项都齐了才跳过——缺类型就重新抓一次。
     """
-    log("· 网易云补曲目")
-    rows = [r for r in con.execute(
-        "SELECT id,extra FROM releases WHERE source='netease'").fetchall()
-        if "ne_detail" not in (r[1] or "")]
-    todo = rows[:cap]
+    log("· 网易云补曲目 / 类型")
+    rows = con.execute(
+        "SELECT id,extra,rtype_src FROM releases WHERE source='netease'"
+    ).fetchall()
+    todo = []
+    for rid, extra, rsrc in rows:
+        if "ne_detail" in (extra or "") and (rsrc or "").strip():
+            continue                     # 曲目和类型都有了，不必再请求
+        todo.append((rid, extra))
+    todo = todo[:cap]
     if not todo:
         log("  均已补齐，跳过")
         return 0
 
-    n_tr = 0
-    done = 0
+    n_tr = n_type = done = 0
     for rid, extra in todo:
         nid = rid.split(":", 1)[1] if ":" in rid else ""
         try:
@@ -576,6 +587,14 @@ def step_netease_tracks(con, cap=400):
             extra["trackCount"] = det.get("size") or len(tracks)
             extra["company"] = det.get("company") or ""
             n_tr += len(tracks)
+            # 网易云自己标的类型 —— 优先级最高，写进 rtype_src 永不被标题猜测冲掉
+            ne_raw = (det.get("type") or "").strip()
+            if ne_raw:
+                extra["srcType"] = ne_raw
+                con.execute(
+                    "UPDATE releases SET rtype_src=? WHERE id=?", (ne_raw, rid))
+                if map_src_type(ne_raw):
+                    n_type += 1
         extra["ne_detail"] = 1
         con.execute("UPDATE releases SET extra=? WHERE id=?",
                     (json.dumps(extra, ensure_ascii=False), rid))
@@ -584,7 +603,7 @@ def step_netease_tracks(con, cap=400):
             con.commit()
         time.sleep(0.12)
     con.commit()
-    log(f"  补齐 {done} 张专辑 / {n_tr} 首曲目")
+    log(f"  补齐 {done} 张专辑 / {n_tr} 首曲目 / {n_type} 个类型")
     return n_tr
 
 
@@ -939,9 +958,14 @@ def map_src_type(raw):
     """
     把数据源自己标的类型归一化成 Single / EP / Album 三档。
 
-    kpopping 的日历里直接写着 "Mini Album" / "Single" / "EP" / "Album" / "OST"，
     这是最可靠的来源——比从标题猜准得多。以前没单独存，被 step_retype 用标题
     重判冲掉了，结果什么都被猜成 Album（NMIXX《Strange Muse》就这么变成正规专）。
+
+    两个源的原始写法：
+      - kpopping：英文 "Mini Album" / "Single" / "EP" / "Album" / "OST"
+      - 网易云：  "Single" / "EP" / "专辑"（三档，中文）
+    网易云这档有价值的地方在于它**单独区分了 EP**——
+    Apple 的 collectionType 恒为 "Album"（实测无信息量）不能用，网易云可以。
     """
     s = (raw or "").strip().lower()
     if not s:
@@ -950,6 +974,10 @@ def map_src_type(raw):
         return "Single"
     if "mini" in s or re.search(r"\bep\b", s):
         return "EP"
+    if "迷你专辑" in s or "迷你专" in s:      # 网易云偶尔这么写
+        return "EP"
+    if "专辑" in s:                       # 网易云的「专辑」= 正规专
+        return "Album"
     # 后续专 / 合辑 / 现场版 都归到正规专这一档
     if ("album" in s or "repackage" in s or "compilation" in s
             or "live" in s):
@@ -1158,15 +1186,22 @@ def export_data(con):
                 hit.append(rel)
         for c in clusters:
             best = c[0]
-            # 只有当这份自己没类型时，才去借「标题里带明确线索」的那份。
-            # 否则会出现同一个 EP，Apple 的裸标题靠曲目数猜成正规专、
-            # 网易云的 "The 1st EP" 才是对的，两边打架。
+            # 只有当这份自己没类型时才去借。借的顺序：
+            #   1) 同簇其它源已经判好的类型（网易云 2026-10 起自己标 Single/EP/专辑，
+            #      kpopping 标 Mini Album/Single/Album）——这是源生标注，最可靠；
+            #   2) 退而求其次，借「标题里写明形态」的那份（Apple 的 "- EP" 后缀）。
+            # 跨源类型打架（如 Apple 说 Single、网易云说 EP）时不猜，宁可留空。
             if not best.get("rtype"):
-                for r in c:
-                    if subtype_is_explicit(r["title"]):
-                        best = dict(best)
-                        best["rtype"] = parse_subtype(r["title"])
-                        break
+                vals = {r["rtype"] for r in c if r.get("rtype")}
+                if len(vals) == 1:
+                    best = dict(best)
+                    best["rtype"] = next(iter(vals))
+                elif len(vals) == 0:
+                    for r in c:
+                        if subtype_is_explicit(r["title"]):
+                            best = dict(best)
+                            best["rtype"] = parse_subtype(r["title"])
+                            break
             dedup.append(best)
     n_dup = len(releases) - len(dedup)
     if n_dup:
