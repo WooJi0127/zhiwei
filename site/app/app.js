@@ -24,11 +24,12 @@ function dispName(n){
 }
 function plainName(n){ var d=dispName(n); return d.zh || n; }
 
-/* 发行形态：只分 单曲 / 迷你专(EP) / 正规专 三类。
-   后续专、合辑归入正规专，避免筛选时多余一档。 */
+/* 发行形态：只分 Single / EP / Album 三档（用英文原始类型，不翻译，
+   因为翻译会引入二次误差——EP 不等于迷你专，Mini Album 又不一样）。
+   后续专、合辑归入 Album，避免筛选时多余一档。 */
 function catOf(r){
   var t = (r.rtype||"").toLowerCase();
-  if(!t) return "";                       /* 判不出来就留空，不硬猜成正规专 */
+  if(!t) return "";                       /* 判不出来就留空，不硬猜成 Album */
   if(t.indexOf("mini")>=0 || /\bep\b/.test(t) || t.indexOf("- ep")>=0) return "Mini";
   if(t.indexOf("single")>=0) return "Single";
   if(t.indexOf("album")>=0) return "Album";
@@ -36,9 +37,9 @@ function catOf(r){
 }
 function typeLabel(r){
   var c = r._cat;
-  if(c==="Mini") return "迷你专 EP";
-  if(c==="Single") return "单曲";
-  if(c==="Album") return "正规专";
+  if(c==="Mini") return "EP";
+  if(c==="Single") return "Single";
+  if(c==="Album") return "Album";
   return "";                              /* 空 → 调用方不显示类型标签 */
 }
 
