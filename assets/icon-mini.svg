@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+  <!--
+    小尺寸专用（≤64px）。完整版那 12 个钟面数字缩到 16px 会糊成一团灰，
+    这里只保留能认出来的：墨绿方块、唱片深色盘、铜色中心、奶油色唱臂。
+    线条整体加粗，并给盘面加一圈淡描边，免得深色盘和深色底压在一起分不开。
+  -->
+  <rect x="3" y="3" width="94" height="94" rx="20" fill="#33473A"/>
+
+  <circle cx="45" cy="50" r="34" fill="#1C251F"/>
+  <circle cx="45" cy="50" r="34" fill="none" stroke="#FAF6EE"
+          stroke-opacity="0.22" stroke-width="2.4"/>
+
+  <circle cx="45" cy="50" r="20" fill="none" stroke="#FAF6EE"
+          stroke-opacity="0.18" stroke-width="1.6"/>
+
+  <circle cx="45" cy="50" r="9.5" fill="#B5764F"/>
+  <circle cx="45" cy="50" r="3" fill="#FAF6EE"/>
+
+  <g>
+    <line x1="84" y1="16" x2="66" y2="38" stroke="#FAF6EE" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="84" cy="16" r="5.2" fill="#B5764F"/>
+    <circle cx="66" cy="38" r="3.2" fill="#FAF6EE"/>
+  </g>
+</svg>

@@ -1,40 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6d4aff"/>
-      <stop offset="0.55" stop-color="#a855f7"/>
-      <stop offset="1" stop-color="#ff4f92"/>
-    </linearGradient>
-  </defs>
+  <!-- 墨绿圆角底 -->
+  <rect x="3" y="3" width="94" height="94" rx="20" fill="#33473A"/>
 
-  <!-- 渐变圆底 -->
-  <circle cx="50" cy="50" r="50" fill="url(#g)"/>
+  <!-- 唱片：深色盘面 + 两道纹路 -->
+  <circle cx="45" cy="50" r="35" fill="#1C251F"/>
+  <circle cx="45" cy="50" r="31" fill="none" stroke="#3E5446" stroke-width="1"/>
+  <circle cx="45" cy="50" r="25" fill="none" stroke="#3E5446" stroke-width="0.7"/>
 
-  <!-- 白色表圈 -->
-  <circle cx="50" cy="50" r="43.5" fill="none" stroke="#ffffff" stroke-width="6.5" stroke-opacity="0.92"/>
-
-  <!-- 倒转的数字：整圈左右镜像，原本 1 的位置写 11，2 的位置写 10……
-       寓意时间倒着数：回归是倒计时，发布是回溯 -->
-  <g fill="#ffffff" font-family="Segoe UI, Helvetica, Arial, sans-serif"
-     font-size="15" font-weight="600" text-anchor="middle" dominant-baseline="central">
-    <text x="50"  y="21.5">12</text>
-    <text x="66.5" y="25.5">11</text>
-    <text x="78.5" y="37.5">10</text>
-    <text x="82.5" y="53.5">9</text>
-    <text x="78.5" y="69.5">8</text>
-    <text x="66.5" y="81.5">7</text>
-    <text x="50"  y="85.5">6</text>
-    <text x="33.5" y="81.5">5</text>
-    <text x="21.5" y="69.5">4</text>
-    <text x="17.5" y="53.5">3</text>
-    <text x="21.5" y="37.5">2</text>
-    <text x="33.5" y="25.5">1</text>
+  <!-- 倒着数的钟面：12 在顶，顺读向左，取其「回归倒计时」的意思。
+       注意这里的数字顺序和站内 header 完全一致，不要两边各改各的。 -->
+  <g font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif"
+     font-weight="600" font-size="9.5" fill="#FAF6EE" text-anchor="middle">
+    <text x="45" y="30.5">12</text>
+    <text x="58.5" y="34.5">11</text>
+    <text x="68.5" y="41.5">10</text>
+    <text x="72.5" y="53">9</text>
+    <text x="68.5" y="64.5">8</text>
+    <text x="58.5" y="71.5">7</text>
+    <text x="45" y="75.5">6</text>
+    <text x="31.5" y="71.5">5</text>
+    <text x="21.5" y="64.5">4</text>
+    <text x="17.5" y="53">3</text>
+    <text x="21.5" y="41.5">2</text>
+    <text x="31.5" y="34.5">1</text>
   </g>
 
-  <!-- 指针：指向 11 的方向（倒着走） -->
-  <g stroke="#ffffff" stroke-linecap="round" fill="#ffffff">
-    <line x1="50" y1="50" x2="50" y2="30.5" stroke-width="4.6"/>
-    <line x1="50" y1="50" x2="65" y2="57" stroke-width="3.2" stroke-opacity="0.8"/>
-    <circle cx="50" cy="50" r="4.4"/>
+  <!-- 铜色标签 + 中轴 -->
+  <circle cx="45" cy="50" r="8.5" fill="#B5764F"/>
+  <circle cx="45" cy="50" r="2.2" fill="#FAF6EE"/>
+
+  <!-- 唱臂：从右上角伸向盘面 -->
+  <g>
+    <line x1="84" y1="16" x2="66" y2="38" stroke="#FAF6EE" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="84" cy="16" r="4.5" fill="#B5764F"/>
+    <circle cx="66" cy="38" r="2.6" fill="#FAF6EE"/>
   </g>
 </svg>
