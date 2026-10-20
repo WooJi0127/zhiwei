@@ -51,3 +51,6 @@ mobile/android/app/keystore.properties
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# SQLite 事务日志（瞬时文件，跟着 kpop.db 一起忽略）
+*.db-journal
