@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="trailW" gradientUnits="userSpaceOnUse" x1="150" y1="96" x2="270" y2="300">
+      <stop offset="0%" stop-color="#33473A" stop-opacity="0.20"/>
+      <stop offset="45%" stop-color="#B5764F" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#C9885A" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="orbW" cx="270" cy="300" r="33" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F4D2A8"/>
+      <stop offset="60%" stop-color="#C9885A"/>
+      <stop offset="100%" stop-color="#9E5F38"/>
+    </radialGradient>
+    <filter id="glowW" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- 浅米白底（与网页 #FAF6EE 一致） -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="#FAF6EE"/>
+
+  <g transform="translate(-44,-30) scale(1.22)">
+  <path d="M148,97 C178,155 212,255 244,312 C290,300 300,286 298,280 C262,210 215,140 152,95 Z"
+        fill="url(#trailW)"/>
+
+  <circle cx="184" cy="153" r="5"  fill="#33473A" opacity="0.50"/>
+  <circle cx="216" cy="208" r="7"  fill="#B5764F" opacity="0.85"/>
+  <circle cx="246" cy="259" r="9"  fill="#D89B6A" opacity="1"/>
+
+  <circle cx="270" cy="300" r="46" fill="#B5764F" opacity="0.28" filter="url(#glowW)"/>
+  <circle cx="270" cy="300" r="44" fill="none" stroke="#B5764F" stroke-width="3.5" opacity="0.7"/>
+  <circle cx="270" cy="300" r="33" fill="url(#orbW)"/>
+
+  <path d="M312,262 L316,276 L330,280 L316,284 L312,298 L308,284 L294,280 L308,276 Z" fill="#B5764F" opacity="0.9"/>
+  </g>
+</svg>
