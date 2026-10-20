@@ -886,7 +886,9 @@ function initSelects(){
     function sync(){
       var o = sel.options[sel.selectedIndex];
       txt.textContent = o ? o.text : (sel.getAttribute("placeholder") || "");
-      btn.classList.toggle("empty", !!sel.value === false && sel.selectedIndex <= 0
+      /* 注意：状态类不能叫 empty —— 全局 .empty 是「列表为空」提示块的样式
+         （padding:64px 20px），同名会把下拉框撑成 130px 的大方块。 */
+      btn.classList.toggle("unsel", !sel.value && sel.selectedIndex <= 0
         && !!sel.options[0] && sel.options[0].value === "");
     }
     function fill(){
