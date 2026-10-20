@@ -773,6 +773,15 @@ function renderBiasBox(){
       + top.map(function(n){ return '<button class="chip" data-addbias="'+esc(n)+'">+ '+esc(plainName(n))+'</button>'; }).join("")
     : "";
 }
+/* 大列表渲染上限：历史回填后全库 4700+ 张，「全部已发布」一次全塞 DOM
+   手机直接卡死（冒烟测试都跑不完）。先渲染一部分，剩下的点「显示更多」。
+   筛选条件一变就重置（用条件签名判断，不用挨个改事件处理器）。 */
+var LIST_STEP = 300, listCap = LIST_STEP, listSig = null;
+function listSignature(){
+  return [S.tab, S.q, S.type, S.kind, S.agency, S.onlyFav, S.onlyBias,
+          S.sort, S.range && S.range.label].join("|");
+}
+
 function renderList(){
   renderBiasBox();
   $("biasBox").style.display = (S.tab==="mine" && S.mine==="bias" || S.showBiasMgr) ? "" : "none";
@@ -821,7 +830,15 @@ function renderList(){
     }
   } else if(isPast){
     ensureYears();
-    html = yearBarHTML() + gridHTML(applyFilters(ALL));
+    var sig = listSignature();
+    if(sig !== listSig){ listCap = LIST_STEP; listSig = sig; }
+    var pl = applyFilters(ALL);
+    var shown = pl.slice(0, listCap);
+    html = yearBarHTML() + gridHTML(shown);
+    if(pl.length > shown.length){
+      html += '<div class="morebar"><button class="morebtn" id="moreBtn">显示更多 · 还有 '
+            + (pl.length - shown.length) + ' 张</button></div>';
+    }
   } else if(isMine && S.mine === "fav"){
     var fl = ALL.filter(function(r){ return isFav(r.id); });
     var fu = fl.filter(function(r){ return r._dd>=0; }).sort(function(a,b){ return a._dd-b._dd; });
@@ -1133,6 +1150,13 @@ SponShow("wechat");
 /* ============================ 事件 ============================ */
 document.addEventListener("click", function(e){
   var t = e.target, el;
+
+  /* 大列表「显示更多」：每次多渲染 LIST_STEP 张 */
+  if(t.closest("#moreBtn")){
+    listCap += LIST_STEP;
+    render();
+    return;
+  }
 
   /* 赞赏：开关面板 / 切换收款码 / 点面板外自动收起
      两个要点：

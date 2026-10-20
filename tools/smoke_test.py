@@ -74,7 +74,10 @@ step(function(){
   $("q").value = "A2O"; $("q").dispatchEvent(new Event("input"));
 });
 step(function(){
-  LOG.push("搜索A2O=" + QT());
+  /* 数量不写死：回填后 A2O 从 7 涨到 8，写死会误报。
+     只验「搜索能用且结果在合理区间」——0 说明搜索坏了，>300 说明分页上限没生效 */
+  var n = QT();
+  LOG.push("搜索A2O=" + n + " 合理=" + (n >= 5 && n <= 300 ? 1 : 0));
   LOG.push("标题=" + JSON.stringify(Array.prototype.map.call(
     document.querySelectorAll("#content .ctitle"),
     function(e){ return e.textContent.trim(); }).slice(0, 8)));
@@ -263,7 +266,7 @@ REQUIRED = [
     ("无外链=true",      "详情页里有外链"),
     ("详情=true",        "详情页打不开"),
     ("返回=true",        "详情页返回不了"),
-    ("搜索A2O=7",        "A2O 收录数不对（应为 7 张）"),
+    (" 合理=1",          "A2O 搜索结果异常（0 张=搜索坏，>300=分页上限没生效）"),
 ]
 
 
@@ -313,7 +316,9 @@ def main():
 
         # 无头浏览器偶尔会因为 GPU 进程起不来而卡住，多试几次基本都能过。
         # 这台机器上光启动 Edge 就可能要 40 秒（没有 GPU），加上注入脚本要
-        # 反复重渲染 1700 张卡片，慢的时候整轮能到 6~7 分钟，所以超时给得很宽。
+        # 反复重渲染全部卡片，慢的时候整轮能到 6~7 分钟，所以超时给得很宽。
+        # 2026-10-20 历史回填后发行 1980→4745 张（2.4 倍），渲染更慢，
+        # 480s 连续两轮超时——提到 900s。页面再变重时这里也要跟着加。
         # 注意：别加 --disable-features=VizDisplayCompositor / --disable-software-rasterizer，
         # 这两个会让 --dump-dom 直接卡死。
         ok = False
@@ -325,7 +330,7 @@ def main():
                         [edge, "--headless=new", "--disable-gpu", "--no-sandbox",
                          "--virtual-time-budget=20000", "--window-size=1400,1000",
                          f"--user-data-dir={prof}{attempt}", "--dump-dom", pic],
-                        stdout=fh, stderr=subprocess.DEVNULL, timeout=480)
+                        stdout=fh, stderr=subprocess.DEVNULL, timeout=900)
                 ok = True
                 print(f"  · 页面渲染完成，用时 {time.time()-t0:.0f}s")
                 break
