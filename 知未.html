@@ -197,12 +197,18 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .ybtn.busy{opacity:.6;cursor:default;border-style:dashed}
 .ybtn.busy:hover{border-color:var(--line);color:var(--text)}
 
-/* 「显示更多」：大列表分批渲染的加载按钮，风格对齐 ybtn */
-.morebar{display:flex;justify-content:center;padding:6px 0 18px}
-.morebtn{border:1px dashed var(--line);background:var(--card);color:var(--sub);
-  border-radius:10px;padding:8px 22px;font-size:13px;font-weight:700;
-  transition:border-color .15s,color .15s}
-.morebtn:hover{border-color:var(--brand);color:var(--brand)}
+/* 过去模块页码条：一页 60 张，只渲染当前页 */
+.pager{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;
+  padding:18px 0 8px}
+.pgb{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--line2);background:#fff;
+  border-radius:9px;font-size:13px;font-weight:700;color:var(--text);
+  transition:border-color .15s,color .15s,background-color .15s}
+.pgb:hover:not([disabled]):not(.on){border-color:var(--brand2);color:var(--brand2)}
+.pgb.on{background:var(--brand);border-color:transparent;color:#FAF6EE;
+  box-shadow:var(--relief),0 1px 3px rgba(34,37,31,.22)}
+.pgb[disabled]{opacity:.4;cursor:default}
+.pgd{color:var(--sub);padding:0 2px;font-weight:700}
+.pgc{font-size:11.5px;color:var(--sub);margin-left:6px}
 
 /* ================= 首页 ================= */
 .hero{display:flex;gap:26px;align-items:flex-start;margin:10px 0 34px;flex-wrap:wrap}
@@ -1458,11 +1464,7 @@ function detailHTML(r){
         +   '<div class="exi"><span class="k">曲序</span><span class="v">'
         +     (t.disc>1 ? ('Disc '+t.disc+' · 第 '+no+' 首') : ('第 '+no+' 首'))+'</span></div>'
         +   '<div class="exi"><span class="k">风格</span><span class="v">'+esc(t.g || r.genre || "—")+'</span></div>'
-        +   '<div class="exi"><span class="k">制作团队</span><span class="v dim">暂未收录</span></div>'
         +  '</div>'
-        +  '<div class="extnote">说明：作词 / 作曲 / 编曲等制作人员名单，Apple Music 的公开接口并不提供，'
-        +   '维基与 MusicBrainz 对 K-pop 新作的收录率也几乎为零，因此暂不展示。'
-        +   '时长、曲序、风格为官方接口原始数据。</div>'
         + '</div>';
     });
     h += '</div>';
@@ -1682,13 +1684,42 @@ function renderBiasBox(){
       + top.map(function(n){ return '<button class="chip" data-addbias="'+esc(n)+'">+ '+esc(plainName(n))+'</button>'; }).join("")
     : "";
 }
-/* 大列表渲染上限：历史回填后全库 4700+ 张，「全部已发布」一次全塞 DOM
-   手机直接卡死（冒烟测试都跑不完）。先渲染一部分，剩下的点「显示更多」。
-   筛选条件一变就重置（用条件签名判断，不用挨个改事件处理器）。 */
-var LIST_STEP = 300, listCap = LIST_STEP, listSig = null;
+/* 过去模块分页：历史回填后全库 4700+ 张，一次全塞 DOM 手机直接卡死。
+   改成每页 PAGE_SIZE 张 + 页码，要哪页渲染哪页。
+   筛选条件一变就回第 1 页（用条件签名判断，不用挨个改事件处理器）。 */
+var PAGE_SIZE = 60, page = 1, listSig = null;
 function listSignature(){
   return [S.tab, S.q, S.type, S.kind, S.agency, S.onlyFav, S.onlyBias,
           S.sort, S.range && S.range.label].join("|");
+}
+
+/* 页码条：最多 7 个数字，两端用省略号，首页末页常驻 */
+function pageList(cur, total){
+  var out = [], MAX = 7;
+  if(total <= MAX){
+    for(var i = 1; i <= total; i++) out.push(i);
+    return out;
+  }
+  out.push(1);
+  var s = Math.max(2, cur - 2), e = Math.min(total - 1, cur + 2);
+  if(s > 2) out.push(0);                       // 0 = 省略号
+  for(var i = s; i <= e; i++) out.push(i);
+  if(e < total - 1) out.push(0);
+  out.push(total);
+  return out;
+}
+function pagerHTML(cur, total, n){
+  var h = '<div class="pager">'
+    + '<button class="pgb"' + (cur === 1 ? ' disabled' : ' data-page="' + (cur - 1) + '"')
+    + '>上一页</button>';
+  pageList(cur, total).forEach(function(p){
+    h += p === 0 ? '<span class="pgd">…</span>'
+       : '<button class="pgb' + (p === cur ? ' on' : '') + '" data-page="' + p + '">' + p + '</button>';
+  });
+  h += '<button class="pgb"' + (cur === total ? ' disabled' : ' data-page="' + (cur + 1) + '"')
+    + '>下一页</button>'
+    + '<span class="pgc">共 ' + n + ' 张 · ' + total + ' 页</span></div>';
+  return h;
 }
 
 function renderList(){
@@ -1740,14 +1771,15 @@ function renderList(){
   } else if(isPast){
     ensureYears();
     var sig = listSignature();
-    if(sig !== listSig){ listCap = LIST_STEP; listSig = sig; }
+    if(sig !== listSig){ page = 1; listSig = sig; }
     var pl = applyFilters(ALL);
-    var shown = pl.slice(0, listCap);
-    html = yearBarHTML() + gridHTML(shown);
-    if(pl.length > shown.length){
-      html += '<div class="morebar"><button class="morebtn" id="moreBtn">显示更多 · 还有 '
-            + (pl.length - shown.length) + ' 张</button></div>';
-    }
+    var pages = Math.max(1, Math.ceil(pl.length / PAGE_SIZE));
+    if(page > pages) page = pages;
+    if(page < 1) page = 1;
+    var from = (page - 1) * PAGE_SIZE;
+    html = yearBarHTML()
+         + gridHTML(pl.slice(from, from + PAGE_SIZE))
+         + (pages > 1 ? pagerHTML(page, pages, pl.length) : "");
   } else if(isMine && S.mine === "fav"){
     var fl = ALL.filter(function(r){ return isFav(r.id); });
     var fu = fl.filter(function(r){ return r._dd>=0; }).sort(function(a,b){ return a._dd-b._dd; });
@@ -2060,10 +2092,13 @@ SponShow("wechat");
 document.addEventListener("click", function(e){
   var t = e.target, el;
 
-  /* 大列表「显示更多」：每次多渲染 LIST_STEP 张 */
-  if(t.closest("#moreBtn")){
-    listCap += LIST_STEP;
+  /* 过去模块翻页：只渲染那一页，翻完滚回列表顶部 */
+  var pg = t.closest("[data-page]");
+  if(pg && !pg.hasAttribute("disabled")){
+    page = parseInt(pg.getAttribute("data-page"), 10) || 1;
     render();
+    var c = $("content");
+    if(c) window.scrollTo({ top: c.offsetTop - 70, behavior: "smooth" });
     return;
   }
 

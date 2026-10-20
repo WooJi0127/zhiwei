@@ -1014,9 +1014,31 @@ def step_retype(con):
     """
     rows = list(con.execute(
         "SELECT id,artist,title,rtype,rtype_src FROM releases"))
-    # 源生类型最可信，其次才是标题里的线索
-    got = {rid: (map_src_type(src) or parse_subtype(title))
-           for rid, _a, title, _o, src in rows}
+
+    # 类型优先级（2026-10-20 用户定的）：**网易云排第一**。
+    # 它的 type 是源生三档标注（Single / EP / 专辑），比标题后缀可靠；
+    # 同专辑被多个源各抓一次时，网易云那份（id 以 ne: 开头）对整个专辑生效。
+    # 之后才是：其它源生标注 → 标题写明 → 跨源一致时借。
+    ne = {}
+    for rid, _a, _t, _o, src in rows:
+        if rid.startswith("ne:"):
+            v = map_src_type(src)
+            if v:
+                ne[rid] = v
+    ne_album = {}
+    for rid, artist, title, _o, _s in rows:
+        v = ne.get(rid)
+        if v:
+            ne_album.setdefault((artist, _title_key(title)), set()).add(v)
+
+    got = {}
+    for rid, artist, title, _o, src in rows:
+        v = ne.get(rid)
+        if not v:
+            vs = ne_album.get((artist, _title_key(title)))
+            if vs and len(vs) == 1:      # 网易云自己有分歧也不猜
+                v = next(iter(vs))
+        got[rid] = v or (map_src_type(src) or parse_subtype(title))
 
     # (艺人, 归一标题) -> 已确认的类型集合
     seen = {}
