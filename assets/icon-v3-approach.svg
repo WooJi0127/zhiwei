@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+  <!-- 趋近版（深色·应用图标）：同心圆由外向内收束 + 透明度递增 + 铜色趋近弧 -->
+  <rect x="3" y="3" width="94" height="94" rx="20" fill="#33473A"/>
+  <circle cx="50" cy="50" r="35" fill="#1C251F"/>
+  <!-- 环间距由外向内递减（5→4.5→4→3），越靠近中心越密 = 时间收紧 -->
+  <circle cx="50" cy="50" r="30"   fill="none" stroke="#46604E" stroke-width="1"   stroke-opacity="0.35"/>
+  <circle cx="50" cy="50" r="25.5" fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="0.55"/>
+  <circle cx="50" cy="50" r="21.5" fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="0.75"/>
+  <circle cx="50" cy="50" r="18.5" fill="none" stroke="#46604E" stroke-width="0.9" stroke-opacity="1"/>
+  <!-- 回归日：中心铜色靶心 -->
+  <circle cx="50" cy="50" r="9" fill="#B5764F"/>
+  <circle cx="50" cy="50" r="2.6" fill="#FAF6EE"/>
+  <!-- 趋近弧：从外圈扫向中心，末端铜点 = “此刻”，正奔向回归日 -->
+  <path d="M70,21 A30,30 0 0 1 61.5,42" fill="none" stroke="#B5764F" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="61.5" cy="42" r="3.4" fill="#B5764F"/>
+</svg>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+  <!-- 改良版：保留唱片+倒计时钟面概念，修复 4 个问题 -->
+  <rect x="3" y="3" width="94" height="94" rx="20" fill="#33473A"/>
+  <circle cx="45" cy="50" r="35" fill="#1C251F"/>
+  <!-- 纹路提亮 + 加一道，盘面不再像纯黑圆 -->
+  <circle cx="45" cy="50" r="31" fill="none" stroke="#46604E" stroke-width="1"/>
+  <circle cx="45" cy="50" r="25" fill="none" stroke="#46604E" stroke-width="0.8"/>
+  <circle cx="45" cy="50" r="19" fill="none" stroke="#46604E" stroke-width="0.6"/>
+  <!-- 数字：1 用铜色高亮 + 加环，让“倒计时到 1”成立 -->
+  <g font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif"
+     font-weight="600" font-size="9.5" fill="#FAF6EE" text-anchor="middle">
+    <text x="45" y="30.5">12</text>
+    <text x="58.5" y="34.5">11</text>
+    <text x="68.5" y="41.5">10</text>
+    <text x="72.5" y="53">9</text>
+    <text x="68.5" y="64.5">8</text>
+    <text x="58.5" y="71.5">7</text>
+    <text x="45" y="75.5">6</text>
+    <text x="31.5" y="71.5">5</text>
+    <text x="21.5" y="64.5">4</text>
+    <text x="17.5" y="53">3</text>
+    <text x="21.5" y="41.5">2</text>
+    <text x="31.5" y="34.5" fill="#B5764F" font-size="11.5" font-weight="700">1</text>
+  </g>
+  <circle cx="31.5" cy="33" r="6.8" fill="none" stroke="#B5764F" stroke-width="1.3"/>
+  <!-- 铜标放大到 r=11，避免像摄像头镜头 -->
+  <circle cx="45" cy="50" r="11" fill="#B5764F"/>
+  <circle cx="45" cy="50" r="2.6" fill="#FAF6EE"/>
+  <!-- 唱臂针头外移到 (72,34)，不再压住 10 -->
+  <line x1="86" y1="14" x2="72" y2="34" stroke="#FAF6EE" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="86" cy="14" r="4.5" fill="#B5764F"/>
+  <circle cx="72" cy="34" r="2.8" fill="#FAF6EE"/>
+</svg>

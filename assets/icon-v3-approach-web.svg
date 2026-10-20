@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+  <!-- 趋近版（浅色·网页/favicon）：呼应站点纸感 -->
+  <rect x="3" y="3" width="94" height="94" rx="22" fill="#FAF6EE" stroke="#33473A" stroke-width="1.5"/>
+  <circle cx="50" cy="50" r="35" fill="#EFF2EC" stroke="#33473A" stroke-width="2"/>
+  <circle cx="50" cy="50" r="30"   fill="none" stroke="#33473A" stroke-width="1"   stroke-opacity="0.35"/>
+  <circle cx="50" cy="50" r="25.5" fill="none" stroke="#33473A" stroke-width="0.9" stroke-opacity="0.55"/>
+  <circle cx="50" cy="50" r="21.5" fill="none" stroke="#33473A" stroke-width="0.9" stroke-opacity="0.75"/>
+  <circle cx="50" cy="50" r="18.5" fill="none" stroke="#33473A" stroke-width="0.9" stroke-opacity="1"/>
+  <circle cx="50" cy="50" r="9" fill="#B5764F"/>
+  <circle cx="50" cy="50" r="2.6" fill="#FAF6EE"/>
+  <path d="M70,21 A30,30 0 0 1 61.5,42" fill="none" stroke="#B5764F" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="61.5" cy="42" r="3.4" fill="#B5764F"/>
+</svg>
