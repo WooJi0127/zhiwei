@@ -132,24 +132,23 @@ function ensureYears(){
   return true;
 }
 
-/* 未加载的年份按钮条 */
-function yearBarHTML(){
+/* 未加载年份 → 并进筛选面板末尾的一行（横向滚动），不再单独占一块面板 */
+function renderYearRow(){
+  var el = $("fyear"); if(!el) return;
   var ks = Object.keys(YEARS).filter(function(y){ return !LOADED[y]; });
-  if(!ks.length){
-    return Object.keys(PENDING).length
-      ? '<div class="ybar"><span class="ybl">正在加载更早年份…</span></div>'
-      : "";
-  }
-  return '<div class="ybar">'
-    + '<span class="ybl">加载更早年份</span>'
-    + ks.map(function(y){
-        var busy = !!PENDING[y];
-        return '<button class="ybtn'+(busy ? ' busy' : '')+'"'
-             + (busy ? ' disabled' : ' data-year="'+esc(y)+'"') + '>'
-             + (busy ? '加载中…' : esc(y)+' 年')
-             + '<span class="yn">'+YEARS[y]+'</span></button>';
-      }).join("")
-    + '</div>';
+  var busy = Object.keys(PENDING).length > 0;
+  if(!ks.length && !busy){ el.style.display = "none"; return; }
+  var h = '<span class="fyl">' + (ks.length ? "更早年份" : "正在加载年份…") + '</span>'
+        + '<div class="fys">';
+  ks.forEach(function(y){
+    var b = !!PENDING[y];
+    h += '<button class="ybtn'+(b ? ' busy' : '')+'"'
+       + (b ? ' disabled' : ' data-year="'+esc(y)+'"') + '>'
+       + (busy ? '加载中…' : esc(y)+' 年')
+       + '<span class="yn">'+YEARS[y]+'</span></button>';
+  });
+  el.innerHTML = h + '</div>';
+  el.style.display = "";
 }
 
 /* ============================ 工具 ============================ */
@@ -495,8 +494,7 @@ function detailHTML(r){
     +      '<b>'+esc(fmtDate(r.date))+'</b>'
     +      (r._tn ? '<span class="sep">·</span><span>'+r._tn+' 首歌曲</span>' : '')
     +      (r._dur ? '<span class="sep">·</span><span>'+esc(fmtDur(r._dur))+'</span>' : '')
-    +      (r.genre ? '<span class="sep">·</span><span>'+esc(r.genre)+'</span>' : '')
-    +      (typeLabel(r) ? '<span class="sep">·</span><span class="tag">'+esc(typeLabel(r))+'</span>' : '')
+    +    +      (typeLabel(r) ? '<span class="sep">·</span><span class="tag">'+esc(typeLabel(r))+'</span>' : '')
     +      (r._isNew ? '<span class="tag s">NEW</span>' : '')
     +    '</div>';
 
@@ -548,7 +546,6 @@ function detailHTML(r){
         +   '<div class="exi"><span class="k">时长</span><span class="v">'+esc(fmtDurShort(t.ms)||"—")+'</span></div>'
         +   '<div class="exi"><span class="k">曲序</span><span class="v">'
         +     (t.disc>1 ? ('Disc '+t.disc+' · 第 '+no+' 首') : ('第 '+no+' 首'))+'</span></div>'
-        +   '<div class="exi"><span class="k">风格</span><span class="v">'+esc(t.g || r.genre || "—")+'</span></div>'
         +  '</div>'
         + '</div>';
     });
@@ -772,7 +769,7 @@ function renderBiasBox(){
 /* 过去模块分页：历史回填后全库 4700+ 张，一次全塞 DOM 手机直接卡死。
    改成每页 PAGE_SIZE 张 + 页码，要哪页渲染哪页。
    筛选条件一变就回第 1 页（用条件签名判断，不用挨个改事件处理器）。 */
-var PAGE_SIZE = 60, page = 1, listSig = null;
+var PAGE_SIZE = 30, page = 1, listSig = null;
 function listSignature(){
   return [S.tab, S.q, S.type, S.kind, S.agency, S.onlyFav, S.onlyBias,
           S.sort, S.range && S.range.label].join("|");
@@ -855,6 +852,7 @@ function renderList(){
     }
   } else if(isPast){
     ensureYears();
+    renderYearRow();
     var sig = listSignature();
     if(sig !== listSig){ page = 1; listSig = sig; }
     var pl = applyFilters(ALL);
@@ -862,8 +860,7 @@ function renderList(){
     if(page > pages) page = pages;
     if(page < 1) page = 1;
     var from = (page - 1) * PAGE_SIZE;
-    html = yearBarHTML()
-         + gridHTML(pl.slice(from, from + PAGE_SIZE))
+    html = gridHTML(pl.slice(from, from + PAGE_SIZE))
          + (pages > 1 ? pagerHTML(page, pages, pl.length) : "");
   } else if(isMine && S.mine === "fav"){
     var fl = ALL.filter(function(r){ return isFav(r.id); });
