@@ -51,6 +51,11 @@
      以前是「平面色块 + 大范围泛光」，像 SaaS 模板按钮 */
   --relief:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1.5px 0 rgba(0,0,0,.22);
   --drop:0 2px 6px rgba(34,37,31,.22);
+  /* 牛皮纸 / 东巴纸质感：暖黄褐底 + 三层 SVG 噪声——
+     m=大块染色不匀，f=横向粗纤维，g=细颗粒。三层都 stitchTiles=stitch
+     所以能无缝平铺；纯 CSS 生成，不引外部图片，各端自动同步。 */
+  --kraft:#F0E5CE;
+  --kraft-tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.014' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.30'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55 0.012' numOctaves='2' seed='21' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.34'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.44'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23m)' opacity='.55'/%3E%3Crect width='200' height='200' filter='url(%23f)' opacity='.5'/%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='.5'/%3E%3C/svg%3E");
   --font:"Inter","PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
   --font-title:"Noto Serif SC","Songti SC",Georgia,serif;
   --ease:cubic-bezier(.2,.8,.3,1);
@@ -86,21 +91,24 @@ header{position:sticky;top:0;z-index:60;background:rgba(255,253,248,.93);
 
 
 
-.stoggle{margin-left:auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);
-  background:var(--card);font-size:14px;display:grid;place-items:center;
-  transition:border-color .15s,background .15s}
-.stoggle:hover{border-color:var(--brand);background:#FBF9F2}
-.searchcover{position:relative;display:flex;align-items:center;gap:9px;margin-top:10px;
-  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 10px;
-  box-shadow:var(--shadow-md);animation:rise .25s var(--ease) both}
-.searchcover input{flex:1;padding:9px 2px;border:0;outline:none;font-size:14px;
+/* 搜索：也走文字化——圆形按钮去框去白底，输入行只留一条底线作提示。
+   元素同时挂着 .btn（通栏白底描边按钮），必须用 .btn.stoggle 双类才压得住。 */
+.btn.stoggle,.stoggle{margin-left:auto;width:38px;height:38px;border-radius:50%;border:0;
+  padding:0;background:transparent;font-size:14px;color:var(--sub);display:grid;place-items:center;
+  transition:color .15s,background-color .15s}
+.btn.stoggle:hover,.stoggle:hover{background:#F4F0E6;color:var(--brand);border-color:transparent}
+.searchcover{position:relative;display:flex;align-items:center;gap:9px;margin-top:8px;
+  background:transparent;border:0;border-bottom:1px solid var(--line2);border-radius:0;
+  padding:5px 2px;box-shadow:none;animation:rise .25s var(--ease) both;
+  font-family:var(--font-title)}
+.searchcover input{flex:1;padding:8px 2px;border:0;outline:none;font-size:15px;
   background:transparent;color:var(--text)}
-.searchcover input::placeholder{color:#A8A498}
-.searchcover .ic{width:15px;height:15px;flex:none;color:var(--sub)}
+.searchcover input::placeholder{color:#A8A498;font-weight:400}
+.searchcover .ic{width:15px;height:15px;flex:none;color:var(--brand)}
 .searchcover .sclose{border:0;background:transparent;color:var(--sub);border-radius:50%;
   width:28px;height:28px;display:grid;place-items:center;font-size:13px;flex:none;
   transition:background .15s,color .15s}
-.searchcover .sclose:hover{background:#F2EFE8;color:var(--text)}
+.searchcover .sclose:hover{background:#F4F0E6;color:var(--brand)}
 .tabs{display:flex;gap:2px;flex:1;flex-wrap:wrap}
 .tab{padding:9px 17px;border-radius:10px;border:0;background:transparent;color:var(--sub);
   font-family:var(--font-title);font-size:14px;font-weight:600;letter-spacing:.02em;
@@ -266,11 +274,13 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 
 /* 即将回归：横向迷你卡 */
 .minibar{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
-.mini{flex:none;width:148px;background:var(--card);border:1px solid var(--line);
-  border-radius:12px;padding:10px;cursor:pointer;box-shadow:var(--shadow);
+.mini{flex:none;width:148px;background-color:var(--kraft);background-image:var(--kraft-tex);
+  background-size:200px 200px;border:0;padding:10px;cursor:pointer;box-shadow:var(--shadow);
+  /* 四角半径各不相同 —— 手切纸不会四个角一样圆 */
+  border-radius:11px 8px 12px 9px / 9px 12px 8px 11px;
   transition:transform .15s,box-shadow .15s}
 .mini:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
-.mini.bias{border-color:#E3D8C6}
+.mini.bias{box-shadow:0 0 0 2px rgba(255,47,82,.16),var(--shadow)}
 .mini .mcov{position:relative;width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;
   background:var(--grad-soft);display:grid;place-items:center}
 .mini .mcov .ph{font-size:20px;opacity:.35}
@@ -280,8 +290,10 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 
 /* 本月 MV（首页） */
 .mvbar{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
-.mvmini{flex:none;width:158px;background:var(--card);border:1px solid var(--line);
-  border-radius:12px;overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
+.mvmini{flex:none;width:158px;background-color:var(--kraft);background-image:var(--kraft-tex);
+  background-size:200px 200px;border:0;overflow:hidden;box-shadow:var(--shadow);
+  border-radius:10px 12px 8px 11px / 12px 9px 11px 8px;
+  transition:transform .15s,box-shadow .15s}
 .mvmini:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .mvmini .mvcov{position:relative;display:block;width:100%;aspect-ratio:16/9;background:var(--grad-soft)}
 .mvmini .mvcov img{width:100%;height:100%;object-fit:cover;display:block}
@@ -448,14 +460,37 @@ a.btn{display:inline-flex;align-items:center}
   padding:3px 10px;border-radius:20px;font-weight:800}
 .sec-h .line{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(244px,1fr));gap:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  overflow:hidden;box-shadow:var(--shadow);
-  transition:transform .18s cubic-bezier(.2,.8,.3,1),box-shadow .18s,border-color .18s;
-  display:flex;flex-direction:column;cursor:pointer}
-.card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:#D8D2C4}
+/* 卡片 = 一张手抄纸：牛皮纸底 + 噪声纤维 + 手撕毛边（clip-path 抖点）。
+   毛边会裁掉 box-shadow，所以阴影改用 drop-shadow（滤镜在裁剪之后生效，
+   影子和撕口形状一致）。下面给 3 种毛边变体轮换，避免每张卡一模一样。 */
+.card{background-color:var(--kraft);background-image:var(--kraft-tex);
+  background-size:200px 200px;background-repeat:repeat;
+  border:0;border-radius:0;overflow:hidden;
+  filter:drop-shadow(0 1px 1px rgba(34,37,31,.09)) drop-shadow(0 3px 7px rgba(34,37,31,.10));
+  box-shadow:inset 0 0 0 1px rgba(122,96,60,.16);
+  transition:transform .18s cubic-bezier(.2,.8,.3,1),filter .18s;
+  display:flex;flex-direction:column;cursor:pointer;
+  clip-path:polygon(0.6% 1.1%,24% 0.4%,47% 1.2%,72% 0.5%,99.5% 1.0%,
+    99.2% 24%,99.7% 48%,99.3% 72%,99.6% 98.9%,
+    76% 99.5%,52% 99.0%,28% 99.6%,3% 99.1%,0.8% 98.8%,
+    0.9% 74%,0.4% 48%,1.0% 22%)}
+.grid .card:nth-child(3n+2){
+  clip-path:polygon(0.4% 0.8%,26% 1.3%,49% 0.5%,74% 1.1%,99.6% 0.6%,
+    99.3% 26%,99.5% 50%,99.1% 74%,99.4% 99.0%,
+    74% 99.4%,50% 99.7%,27% 99.1%,5% 99.5%,0.9% 99.2%,
+    0.5% 72%,1.1% 47%,0.6% 21%)}
+.grid .card:nth-child(3n){
+  clip-path:polygon(0.9% 0.5%,23% 1.0%,48% 0.4%,71% 1.2%,99.4% 0.7%,
+    99.6% 23%,99.2% 47%,99.7% 71%,99.2% 99.3%,
+    77% 99.1%,53% 99.6%,29% 98.9%,6% 99.4%,0.6% 98.9%,
+    1.2% 73%,0.7% 49%,0.5% 23%)}
+.card:hover{transform:translateY(-3px);
+  filter:drop-shadow(0 2px 2px rgba(34,37,31,.12)) drop-shadow(0 11px 18px rgba(34,37,31,.17))}
 /* 封面轻微放大，hover 时才动，静止时不抢戏 */
 .card:hover .cov img{transform:scale(1.045)}
-.card.bias{border-color:#D6C4A8;box-shadow:0 0 0 2px rgba(255,47,82,.10),var(--shadow)}
+.card.bias{filter:drop-shadow(0 0 2px rgba(255,47,82,.55))
+  drop-shadow(0 0 3px rgba(255,47,82,.40))
+  drop-shadow(0 3px 7px rgba(34,37,31,.10))}
 .cov{position:relative;aspect-ratio:1;background:linear-gradient(135deg,#F2EFE8,#EAE6DD);overflow:hidden}
 .cov img{width:100%;height:100%;object-fit:cover;display:block;
   transition:transform .35s cubic-bezier(.2,.8,.3,1)}
@@ -483,7 +518,8 @@ a.btn{display:inline-flex;align-items:center}
 .car .zh{color:var(--text);font-weight:800}
 .car .en{font-size:11.5px;opacity:.7}
 .cmeta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;font-size:11px;color:var(--sub)}
-.tag{padding:2px 7px;background:#F4F1EA;border-radius:6px;font-weight:700}
+/* 类型标签：牛皮纸上要用更亮一点的纸白，才看得出是「贴上去的小纸片」 */
+.tag{padding:2px 7px;background:rgba(255,253,248,.78);border-radius:6px;font-weight:700}
 /* 「N 首」/NEW 这类次要信息：和类型标签同底，字用次级灰。
    以前一个紫一个蓝（.tag.s 紫罗兰 / .tag.k Tailwind 蓝），是全页最跳的两个色块；
    .tag.k 没有任何地方在用，直接删了。 */
@@ -660,7 +696,8 @@ footer a{color:var(--brand)}
   main{padding-bottom:calc(26px + env(safe-area-inset-bottom,0px))}
 
   /* 2) 触摸设备没有 hover，去掉上浮位移，否则点一下会「跳」 */
-  .card:hover{transform:none;box-shadow:var(--shadow);border-color:var(--line)}
+  .card:hover{transform:none;
+    filter:drop-shadow(0 1px 1px rgba(34,37,31,.09)) drop-shadow(0 3px 7px rgba(34,37,31,.10))}
   .card:hover .cov img{transform:none}
   .btn:hover,.chip:hover,.tab:hover,.favbtn:hover{transform:none}
 
