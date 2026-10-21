@@ -33,11 +33,12 @@
 
 
 :root{
-  /* 米白偏黄的纸感底色 + 墨绿主色 + 赭石强调 */
-  --bg:#FAF6EE; --card:#fff; --line:#E9E5DC; --text:#22251F; --sub:#6E6A5F;
-  /* 纸白面板 + 深一档的描边：面板不能和卡片一样纯白，
-     纯白浮在米底上像贴片，暖白+实边才有「纸叠纸」的厚度 */
-  --paper:#FFFDF8; --line2:#DFD8C6;
+  /* 三档纸色由浅到深：米底(页面) < 面板纸(筛选栏/弹层/详情面板) < 卡片纸(专辑卡)。
+     面板和卡片同一个牛皮纸色系但深浅不同——卡片是「贴上去的纸」，面板是「垫着的纸」。
+     描边也整体转暖，压掉原来的灰白感 */
+  --bg:#FAF6EE; --card:#F5EEDD; --line:#E7DFC9; --text:#22251F; --sub:#6E6A5F;
+  /* 面板纸 + 深一档的描边 */
+  --paper:#F5EEDD; --line2:#DFD3B8;
   --brand:#33473A; --brand2:#B5764F; --gold:#B5764F; --heart:#A8503C;
   --ok:#3F6B4F; --radius:12px;
   --grad:linear-gradient(135deg,#33473A,#5B7263);
@@ -60,6 +61,11 @@
   --font-title:"Noto Serif SC","Songti SC",Georgia,serif;
   --ease:cubic-bezier(.2,.8,.3,1);
 }
+/* 面板垫同款纸纹（比卡片的浅）：让整站不再有「塑料白」表面。
+   注意：给这些元素加纹理后，它们的 hover 一律只能动 background-color，
+   写 background 简写会把纹理洗掉 */
+.filters,.calpop,.selpop,.dsec,.dhero,.biasbox,.hempty,.bday,.notice,.mvbtn,.sponpop{
+  background-image:var(--kraft-tex);background-size:200px 200px}
 /* 顶部一抹渐变光晕，让页面不是一片死白 */
 body::before{
   content:"";position:fixed;inset:0 0 auto 0;height:340px;pointer-events:none;z-index:0;
@@ -127,7 +133,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
   background:#FBF6EC;border:1px solid #E3D8C6;
   border-radius:12px;font-size:13px;color:#8A5A2B;box-shadow:var(--shadow)}
 .notice.on{display:flex}
-.notice button{margin-left:auto;border:1px solid #e8c777;background:#fff;color:#8A5A2B;
+.notice button{margin-left:auto;border:1px solid #e8c777;background:var(--card);color:#8A5A2B;
   border-radius:9px;padding:5px 12px;font-size:12.5px;font-weight:700;transition:background .15s}
 .notice button:hover{background:#FDFBF4}
 
@@ -198,7 +204,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 
 /* 首页：展开更多按钮 */
 .morebtn{margin-top:9px;padding:7px 15px;border-radius:999px;border:1px solid var(--line);
-  background:#fff;font-size:12px;font-weight:600;color:var(--sub);
+  background:var(--card);font-size:12px;font-weight:600;color:var(--sub);
   transition:border-color .15s,color .15s}
 .morebtn:hover{border-color:var(--brand);color:var(--brand)}
 
@@ -207,8 +213,8 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .fyr{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
 .fyl{font-size:11.5px;color:var(--sub);font-weight:700;flex:none;letter-spacing:.02em}
 .fys{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;min-width:0;padding:2px 0}
-.ybtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:#fff;
-  background:#fff;color:var(--text);border-radius:9px;padding:5px 11px;font-size:12.5px;font-weight:700;
+.ybtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--card);
+  color:var(--text);border-radius:9px;padding:5px 11px;font-size:12.5px;font-weight:700;
   transition:border-color .15s,color .15s}
 .ybtn:hover{border-color:var(--brand);color:var(--brand)}
 .ybtn .yn{font-size:10.5px;color:var(--sub);font-weight:600}
@@ -219,7 +225,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 /* 过去模块页码条：一页 60 张，只渲染当前页 */
 .pager{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;
   padding:18px 0 8px}
-.pgb{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--line2);background:#fff;
+.pgb{min-width:34px;height:34px;padding:0 10px;border:1px solid var(--line2);background:var(--card);
   border-radius:9px;font-size:13px;font-weight:700;color:var(--text);
   transition:border-color .15s,color .15s,background-color .15s}
 .pgb:hover:not([disabled]):not(.on){border-color:var(--brand2);color:var(--brand2)}
@@ -264,7 +270,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .bdaylist{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:9px}
 .bday{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
   border-radius:12px;padding:9px 12px;box-shadow:var(--shadow)}
-.bday.bias{border-color:#E3D8C6;background:linear-gradient(135deg,#FBF6EC,#fff)}
+.bday.bias{border-color:#E3D8C6;background:linear-gradient(135deg,#F8F1E1,#F2E9D6)}
 .bday .bav{font-size:15px}
 .bday .bname{font-weight:800;font-size:13.5px}
 .bday .bgrp{display:flex;align-items:center;gap:3px;font-size:11.5px;color:var(--sub);
@@ -305,7 +311,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 
 /* 详情页：官方 MV 按钮 */
 .mvbtn{margin:0 0 12px;padding:10px 13px;border-radius:12px;border:1px solid #E3D8C6;
-  background:linear-gradient(135deg,#FBF6EC,#fff);display:flex;align-items:center;gap:10px}
+  background:linear-gradient(135deg,#F8F1E1,#F2E9D6);display:flex;align-items:center;gap:10px}
 .mvbtn:hover{border-color:#ff9fbb}
 .mvbtn .mvi{width:30px;height:30px;flex:none;border-radius:50%;background:#B5764F;color:#fff;
   display:grid;place-items:center;font-size:12px}
@@ -351,10 +357,10 @@ select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
   transition:border-color .15s,box-shadow .15s,background-color .15s;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%23696f83' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 11px center;background-size:12px}
-select:hover{border-color:var(--brand2);background-color:#fdfcff}
+select:hover{border-color:var(--brand2);background-color:#F8F1E0}
 select:focus{border-color:var(--brand);box-shadow:var(--ring)}
 select:focus:hover{border-color:var(--brand)}
-select option{background:#fff;color:var(--text)}
+select option{background:#F5EEDD;color:var(--text)}
 /* 日期按钮：箭头与 select 用同一枚 SVG，视觉完全对齐 */
 .datebtn{padding:7px 26px 7px 4px;border:0;border-radius:9px;background-color:transparent;
   font-size:13px;color:var(--text);font-weight:700;display:flex;align-items:center;gap:7px;cursor:pointer;
@@ -372,9 +378,9 @@ select option{background:#fff;color:var(--text)}
 .chip.on{background:var(--grad);border-color:transparent;color:#fff;
   box-shadow:var(--relief),var(--drop)}
 .spacer{flex:1}
-.btn{padding:7px 14px;border-radius:10px;border:1px solid var(--line2);background:#fff;
+.btn{padding:7px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--card);
   color:var(--text);font-size:12.5px;font-weight:700;transition:all .15s}
-.btn:hover{background:#FBF8F0;border-color:var(--brand2)}
+.btn:hover{background-color:#F8F1E0;border-color:var(--brand2)}
 .btn.pri{background:var(--grad);border-color:transparent;color:#fff;
   box-shadow:var(--relief),var(--drop)}
 a.btn{display:inline-flex;align-items:center}
@@ -399,29 +405,29 @@ a.btn{display:inline-flex;align-items:center}
   text-shadow:0 1px 0 rgba(255,255,255,.65)}
 
 /* ================= calendar popup ================= */
-.calpop{position:absolute;z-index:90;background:#fff;border:1px solid var(--line);
+.calpop{position:absolute;z-index:90;background:var(--card);border:1px solid var(--line);
   border-radius:14px;box-shadow:var(--shadow-lg);padding:14px;width:306px;display:none;
   max-height:min(78vh,560px);overflow:auto;overscroll-behavior:contain}
 .calpop.on{display:block}
 .calh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .calh .mm{font-weight:800;font-size:14px;flex:1;text-align:center}
-.calh button{border:1px solid var(--line);background:#fff;border-radius:10px;height:28px;
+.calh button{border:1px solid var(--line);background:var(--card);border-radius:10px;height:28px;
   font-size:14px;color:var(--sub);line-height:1}
 .calh button#calPrev,.calh button#calNext{width:28px}
 .calh button.mm{font-size:13.5px;color:var(--text);font-weight:800}
-.calh button:hover{background:#F5F2EB}
-.calh button.mm:hover{background:#EDF0EA;border-color:var(--brand2);color:var(--brand)}
+.calh button:hover{background-color:#F0E7D2}
+.calh button.mm:hover{background-color:#EDF0EA;border-color:var(--brand2);color:var(--brand)}
 /* 月 / 年选择面板 */
 .calpick{display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .calpick.on{display:grid}
 .calpick .pyh{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .calpick .pyh span{flex:1;text-align:center;font-weight:800;font-size:13.5px}
-.calpick .pyh button{width:26px;height:26px;border:1px solid var(--line);background:#fff;border-radius:8px;
+.calpick .pyh button{width:26px;height:26px;border:1px solid var(--line);background:var(--card);border-radius:8px;
   border-radius:7px;font-size:13px;color:var(--sub);line-height:1}
-.calpick .pyh button:hover{background:#F5F2EB}
-.calpick .mc{padding:7px 0;border:1px solid var(--line);background:#fff;border-radius:10px;
+.calpick .pyh button:hover{background-color:#F0E7D2}
+.calpick .mc{padding:7px 0;border:1px solid var(--line);background:var(--card);border-radius:10px;
   font-size:12.5px;font-weight:700;color:var(--text)}
-.calpick .mc:hover{background:#F5F2EB}
+.calpick .mc:hover{background-color:#F0E7D2}
 .calpick .mc.on{background:var(--grad);border-color:transparent;color:#fff;
   box-shadow:0 2px 8px rgba(51,71,58,.30)}
 /* 已选范围提示 */
@@ -430,9 +436,9 @@ a.btn{display:inline-flex;align-items:center}
 .calrng b{color:var(--brand)}
 /* 整月 / 整年 快捷 */
 .caltools{display:flex;gap:6px;margin-top:8px}
-.caltools button{flex:1;padding:6px 0;border:1px solid var(--line);background:#fff;
+.caltools button{flex:1;padding:6px 0;border:1px solid var(--line);background:var(--card);
   border-radius:10px;font-size:12px;font-weight:700;color:var(--sub)}
-.caltools button:hover{background:#EDF0EA;border-color:var(--brand2);color:var(--brand)}
+.caltools button:hover{background-color:#EDF0EA;border-color:var(--brand2);color:var(--brand)}
 .calw{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calw .wd{text-align:center;font-size:11px;color:var(--sub);font-weight:700;padding:3px 0}
 .cald{aspect-ratio:1;border:0;background:transparent;border-radius:9px;font-size:12.5px;
@@ -448,7 +454,7 @@ a.btn{display:inline-flex;align-items:center}
 .cald.sel::after{background:#fff}
 .cald.today{box-shadow:inset 0 0 0 1.5px var(--brand2)}
 .calfoot{display:flex;gap:7px;margin-top:11px}
-.calfoot button{flex:1;padding:7px;border-radius:10px;border:1px solid var(--line);background:#fff;
+.calfoot button{flex:1;padding:7px;border-radius:10px;border:1px solid var(--line);background:var(--card);
   font-size:12.5px;font-weight:700;color:var(--sub)}
 .calfoot button.pri{background:var(--grad);border-color:transparent;color:#fff;
   box-shadow:0 2px 8px rgba(51,71,58,.30)}
@@ -469,7 +475,7 @@ a.btn{display:inline-flex;align-items:center}
   filter:drop-shadow(0 1px 1px rgba(34,37,31,.09)) drop-shadow(0 3px 7px rgba(34,37,31,.10));
   box-shadow:inset 0 0 0 1px rgba(122,96,60,.16);
   transition:transform .18s cubic-bezier(.2,.8,.3,1),filter .18s;
-  display:flex;flex-direction:column;cursor:pointer;
+  display:flex;flex-direction:column;cursor:pointer;padding:8px;
   clip-path:polygon(0.6% 1.1%,24% 0.4%,47% 1.2%,72% 0.5%,99.5% 1.0%,
     99.2% 24%,99.7% 48%,99.3% 72%,99.6% 98.9%,
     76% 99.5%,52% 99.0%,28% 99.6%,3% 99.1%,0.8% 98.8%,
@@ -491,7 +497,10 @@ a.btn{display:inline-flex;align-items:center}
 .card.bias{filter:drop-shadow(0 0 2px rgba(255,47,82,.55))
   drop-shadow(0 0 3px rgba(255,47,82,.40))
   drop-shadow(0 3px 7px rgba(34,37,31,.10))}
-.cov{position:relative;aspect-ratio:1;background:linear-gradient(135deg,#F2EFE8,#EAE6DD);overflow:hidden}
+/* 封面 = 贴在纸上的一张照片：四周留纸边、微微圆角、一道短落影 */
+.cov{position:relative;aspect-ratio:1;overflow:hidden;border-radius:3px;
+  background:linear-gradient(135deg,#F3EAD8,#E9DEC7);
+  box-shadow:0 1px 2px rgba(34,37,31,.18),0 2px 5px rgba(34,37,31,.10)}
 .cov img{width:100%;height:100%;object-fit:cover;display:block;
   transition:transform .35s cubic-bezier(.2,.8,.3,1)}
 .cov .ph{position:absolute;inset:0;display:grid;place-items:center;color:#D5D0C4;font-size:28px}
@@ -511,7 +520,7 @@ a.btn{display:inline-flex;align-items:center}
   font-weight:800;letter-spacing:.5px}
 .badge.new{background:var(--brand);color:#FAF6EE}
 
-.cbody{padding:13px 14px 14px;display:flex;flex-direction:column;gap:3px;flex:1}
+.cbody{padding:7px 8px 8px;display:flex;flex-direction:column;gap:3px;flex:1}
 .ctitle{font-size:15px;font-weight:800;letter-spacing:-.2px;line-height:1.35;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:38px}
 .car{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--sub);font-weight:600}
@@ -547,7 +556,7 @@ a.btn{display:inline-flex;align-items:center}
 
 /* ================= detail ================= */
 .backbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.backbar button{border:1px solid var(--line);background:#fff;border-radius:10px;
+.backbar button{border:1px solid var(--line);background:var(--card);border-radius:10px;
   padding:7px 14px;font-size:13px;font-weight:700;color:var(--text)}
 .backbar button:hover{background:#F5F2EB}
 .dhero{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;
@@ -652,7 +661,7 @@ footer a{color:var(--brand)}
 .spon.hide{opacity:0;pointer-events:none;transform:translateY(16px)}
 
 .sponpop{position:fixed;right:20px;bottom:calc(76px + env(safe-area-inset-bottom));
-  z-index:121;width:236px;background:#fff;border:1px solid var(--line);border-radius:16px;
+  z-index:121;width:236px;background:var(--card);border:1px solid var(--line);border-radius:16px;
   box-shadow:var(--shadow-lg);padding:14px;display:none;animation:sponin .18s ease-out}
 .sponpop.on{display:block}
 @keyframes sponin{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
