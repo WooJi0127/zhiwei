@@ -154,6 +154,14 @@ step(function(){
   LOG.push("生日条数=" + document.querySelectorAll("#homeView .bday").length
     + " 迷你卡=" + document.querySelectorAll("#homeView .mini").length
     + " 首页打歌条=" + (document.querySelector("#homeShows .shnow") ? "有" : "无"));
+  /* 热门 MV：本月为空要能自动回退到近三个月/近一年/历史，不能留空面板 */
+  var mvSec = Array.prototype.filter.call(
+    document.querySelectorAll("#homeView .hsec"),
+    function(s){ return (s.textContent || "").indexOf("热门 MV") === 0; })[0];
+  var nMV = mvSec ? mvSec.querySelectorAll(".mvmini").length : -1;
+  LOG.push("首页MV=" + nMV
+    + " 首页MV有内容=" + (nMV > 0)
+    + " 档位=" + (mvSec ? ((mvSec.querySelector(".hs") || {}).textContent || "") : ""));
   var mm = (window.__KPOP_DATA__ && window.__KPOP_DATA__.members) || [];
   var md = new Date(); var key = ("0" + (md.getMonth()+1)).slice(-2) + "-" + ("0" + md.getDate()).slice(-2);
   var exp = mm.filter(function(x){ return x.b && x.b.slice(5) === key; }).length;
@@ -282,6 +290,7 @@ REQUIRED = [
     ("页签宋体=true",    "顶部页签没换成宋体"),
     ("节目条宋体=true",  "打歌节目条没换成宋体"),
     ("节目条白底已去=true", "打歌节目条还是白卡片，没文字化"),
+    ("首页MV有内容=true",  "首页热门 MV 是空的（本月为空时应回退到近三个月/近一年/历史）"),
 ]
 
 

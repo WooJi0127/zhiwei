@@ -245,26 +245,50 @@ function fmtPlay(n){
   if(n >= 10000)     return (n/10000).toFixed(1) + " 万";
   return String(n);
 }
-/* 找这张专辑对应的官方 MV：同艺人 + MV 标题里带专辑名。
-   对不上就返回 null——用户明确说过，没有的就不显示。 */
-function mvOf(r){
-  var t = (r.title || "").toLowerCase();
-  if(!t) return null;
-  for(var i = 0; i < MVS.length; i++){
-    var m = MVS[i];
-    if(m.a !== r.artist) continue;
-    if((m.t || "").toLowerCase().indexOf(t) >= 0) return m;
-  }
-  return null;
+/* 首页「热门 MV」：近两个月发行的专辑，找它的主打曲 MV，按播放量降序，最多 6 个。
+   匹配办法：MV 标题里出现专辑名（比对前先把引号、空格、大小写全抹掉，
+   B 站标题里那些 ‘ ’ 「 」 不然永远对不上）。
+   主打没找到也不留空：用同窗口内其它官方 MV 按播放量补足到 6 个。
+   MV 只服务于这一块：详情页不挂 MV 入口（用户拍板），mvOf() 已随之删除。 */
+var MV_DAYS = 60;          /* 近两个月 */
+var MV_MAX  = 6;           /* 板块最多 6 个 */
+function mvKey(s){
+  return (s || "").toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, "");
 }
-/* 本月的官方 MV（按播放量降序，数据本来就是这个顺序） */
-function mvThisMonth(max){
-  var y = TODAY.getFullYear(), mo = TODAY.getMonth(), out = [];
-  for(var i = 0; i < MVS.length && out.length < (max || 8); i++){
-    var d = new Date((MVS[i].d || 0) * 1000);
-    if(d.getFullYear() === y && d.getMonth() === mo) out.push(MVS[i]);
+function mvHot(){
+  var now = TODAY.getTime() / 1000, lo = now - MV_DAYS * 86400;
+  /* 1) 近两个月发行的专辑 → 艺人 + 专辑名 */
+  var want = [], seenRel = {};
+  for(var i = 0; i < ALL.length; i++){
+    var r = ALL[i];
+    if(!r.date) continue;
+    var t = Date.parse(r.date + "T00:00:00") / 1000;
+    if(!(t <= now && t >= lo)) continue;
+    var k = r.artist + "|" + mvKey(r.title);
+    if(seenRel[k]) continue;
+    seenRel[k] = 1;
+    want.push(r);
   }
-  return out;
+  /* 2) 先放「专辑名对得上」的：这些是确定无误的主打 MV */
+  var out = [], used = {};
+  for(var a = 0; a < want.length && out.length < MV_MAX; a++){
+    for(var b = 0; b < MVS.length; b++){
+      var m = MVS[b];
+      if(used[m.v] || m.a !== want[a].artist) continue;
+      if((m.d || 0) < lo || (m.d || 0) > now) continue;
+      if(mvKey(m.t).indexOf(mvKey(want[a].title)) >= 0){
+        used[m.v] = 1; out.push(m); break;
+      }
+    }
+  }
+  /* 3) 不够 6 个就用同窗口其它官方 MV 按播放量补足（数据本身已按播放量降序） */
+  for(var c = 0; c < MVS.length && out.length < MV_MAX; c++){
+    var mv = MVS[c];
+    if(used[mv.v]) continue;
+    if((mv.d || 0) < lo || (mv.d || 0) > now) continue;
+    used[mv.v] = 1; out.push(mv);
+  }
+  return {list:out, label: out.length ? "近两个月 · 按播放量" : ""};
 }
 
 /* 今天过生日的成员。b 形如 2000-04-11，比月日即可。
@@ -486,15 +510,8 @@ function detailHTML(r){
     h += '<div class="ddesc"><span class="lb">专辑信息</span>' + esc(facts.join("　·　")) + '</div>';
   }
 
-  /* 官方 MV：只放官方账号发布的，标题对不上就不显示（宁缺毋滥） */
-  var mv = mvOf(r);
-  if(mv){
-    h += '<a class="dail mvbtn" href="'+mvURL(mv)+'" target="_blank" rel="noopener nofollow">'
-      +  '<span class="mvi">▶</span>'
-      +  '<span class="mvt"><b>官方 MV</b><span>'+esc(mv.t)+'</span></span>'
-      +  '<span class="mvp">'+fmtPlay(mv.p)+' 播放 · '+esc(mv.u)+'</span>'
-      +  '</a>';
-  }
+  /* 官方 MV 只在首页「热门 MV」那一块用（用户拍板：详情页不挂 MV 入口）。
+     以前这里按「同艺人 + 标题带专辑名」猜一个，命中率低还常常张冠李戴，删掉。 */
 
   h += '<div class="dact">'
     +  '<button class="btn" id="favDetail" style="padding:10px 18px;border-radius:11px;font-size:13px">'
@@ -658,9 +675,9 @@ function renderHome(){
   h += homeSec("今日生日", bds.length ? "共 "+bds.length+" 位" : "",
         bds.length ? bdayListHTML(bds) : '<div class="hempty">今天没有收录到艺人生日</div>');
 
-  /* 热门 MV：官方账号发布，按播放量排序 */
-  var mm = mvThisMonth(8);
-  h += homeSec("热门 MV", mm.length ? "官方账号 · 按播放量" : "",
+  /* 热门 MV：官方账号发布，按播放量排序（本月 → 三个月 → 一年 → 历史） */
+  var hot = mvHot(), mm = hot.list;
+  h += homeSec("热门 MV", hot.label,
         mm.length
           ? '<div class="mvbar">' + mm.map(function(m){
               return '<a class="mvmini" href="'+mvURL(m)+'" target="_blank" rel="noopener nofollow">'
@@ -672,7 +689,7 @@ function renderHome(){
                 + '<span class="mvau">'+esc(m.u)+'</span>'
                 + '</a>';
             }).join("") + '</div>'
-          : '<div class="hempty">本月还没有收录到官方 MV</div>');
+          : '<div class="hempty">近两个月还没有收录到官方 MV</div>');
 
   /* 打歌节目（复用列表页那一套） */
   h += homeSec("打歌节目", "韩国时间 KST",

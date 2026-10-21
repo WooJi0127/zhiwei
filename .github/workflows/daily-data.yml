@@ -50,11 +50,12 @@ jobs:
 
       # B 站官方 MV：放在这里跑是因为 Actions 在境外，不会触发 B 站风控
       # （本机连续请求会被 412）。
-      # 每次最多抓 40 个艺人（约 10 分钟），没抓完的下次接着补，几天就抓全了；
-      # 抓过的艺人记在 bili_seen 表里，不会重复重试。
-      - name: 抓取 B 站官方 MV
+      # 首页「热门 MV」只放近两个月、最多 6 个，所以每天只需要补「昨天到今天
+      # 发行的专辑」的 MV——--recent 3 留一天余量（B 站上传常晚一天）。
+      # 播放量变化与迟传的 MV 由 weekly-mv-check.yml 每周刷一次近 60 天解决。
+      - name: 补抓 B 站官方 MV（昨天到今天）
         continue-on-error: true      # B 站挂了或被限流都不能影响主流程
-        run: python scripts/bilibili.py --limit 40
+        run: python scripts/bilibili.py --recent 3 --limit 80
 
       # 有上次的数据库 → 增量抓取（约 3 分钟）
       # 没有（首次运行，或缓存被清理）→ 自动改全量抓取（约 25 分钟），保证历史完整

@@ -12,10 +12,17 @@ B 站官方 MV 抓取（只收官方账号发布的，粉丝站 / 二创一律�
    -1 / 127 = 普通用户 / 粉丝站，一律丢弃
 
 用法：
-    python scripts/bilibili.py              # 增量：只补库里没有的艺人
+    python scripts/bilibili.py              # 增量：只补库里没有的艺人（按字母序）
+    python scripts/bilibili.py --recent 30  # 刷新近 30 天有发行的艺人（每次都重抓）
     python scripts/bilibili.py --force      # 全量重抓
     python scripts/bilibili.py --limit 20   # 先试 20 个
     python scripts/bilibili.py --check      # 只校验已有链接有没有失效
+
+为什么要有 --recent：
+    每个艺人抓过一次就会记进 bili_seen，之后不再重抓。MV 是「以后才发」的
+    东西，只抓一次等于永远停在第一次抓到的那天——首页「热门 MV」因此常年
+    显示「本月还没有收录」。--recent 挑近 N 天有发行的艺人强制重抓，
+    新专的官方 MV 才追得回来。每日任务跑的就是这个模式。
 """
 import os
 import re
@@ -37,7 +44,8 @@ DB_PATH = os.path.join(ROOT, "kpop.db")
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 SLEEP = 1.5                    # B 站风控较严：请求太快会 412，宁慢勿封
-PAGES = 2                      # 每个艺人搜 2 页（约 40 条），够覆盖热门 MV
+PAGES = 2                      # 播放量排序搜 2 页（约 40 条），够覆盖历史热门
+NEW_PAGES = 2                  # 发布时间排序再搜 2 页，专门捞刚发的新 MV
 
 DDL = """
 CREATE TABLE IF NOT EXISTS bili (
@@ -186,17 +194,31 @@ def related(name, uname, desc):
     return False
 
 
+# 标题里带这些就不是正片：预告、花絮、幕后、reaction、练习室……首页只要主打 MV
+BAD = [
+    "teaser", "preview", "making", "behind", "spoiler", "trailer",
+    "花絮", "幕后", "预告", "拍摄", "reaction", "react", "练习室",
+    "dance practice", "编舞", "shorts", "巡演", "直播", "cut",
+    "一起看", "观看", "reaction to", "vgm", "first time",
+]
+
+
 def looks_like_mv(title, artist):
-    """只要官方 MV / 官方舞蹈版之类，排除花絮、直播回放、综艺片段。"""
+    """只要官方 MV 正片。命中 BAD 关键词的一律丢掉——否则首页会出现
+    「MV 花絮」「MV Teaser」这种占位垃圾，比没有还难看。"""
     t = title.upper()
-    if "MV" in t or "M/V" in t or "MUSIC VIDEO" in t:
-        return True
-    return False
+    if not ("MV" in t or "M/V" in t or "MUSIC VIDEO" in t):
+        return False
+    low = title.lower()
+    for b in BAD:
+        if b in low:
+            return False
+    return True
 
 
-def search_videos(kw, page):
+def search_videos(kw, page, order="click"):
     url = ("https://api.bilibili.com/x/web-interface/search/type?search_type=video"
-           f"&keyword={urllib.parse.quote(kw)}&order=click&page={page}")
+           f"&keyword={urllib.parse.quote(kw)}&order={order}&page={page}")
     d = api(url)
     if not d or d.get("code") != 0:
         return []
@@ -204,11 +226,19 @@ def search_videos(kw, page):
 
 
 def fetch_artist(con, name):
-    """抓一个艺人的官方 MV，返回存了几条。"""
+    """抓一个艺人的官方 MV，返回存了几条。
+
+    搜两遍，两个排序各有用处：
+      click   —— 播放量降序，捞历史热门（首页「热门 MV」主要靠它）
+      pubdate —— 发布时间降序，捞刚发的。**新 MV 播放量一定低，只按
+                 播放量搜永远排不进前两页**，所以 10 月的新 MV 一直抓不到；
+                 加这一路才追得上新专。"""
     got = []
     seen = set()
-    for pg in range(1, PAGES + 1):
-        for v in search_videos(name, pg):
+    plans = [("click", PAGES), ("pubdate", NEW_PAGES)]
+    for order, pages in plans:
+      for pg in range(1, pages + 1):
+        for v in search_videos(name, pg, order):
             bvid = v.get("bvid")
             if not bvid or bvid in seen:
                 continue
@@ -276,11 +306,28 @@ def main():
         except Exception:  # noqa: BLE001
             limit = None
 
-    rows = [r[0] for r in con.execute("SELECT name FROM artists ORDER BY name").fetchall()]
+    recent_days = None
+    if "--recent" in sys.argv:
+        try:
+            recent_days = int(sys.argv[sys.argv.index("--recent") + 1])
+        except Exception:  # noqa: BLE001
+            recent_days = 30
+
+    if recent_days:
+        # 近期「已经发行」过的艺人优先，且每次都重抓（不查 bili_seen）——
+        # 新 MV 才追得上。注意必须排除未来档期：库里存着几个月后才会发的专辑，
+        # 只按 MAX(date) 排会把 12 月才回归的艺人排在最前面，而他们的 MV 还不存在。
+        today = datetime.date.today().isoformat()
+        cut = (datetime.date.today() - datetime.timedelta(days=recent_days)).isoformat()
+        rows = [r[0] for r in con.execute(
+            "SELECT artist FROM releases WHERE date>=? AND date<=? GROUP BY artist"
+            " ORDER BY MAX(date) DESC", (cut, today)).fetchall()]
+    else:
+        rows = [r[0] for r in con.execute("SELECT name FROM artists ORDER BY name").fetchall()]
     if limit:
         rows = rows[:limit]
     have = set()
-    if not force:
+    if not force and not recent_days:
         have = {r[0] for r in con.execute("SELECT artist FROM bili_seen").fetchall()}
 
     todo = [n for n in rows if force or n not in have]

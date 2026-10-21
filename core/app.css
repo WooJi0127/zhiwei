@@ -52,7 +52,7 @@
 /* 面板垫同款纸纹（比卡片的浅）：让整站不再有「塑料白」表面。
    注意：给这些元素加纹理后，它们的 hover 一律只能动 background-color，
    写 background 简写会把纹理洗掉 */
-.filters,.calpop,.selpop,.dsec,.dhero,.biasbox,.hempty,.bday,.notice,.mvbtn,.sponpop{
+.filters,.calpop,.selpop,.dsec,.dhero,.biasbox,.hempty,.bday,.notice,.sponpop{
   background-image:var(--kraft-tex);background-size:200px 200px}
 /* 顶部一抹渐变光晕，让页面不是一片死白 */
 body::before{
@@ -297,16 +297,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
   height:2.7em;overflow:hidden}
 .mvmini .mvau{display:block;padding:2px 9px 8px;font-size:10.5px;color:var(--sub)}
 
-/* 详情页：官方 MV 按钮 */
-.mvbtn{margin:0 0 12px;padding:10px 13px;border-radius:12px;border:1px solid #E3D8C6;
-  background:linear-gradient(135deg,#F8F1E1,#F2E9D6);display:flex;align-items:center;gap:10px}
-.mvbtn:hover{border-color:#ff9fbb}
-.mvbtn .mvi{width:30px;height:30px;flex:none;border-radius:50%;background:#B5764F;color:#fff;
-  display:grid;place-items:center;font-size:12px}
-.mvbtn .mvt{display:flex;flex-direction:column;min-width:0;flex:1}
-.mvbtn .mvt b{font-size:13px}
-.mvbtn .mvt span{font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mvbtn .mvp{flex:none;font-size:11px;color:var(--sub);font-weight:700}
+/* 详情页的官方 MV 入口已删除（MV 只在首页「热门 MV」用），样式随之清掉 */
 
 .hfoot{margin:26px 0 8px;text-align:center}
 /* 「查看完整日历」：对齐板块标题（.hsec-h）的质感——宋体 + 墨绿，
