@@ -227,6 +227,7 @@ step(function(){
     + " 原生select隐藏=" + (getComputedStyle($("fType")).display)
     + " 筛选栏字体=" + getComputedStyle(document.querySelector(".selbtn")).fontFamily
     + " 分段宋体=" + (ff(document.querySelector(".seg button")).indexOf("Noto Serif SC")>=0)
+    + " 页签宋体=" + (ff(document.querySelector(".tab")).indexOf("Noto Serif SC")>=0)
     + " 节目条宋体=" + (ff(document.querySelector(".showsbar")).indexOf("Noto Serif SC")>=0)
     + " 节目条白底已去=" + (getComputedStyle(document.querySelector(".showsbar")).backgroundColor === "rgba(0, 0, 0, 0)"));
   var b = document.querySelector(".selbtn"); if(b) b.click();
@@ -278,6 +279,7 @@ REQUIRED = [
     (" 合理=1",          "A2O 搜索结果异常（0 张=搜索坏，>300=分页上限没生效）"),
     ("Noto Serif SC",    "筛选栏字体没换成宋体（用户明确要求过）"),
     ("分段宋体=true",    "范围/查看分段控件没换成宋体"),
+    ("页签宋体=true",    "顶部页签没换成宋体"),
     ("节目条宋体=true",  "打歌节目条没换成宋体"),
     ("节目条白底已去=true", "打歌节目条还是白卡片，没文字化"),
 ]
