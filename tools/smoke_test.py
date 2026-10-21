@@ -222,9 +222,13 @@ step(function(){
 /* 自定义下拉：点开面板并选一项，值要同步回底层 select */
 step(function(){ document.querySelector('[data-tab="past"]').click(); });
 step(function(){
+  function ff(el){ return getComputedStyle(el).fontFamily; }
   LOG.push("下拉自绘=" + (document.querySelectorAll(".selbtn").length)
     + " 原生select隐藏=" + (getComputedStyle($("fType")).display)
-    + " 筛选栏字体=" + getComputedStyle(document.querySelector(".selbtn")).fontFamily);
+    + " 筛选栏字体=" + getComputedStyle(document.querySelector(".selbtn")).fontFamily
+    + " 分段宋体=" + (ff(document.querySelector(".seg button")).indexOf("Noto Serif SC")>=0)
+    + " 节目条宋体=" + (ff(document.querySelector(".showsbar")).indexOf("Noto Serif SC")>=0)
+    + " 节目条白底已去=" + (getComputedStyle(document.querySelector(".showsbar")).backgroundColor === "rgba(0, 0, 0, 0)"));
   var b = document.querySelector(".selbtn"); if(b) b.click();
 });
 step(function(){
@@ -273,6 +277,9 @@ REQUIRED = [
     ("返回=true",        "详情页返回不了"),
     (" 合理=1",          "A2O 搜索结果异常（0 张=搜索坏，>300=分页上限没生效）"),
     ("Noto Serif SC",    "筛选栏字体没换成宋体（用户明确要求过）"),
+    ("分段宋体=true",    "范围/查看分段控件没换成宋体"),
+    ("节目条宋体=true",  "打歌节目条没换成宋体"),
+    ("节目条白底已去=true", "打歌节目条还是白卡片，没文字化"),
 ]
 
 

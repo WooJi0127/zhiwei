@@ -122,19 +122,23 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 
 /* 左侧一道渐变竖条，纯装饰，让统计卡不那么呆 */
 
-/* ================= 打歌节目时间表 ================= */
-.showsbar{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:11px 14px;margin-bottom:16px;box-shadow:var(--shadow)}
+/* ================= 打歌节目时间表 =================
+   文字化：不再是一张白卡，像筛选栏一样融进纸底；标题宋体墨绿，
+   「本周 ▾」按钮与下拉按钮同款（透明 + 暖灰 hover）。 */
+.showsbar{background:transparent;border:0;border-radius:0;box-shadow:none;
+  padding:4px 2px;margin-bottom:14px;font-family:var(--font-title)}
 .shhead{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.shic{font-size:15px;line-height:1}
-.shtitle{font-size:13px;font-weight:800;letter-spacing:.2px}
+.shic{font-size:15px;line-height:1;color:var(--brand)}
+.shtitle{font-size:14px;font-weight:700;letter-spacing:.04em;color:var(--brand);
+  text-shadow:0 1px 0 rgba(255,255,255,.65)}
 .shnow{flex:1;min-width:160px;font-size:12.5px;color:var(--sub)}
 .shnow b{color:var(--text)}
-.shnow i{font-style:normal;color:var(--brand);font-weight:700}
+.shnow i{font-style:normal;color:var(--brand2);font-weight:700}
 .shnone{color:#8C8878}
-.shmore{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:9px;
-  padding:4px 10px;font-size:12px;font-weight:700;transition:border-color .15s,color .15s}
-.shmore:hover{border-color:var(--brand);color:var(--brand)}
+.shmore{border:0;background:transparent;color:var(--sub);border-radius:8px;
+  padding:5px 11px;font-family:var(--font-title);font-size:12.5px;font-weight:600;
+  transition:color .15s,background-color .15s}
+.shmore:hover{background-color:#F4F0E6;color:var(--brand)}
 .shweek{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
 .shrow{display:flex;align-items:baseline;gap:10px;padding:5px 4px;font-size:12.5px;border-radius:8px}
 .shrow .shw{width:32px;flex:none;color:var(--sub);font-weight:700;font-size:12px}
@@ -360,19 +364,24 @@ select option{background:#fff;color:var(--text)}
   box-shadow:var(--relief),var(--drop)}
 a.btn{display:inline-flex;align-items:center}
 
-/* ================= 简易控制条（即将回归 / 本月回归） ================= */
-.simplebar{display:none;align-items:center;gap:10px;background:var(--paper);
-  border:1px solid var(--line2);border-radius:var(--radius);padding:10px 14px;
-  margin-bottom:16px;box-shadow:var(--shadow);flex-wrap:wrap}
+/* ================= 简易控制条（范围 / 查看） =================
+   与筛选栏同一套文字语言：去白卡、去灰槽，纯宋体文字 + 暖灰 hover；
+   选中档 = 墨绿加粗 + 赭石短下划线（印刷页码那种记号），不再用绿胶囊。 */
+.simplebar{display:none;align-items:center;gap:10px;background:transparent;
+  border:0;border-radius:0;padding:4px 2px;box-shadow:none;margin-bottom:14px;
+  flex-wrap:wrap;font-family:var(--font-title)}
 .simplebar.on{display:flex}
-.sbl{font-size:12px;color:var(--sub);font-weight:700}
+.sbl{font-size:12px;color:var(--sub);font-weight:700;letter-spacing:.3px}
 .sbsub{font-size:12px;color:var(--sub);font-weight:600;margin-left:auto}
-.seg{display:inline-flex;background:#EDE9DE;border-radius:11px;padding:3px;gap:3px;
-  box-shadow:inset 0 1px 2px rgba(34,37,31,.06)}
-.seg button{border:0;background:transparent;border-radius:8px;padding:6px 16px;
-  font-size:12.5px;font-weight:700;color:var(--sub)}
-.seg button:hover{color:var(--text)}
-.seg button.on{background:var(--grad);color:#fff;box-shadow:var(--relief),0 1px 3px rgba(34,37,31,.25)}
+.seg{display:inline-flex;background:transparent;border-radius:8px;padding:0;gap:2px;
+  box-shadow:none}
+.seg button{border:0;background:transparent;border-radius:8px;padding:6px 13px;
+  font-family:var(--font-title);font-size:13.5px;font-weight:600;color:var(--sub);
+  transition:color .15s,background-color .15s}
+.seg button:hover{color:var(--brand);background-color:#F4F0E6}
+.seg button.on{color:var(--brand);font-weight:700;background:transparent;
+  box-shadow:inset 0 -2px 0 var(--brand2);
+  text-shadow:0 1px 0 rgba(255,255,255,.65)}
 
 /* ================= calendar popup ================= */
 .calpop{position:absolute;z-index:90;background:#fff;border:1px solid var(--line);
