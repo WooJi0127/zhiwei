@@ -235,6 +235,18 @@ step(function(){
   LOG.push("首页板块=" + Array.prototype.map.call(
     document.querySelectorAll("#homeView .hsec-h h2"),
     function(e){ return e.textContent.trim(); }).join("/"));
+  /* 随心歌单：只能是已发行的（含今天），一张未发行的都不能混进来 */
+  var rels = (window.__KPOP_DATA__ && window.__KPOP_DATA__.releases) || [];
+  var byId = {}; rels.forEach(function(r){ byId[r.id] = r; });
+  var today = new Date(); var tS = today.getFullYear() + "-"
+    + ("0"+(today.getMonth()+1)).slice(-2) + "-" + ("0"+today.getDate()).slice(-2);
+  var djc = document.querySelectorAll("#homeView .djc");
+  var bad = 0;
+  Array.prototype.forEach.call(djc, function(e){
+    var r = byId[e.getAttribute("data-open")];
+    if(r && r.date && r.date > tS) bad++;
+  });
+  LOG.push("随心歌单=" + djc.length + " 未发行混入=" + bad);
   LOG.push("今日生日默认=" + document.querySelectorAll("#homeView .bday").length
     + " 展开按钮=" + ($("bdMore") ? $("bdMore").textContent : "无"));
   var b = $("bdMore"); if(b) b.click();
@@ -309,6 +321,8 @@ REQUIRED = [
     ("首页MV不超6=true",   "首页热门 MV 超过 6 个（用户定死最多 6 个）"),
     ("从头开始小节=6",     "「从头开始」页内容没渲染出来"),
     ("诉说输入框=true",    "「诉说」页没有输入框"),
+    ("随心歌单=4",         "首页「随心歌单」卡片数不对"),
+    ("未发行混入=0",       "「随心歌单」混进了还没发行的专辑"),
 ]
 
 

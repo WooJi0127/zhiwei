@@ -1926,8 +1926,9 @@ function bdayListHTML(bds){
 /* 随心歌单：随机挑 4 张已发行的专辑。随机结果存 S.djList，
    翻页 / 切页签都不会变，点「换一批」才重新抽 —— 不然每动一下就换一批，很吵 */
 function djPick(){
-  var pool = ALL.filter(function(r){ return r._img && r._dd < 0; });
-  if(pool.length < 4) pool = ALL.filter(function(r){ return r._img; });
+  /* 只抽已发行的（_dd <= 0 = 今天或更早）。还没发行的不进歌单——
+     点进去只能看个空壳，还以为站坏了。宁可少给几张也不掺未发行的 */
+  var pool = ALL.filter(function(r){ return r._img && r._dd <= 0; });
   var out = [], used = {}, guard = 0;
   while(out.length < 4 && guard++ < 80){
     var r = pool[Math.floor(Math.random() * pool.length)];
@@ -1938,6 +1939,10 @@ function djPick(){
 }
 function djHTML(){
   if(!S.djList || !S.djList.length) S.djList = djPick();
+  if(!S.djList.length){
+    return '<aside class="dj"><div class="djtop"><h3>随心歌单</h3></div>'
+         + '<div class="djsub">还没有已发行的专辑可以抽</div></aside>';
+  }
   var h = '<aside class="dj">'
     + '<div class="djtop"><h3>随心歌单</h3>'
     +   '<button class="btn" id="djMore">换一批</button></div>'
