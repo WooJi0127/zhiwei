@@ -36,11 +36,11 @@ jobs:
           restore-keys: |
             kpop-db-
 
-      # 每周把「近两个月有发行」的艺人整刷一遍：一是 MV 常常晚几天才传，
+      # 每周把「近一个月有发行」的专辑整刷一遍：一是 MV 常常晚几天才传，
       # 二是播放量一直在涨——首页按播放量排序，不刷新就永远是老数字。
-      - name: 刷新近两个月的 MV（播放量 / 迟传补漏）
+      - name: 刷新近一个月的 MV（播放量 / 迟传补漏）
         continue-on-error: true
-        run: python scripts/bilibili.py --recent 60 --limit 250
+        run: python scripts/bilibili.py --releases 30 --ahead 7
 
       - name: 校验失效链接
         continue-on-error: true

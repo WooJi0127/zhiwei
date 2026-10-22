@@ -1219,19 +1219,19 @@ function fmtPlay(n){
   if(n >= 10000)     return (n/10000).toFixed(1) + " 万";
   return String(n);
 }
-/* 首页「热门 MV」：近两个月发行的专辑，找它的主打曲 MV，按播放量降序，最多 6 个。
+/* 首页「热门 MV」：近一个月发行的专辑，找它的主打曲 MV，按播放量降序，最多 6 个。
    匹配办法：MV 标题里出现专辑名（比对前先把引号、空格、大小写全抹掉，
    B 站标题里那些 ‘ ’ 「 」 不然永远对不上）。
    主打没找到也不留空：用同窗口内其它官方 MV 按播放量补足到 6 个。
    MV 只服务于这一块：详情页不挂 MV 入口（用户拍板），mvOf() 已随之删除。 */
-var MV_DAYS = 60;          /* 近两个月 */
+var MV_DAYS = 30;          /* 近一个月 */
 var MV_MAX  = 6;           /* 板块最多 6 个 */
 function mvKey(s){
   return (s || "").toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, "");
 }
 function mvHot(){
   var now = TODAY.getTime() / 1000, lo = now - MV_DAYS * 86400;
-  /* 1) 近两个月发行的专辑 → 艺人 + 专辑名 */
+  /* 1) 近一个月发行的专辑 → 艺人 + 专辑名 */
   var want = [], seenRel = {};
   for(var i = 0; i < ALL.length; i++){
     var r = ALL[i];
@@ -1243,26 +1243,29 @@ function mvHot(){
     seenRel[k] = 1;
     want.push(r);
   }
-  /* 2) 先放「专辑名对得上」的：这些是确定无误的主打 MV */
-  var out = [], used = {};
-  for(var a = 0; a < want.length && out.length < MV_MAX; a++){
+  /* 2) 先挑「专辑名对得上」的（确定无误的主打 MV），再用同窗口其它官方 MV
+        补足候选；最后不管来源，统一按播放量降序取前 6 —— 展示顺序只认播放量，
+        不能「先匹配的排前面」，否则 41 万的会排在 370 万前面 */
+  var used = {}, pool = [];
+  for(var a = 0; a < want.length; a++){
     for(var b = 0; b < MVS.length; b++){
       var m = MVS[b];
       if(used[m.v] || m.a !== want[a].artist) continue;
       if((m.d || 0) < lo || (m.d || 0) > now) continue;
       if(mvKey(m.t).indexOf(mvKey(want[a].title)) >= 0){
-        used[m.v] = 1; out.push(m); break;
+        used[m.v] = 1; pool.push(m); break;
       }
     }
   }
-  /* 3) 不够 6 个就用同窗口其它官方 MV 按播放量补足（数据本身已按播放量降序） */
-  for(var c = 0; c < MVS.length && out.length < MV_MAX; c++){
+  for(var c = 0; c < MVS.length && pool.length < MV_MAX * 3; c++){
     var mv = MVS[c];
     if(used[mv.v]) continue;
     if((mv.d || 0) < lo || (mv.d || 0) > now) continue;
-    used[mv.v] = 1; out.push(mv);
+    used[mv.v] = 1; pool.push(mv);
   }
-  return {list:out, label: out.length ? "近两个月 · 按播放量" : ""};
+  pool.sort(function(x, y){ return (y.p || 0) - (x.p || 0); });
+  var out = pool.slice(0, MV_MAX);
+  return {list:out, label: out.length ? "近一个月 · 按播放量" : ""};
 }
 
 /* 今天过生日的成员。b 形如 2000-04-11，比月日即可。
@@ -1663,7 +1666,7 @@ function renderHome(){
                 + '<span class="mvau">'+esc(m.u)+'</span>'
                 + '</a>';
             }).join("") + '</div>'
-          : '<div class="hempty">近两个月还没有收录到官方 MV</div>');
+          : '<div class="hempty">近一个月还没有收录到官方 MV</div>');
 
   /* 打歌节目（复用列表页那一套） */
   h += homeSec("打歌节目", "韩国时间 KST",

@@ -161,6 +161,7 @@ step(function(){
   var nMV = mvSec ? mvSec.querySelectorAll(".mvmini").length : -1;
   LOG.push("首页MV=" + nMV
     + " 首页MV有内容=" + (nMV > 0)
+    + " 首页MV不超6=" + (nMV <= 6)
     + " 档位=" + (mvSec ? ((mvSec.querySelector(".hs") || {}).textContent || "") : ""));
   var mm = (window.__KPOP_DATA__ && window.__KPOP_DATA__.members) || [];
   var md = new Date(); var key = ("0" + (md.getMonth()+1)).slice(-2) + "-" + ("0" + md.getDate()).slice(-2);
@@ -290,7 +291,8 @@ REQUIRED = [
     ("页签宋体=true",    "顶部页签没换成宋体"),
     ("节目条宋体=true",  "打歌节目条没换成宋体"),
     ("节目条白底已去=true", "打歌节目条还是白卡片，没文字化"),
-    ("首页MV有内容=true",  "首页热门 MV 是空的（本月为空时应回退到近三个月/近一年/历史）"),
+    ("首页MV有内容=true",  "首页热门 MV 是空的（近一个月的 MV 没抓到）"),
+    ("首页MV不超6=true",   "首页热门 MV 超过 6 个（用户定死最多 6 个）"),
 ]
 
 

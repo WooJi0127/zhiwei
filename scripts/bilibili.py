@@ -44,8 +44,9 @@ DB_PATH = os.path.join(ROOT, "kpop.db")
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 SLEEP = 1.5                    # B 站风控较严：请求太快会 412，宁慢勿封
-PAGES = 2                      # 播放量排序搜 2 页（约 40 条），够覆盖历史热门
-NEW_PAGES = 2                  # 发布时间排序再搜 2 页，专门捞刚发的新 MV
+PAGES = 2                      # 按艺人搜：播放量排序 2 页（历史热门用）
+NEW_PAGES = 2                  # 按艺人搜：发布时间排序再 2 页（捞新发的）
+REL_PAGES = 2                  # 按发行条目搜：命中就停，最多翻 2 页
 
 DDL = """
 CREATE TABLE IF NOT EXISTS bili (
@@ -180,13 +181,35 @@ COMPANY = [
 ]
 
 
+def tokens(s):
+    """按非字母数字切开：「A2O MAY」→ ['a2o','may']。
+    官方号常常只挂公司/厂牌名（A2O MAY 的 MV 在 A2O_WORLD 上），
+    按整名比对必然漏，按词比对才抓得到。
+    注意顺序：必须先按原始字符串切再逐段 norm——norm 会把空格一起削掉，
+    先 norm 的话「A2O MAY」会变成一整个 a2omay，永远对不上 A2O_WORLD。"""
+    return [norm(t) for t in re.split(r"[^0-9A-Za-z\u4e00-\u9fff]+", s or "") if norm(t)]
+
+
 def related(name, uname, desc):
     n = norm(name)
     if not n:
         return False
+    un = norm(uname or "")
     u = norm((uname or "") + " " + (desc or ""))
-    if n and n in u:
+
+    # 短名（IVE / XG / TWS）是重灾区：「give」「live」「five」里都有 ive，
+    # 拿去做子串比对会误判一堆无关号。所以短名只认 UP 主名字本身，
+    # 而且必须是开头或独立成词（IVEofficial 认，pcyxjy 不认）。
+    if len(n) <= 4:
+        if not un:
+            return False
+        return un.startswith(n) or n in tokens(uname or "")
+
+    if n in u:
         return True
+    for t in tokens(name):               # A2O MAY → A2O_WORLD 这类
+        if len(t) >= 3 and t in u:
+            return True
     for c in COMPANY:
         cn = norm(c)
         if cn and cn in u:
@@ -207,7 +230,9 @@ def looks_like_mv(title, artist):
     """只要官方 MV 正片。命中 BAD 关键词的一律丢掉——否则首页会出现
     「MV 花絮」「MV Teaser」这种占位垃圾，比没有还难看。"""
     t = title.upper()
-    if not ("MV" in t or "M/V" in t or "MUSIC VIDEO" in t):
+    # 官方号未必写 MV：A2O LITE 的《NEON》就叫 "Official Video"，
+    # 只认 MV 会把它整条漏掉
+    if not any(k in t for k in ("MV", "M/V", "MUSIC VIDEO", "OFFICIAL VIDEO")):
         return False
     low = title.lower()
     for b in BAD:
@@ -225,43 +250,41 @@ def search_videos(kw, page, order="click"):
     return (d.get("data") or {}).get("result") or []
 
 
-def fetch_artist(con, name):
-    """抓一个艺人的官方 MV，返回存了几条。
+def clean_title(t):
+    """发行名去掉「- EP」「- Single」这类后缀：搜「IVE Looks Can Kill - Single」
+    B 站基本搜不到东西，搜「IVE Looks Can Kill」才准。"""
+    return re.sub(r"\s*[-–—]\s*(ep|single|album|mini|ost|repackage|dl|cd)\s*$",
+                  "", t or "", flags=re.I).strip()
 
-    搜两遍，两个排序各有用处：
-      click   —— 播放量降序，捞历史热门（首页「热门 MV」主要靠它）
-      pubdate —— 发布时间降序，捞刚发的。**新 MV 播放量一定低，只按
-                 播放量搜永远排不进前两页**，所以 10 月的新 MV 一直抓不到；
-                 加这一路才追得上新专。"""
-    got = []
-    seen = set()
-    plans = [("click", PAGES), ("pubdate", NEW_PAGES)]
-    for order, pages in plans:
-      for pg in range(1, pages + 1):
-        for v in search_videos(name, pg, order):
-            bvid = v.get("bvid")
-            if not bvid or bvid in seen:
-                continue
-            seen.add(bvid)
-            # 先用视频里带的 UP 主名字粗筛：名字里既没有艺人名也不像公司官方号的，
-            # 直接丢掉，不去查 card 接口。这一步能把请求量砍掉九成。
-            if not related(name, v.get("author") or "", ""):
-                continue
-            ok, uname, udesc = is_official(con, v.get("mid"))
-            if not ok or not related(name, uname, udesc):
-                continue
-            title = clean(v.get("title"))
-            if not looks_like_mv(title, name):
-                continue
-            got.append({
-                "bvid": bvid, "mid": str(v.get("mid")), "uname": uname,
-                "title": title, "play": v.get("play") or 0,
-                "pubdate": v.get("pubdate") or 0,
-                "pic": ("https:" + v["pic"]) if (v.get("pic") or "").startswith("//")
-                       else (v.get("pic") or ""),
-            })
-        time.sleep(SLEEP)
 
+def pick(con, name, videos, seen):
+    """从一批搜索结果里挑官方 MV：UP 主要和艺人对得上 + 官方认证 + 是正片。"""
+    out = []
+    for v in videos:
+        bvid = v.get("bvid")
+        if not bvid or bvid in seen:
+            continue
+        seen.add(bvid)
+        # 先用视频里带的 UP 主名字粗筛，省掉九成 card 接口请求
+        if not related(name, v.get("author") or "", ""):
+            continue
+        ok, uname, udesc = is_official(con, v.get("mid"))
+        if not ok or not related(name, uname, udesc):
+            continue
+        title = clean(v.get("title"))
+        if not looks_like_mv(title, name):
+            continue
+        out.append({
+            "bvid": bvid, "mid": str(v.get("mid")), "uname": uname,
+            "title": title, "play": v.get("play") or 0,
+            "pubdate": v.get("pubdate") or 0,
+            "pic": ("https:" + v["pic"]) if (v.get("pic") or "").startswith("//")
+                   else (v.get("pic") or ""),
+        })
+    return out
+
+
+def save(con, name, got):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     for g in got:
         con.execute("""INSERT OR REPLACE INTO bili
@@ -271,6 +294,45 @@ def fetch_artist(con, name):
                      g["play"], g["pubdate"], g["pic"], now))
     con.commit()
     return len(got)
+
+
+def fetch_release(con, artist, title, lead=None):
+    """按「艺人 + 主打曲 / 专辑名」搜官方 MV —— 这才是首页要的东西。
+
+    只搜艺人名是不够的：B 站搜索按播放量排，艺人名的结果前几页会被老 MV、
+    饭拍、打歌舞台占满，新专主打挤不进去（NMIXX、IVE 都因此漏掉）。
+
+    关键词先主打曲、后专辑名：主打曲常常和专辑名不一样
+    （NMIXX 专辑叫 Strange Muse，主打叫 긴 소원 / Birthday Wish），
+    只用专辑名搜就会整个漏掉。命中一个就收工，省请求。"""
+    kws = []
+    if lead and clean_title(lead) and norm(lead) != norm(title):
+        kws.append((artist + " " + clean_title(lead)).strip())
+    kws.append((artist + " " + clean_title(title)).strip())
+
+    for kw in kws:
+        got, seen = [], set()
+        for pg in range(1, REL_PAGES + 1):
+            got += pick(con, artist, search_videos(kw, pg, "click"), seen)
+            if got:
+                break                  # 第一页就命中就别翻了
+            time.sleep(SLEEP)
+        if got:
+            return save(con, artist, got)
+    return 0
+
+
+def fetch_artist(con, name):
+    """按艺人名捞历史热门 MV（首页其实只用近一个月，这条留作补全历史）。
+
+    两个排序各搜一遍：click 捞热门，pubdate 捞新发的——新 MV 播放量低，
+    只按播放量排会一直沉在后面。"""
+    got, seen = [], set()
+    for order, pages in [("click", PAGES), ("pubdate", NEW_PAGES)]:
+        for pg in range(1, pages + 1):
+            got += pick(con, name, search_videos(name, pg, order), seen)
+            time.sleep(SLEEP)
+    return save(con, name, got)
 
 
 def check_dead(con):
@@ -313,6 +375,22 @@ def main():
         except Exception:  # noqa: BLE001
             recent_days = 30
 
+    # --releases N：按发行条目抓近 N 天的专辑（默认再往后看 7 天——
+    # MV 常常比专辑先发，只盯已发行的会漏掉「预告期就爆了」的那批）
+    rel_days = None
+    rel_ahead = 7
+    if "--releases" in sys.argv:
+        try:
+            rel_days = int(sys.argv[sys.argv.index("--releases") + 1])
+        except Exception:  # noqa: BLE001
+            rel_days = 30
+    if "--ahead" in sys.argv:
+        try:
+            rel_ahead = int(sys.argv[sys.argv.index("--ahead") + 1])
+        except Exception:  # noqa: BLE001
+            rel_ahead = 7
+    skip_have = "--skip-have" in sys.argv
+
     if recent_days:
         # 近期「已经发行」过的艺人优先，且每次都重抓（不查 bili_seen）——
         # 新 MV 才追得上。注意必须排除未来档期：库里存着几个月后才会发的专辑，
@@ -331,13 +409,61 @@ def main():
         have = {r[0] for r in con.execute("SELECT artist FROM bili_seen").fetchall()}
 
     todo = [n for n in rows if force or n not in have]
-    if not todo:
+    # --releases 不看 bili_seen（每次都要重抓，才能追到新 MV 和最新播放量），
+    # 所以「都抓过了」的提前返回对它不成立
+    if not todo and rel_days is None:
         log(f"· B 站：{len(rows)} 个艺人都抓过了，跳过（--force 重抓）")
         con.close()
         return
 
-    log(f"· B 站：待抓 {len(todo)} / 共 {len(rows)} 个艺人")
     cookie()
+
+    # ---- 模式二：按「发行条目」抓（首页「热门 MV」的主力通道）----
+    if rel_days is not None:
+        today = datetime.date.today()
+        lo = (today - datetime.timedelta(days=rel_days)).isoformat()
+        hi = (today + datetime.timedelta(days=rel_ahead)).isoformat()
+        rels = con.execute(
+            "SELECT r.artist, r.title,"
+            "  (SELECT t.name FROM tracks t WHERE t.release_id = r.id"
+            "   ORDER BY t.track_no LIMIT 1) AS lead"
+            " FROM releases r WHERE r.date>=? AND r.date<=?"
+            " GROUP BY r.artist, r.title ORDER BY r.date DESC", (lo, hi)).fetchall()
+        if limit:
+            rels = rels[:limit]
+        have = {}
+        if skip_have:
+            for a, t in con.execute("SELECT artist,title FROM bili WHERE dead=0"):
+                have.setdefault(a, []).append((t or "").lower())
+
+        log(f"· B 站：按发行条目抓 {len(rels)} 条（{lo} ~ {hi}）"
+            + ("，已收录的跳过" if skip_have else ""))
+        total, hit, skipped = 0, 0, 0
+        for i, (artist, title, lead) in enumerate(rels, 1):
+            if skip_have:
+                key = clean_title(lead or title).lower()
+                if key and any(key in t for t in have.get(artist, [])):
+                    skipped += 1
+                    continue
+            try:
+                n = fetch_release(con, artist, title, lead)
+            except Exception as e:  # noqa: BLE001
+                log(f"  ! {artist} / {title} 失败: {str(e)[:50]}")
+                n = 0
+            total += n
+            if n:
+                hit += 1
+            if i % 20 == 0:
+                log(f"  … {i}/{len(rels)} 命中 {hit} 条发行，共 {total} 个 MV")
+            time.sleep(SLEEP)
+        allrows = con.execute("SELECT COUNT(*) FROM bili WHERE dead=0").fetchone()[0]
+        log(f"· B 站：{hit}/{len(rels) - skipped} 条发行有 MV（跳过已收录 {skipped} 条），"
+            f"本次 {total} 个；库里有效共 {allrows} 条")
+        con.close()
+        return
+
+    # ---- 模式一：按艺人抓 ----
+    log(f"· B 站：待抓 {len(todo)} / 共 {len(rows)} 个艺人")
     total, hit = 0, 0
     for i, name in enumerate(todo, 1):
         try:
