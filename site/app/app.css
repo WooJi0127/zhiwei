@@ -666,7 +666,6 @@ a.btn{display:inline-flex;align-items:center}
   transition:border-color .15s,box-shadow .15s}
 .tellta:focus{border-color:var(--brand2);box-shadow:var(--ring)}
 .tellfoot{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px}
-.tellnote{font-size:11.5px;color:var(--sub);line-height:1.6}
 
 /* 诉说与指南页的按钮/分类也要文字化（与全站一致，用户明确要求）：
    分类选中 = 墨绿加粗 + 赭石短下划线；按钮 = 宋体墨绿无框，

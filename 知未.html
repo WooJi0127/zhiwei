@@ -678,7 +678,6 @@ a.btn{display:inline-flex;align-items:center}
   transition:border-color .15s,box-shadow .15s}
 .tellta:focus{border-color:var(--brand2);box-shadow:var(--ring)}
 .tellfoot{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px}
-.tellnote{font-size:11.5px;color:var(--sub);line-height:1.6}
 
 /* 诉说与指南页的按钮/分类也要文字化（与全站一致，用户明确要求）：
    分类选中 = 墨绿加粗 + 赭石短下划线；按钮 = 宋体墨绿无框，
@@ -1590,8 +1589,6 @@ function tellHTML(){
     + '<div class="tellfoot">'
     +   '<button class="btn pri" id="tellSend">发送到我邮箱</button>'
     +   '<button class="btn" id="tellCopy">复制内容</button>'
-    +   '<span class="tellnote" id="tellNote">会打开你的邮件应用；没有邮件应用就点复制，'
-    +     '粘贴发到 ' + esc(REPORT_MAIL) + '</span>'
     + '</div></div>';
   return h;
 }
@@ -2507,7 +2504,7 @@ document.addEventListener("click", function(e){
   if(t.id === "tellCopy" || t.closest("#tellCopy")){
     var v = ($("tellText") || {}).value || "";
     if(!v.trim()){ toast("先写点什么吧"); return; }
-    copyText(v + "\n\n（发送到 " + REPORT_MAIL + "）");
+    copyText(v);
     return;
   }
 });

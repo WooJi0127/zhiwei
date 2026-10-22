@@ -547,8 +547,6 @@ function tellHTML(){
     + '<div class="tellfoot">'
     +   '<button class="btn pri" id="tellSend">发送到我邮箱</button>'
     +   '<button class="btn" id="tellCopy">复制内容</button>'
-    +   '<span class="tellnote" id="tellNote">会打开你的邮件应用；没有邮件应用就点复制，'
-    +     '粘贴发到 ' + esc(REPORT_MAIL) + '</span>'
     + '</div></div>';
   return h;
 }
@@ -1464,7 +1462,7 @@ document.addEventListener("click", function(e){
   if(t.id === "tellCopy" || t.closest("#tellCopy")){
     var v = ($("tellText") || {}).value || "";
     if(!v.trim()){ toast("先写点什么吧"); return; }
-    copyText(v + "\n\n（发送到 " + REPORT_MAIL + "）");
+    copyText(v);
     return;
   }
 });
