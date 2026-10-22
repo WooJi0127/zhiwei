@@ -671,6 +671,37 @@ a.btn{display:inline-flex;align-items:center}
 .tellta:focus{border-color:var(--brand2);box-shadow:var(--ring)}
 .tellfoot{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px}
 
+/* ================= 随心歌单（首页右侧补空位） =================
+   今天发行/生日少的时候，左边会空一大块——右边立一块歌单纸卡。
+   面板纸 + 纸纹 + 宋体标题；按钮文字化（老规矩）。 */
+.hduo{display:flex;gap:22px;align-items:flex-start}
+.hduoL{flex:1;min-width:0}
+.dj{flex:none;width:300px;background-color:var(--card);background-image:var(--kraft-tex);
+  background-size:200px 200px;border:1px solid var(--line2);border-radius:var(--radius);
+  padding:16px 18px 18px;box-shadow:var(--shadow)}
+.djtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.djtop h3{margin:0;font-family:var(--font-title);font-size:16.5px;font-weight:700;
+  color:var(--brand);letter-spacing:.02em;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+.djsub{font-size:12px;color:var(--sub);margin:4px 0 13px;letter-spacing:.02em}
+.djgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px}
+.djc{display:block;width:100%;min-width:0;border:0;background:transparent;padding:0;
+  text-align:left;cursor:pointer}
+.djcov{display:block;width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden;
+  background:var(--grad-soft);box-shadow:0 1px 2px rgba(34,37,31,.16),0 2px 5px rgba(34,37,31,.08)}
+.djcov img{width:100%;height:100%;object-fit:cover;display:block}
+.djt{display:block;margin-top:6px;font-size:12.5px;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dja{display:block;margin-top:1px;font-size:11px;color:var(--sub);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dj .btn{font-family:var(--font-title);font-size:12.5px;font-weight:600;border:0;
+  background:transparent;color:var(--sub);padding:5px 9px;border-radius:8px;
+  transition:color .15s,background-color .15s}
+.dj .btn:hover{background-color:#F4F0E6;color:var(--brand);border-color:transparent}
+@media (max-width:900px){
+  .hduo{flex-direction:column}
+  .dj{width:100%}
+}
+
 /* 诉说与指南页的按钮/分类也要文字化（与全站一致，用户明确要求）：
    分类选中 = 墨绿加粗 + 赭石短下划线；按钮 = 宋体墨绿无框，
    hover 变赭石 + 暖光（「查看完整日历」同款定式）。

@@ -683,6 +683,37 @@ a.btn{display:inline-flex;align-items:center}
 .tellta:focus{border-color:var(--brand2);box-shadow:var(--ring)}
 .tellfoot{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px}
 
+/* ================= 随心歌单（首页右侧补空位） =================
+   今天发行/生日少的时候，左边会空一大块——右边立一块歌单纸卡。
+   面板纸 + 纸纹 + 宋体标题；按钮文字化（老规矩）。 */
+.hduo{display:flex;gap:22px;align-items:flex-start}
+.hduoL{flex:1;min-width:0}
+.dj{flex:none;width:300px;background-color:var(--card);background-image:var(--kraft-tex);
+  background-size:200px 200px;border:1px solid var(--line2);border-radius:var(--radius);
+  padding:16px 18px 18px;box-shadow:var(--shadow)}
+.djtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.djtop h3{margin:0;font-family:var(--font-title);font-size:16.5px;font-weight:700;
+  color:var(--brand);letter-spacing:.02em;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+.djsub{font-size:12px;color:var(--sub);margin:4px 0 13px;letter-spacing:.02em}
+.djgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px}
+.djc{display:block;width:100%;min-width:0;border:0;background:transparent;padding:0;
+  text-align:left;cursor:pointer}
+.djcov{display:block;width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden;
+  background:var(--grad-soft);box-shadow:0 1px 2px rgba(34,37,31,.16),0 2px 5px rgba(34,37,31,.08)}
+.djcov img{width:100%;height:100%;object-fit:cover;display:block}
+.djt{display:block;margin-top:6px;font-size:12.5px;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dja{display:block;margin-top:1px;font-size:11px;color:var(--sub);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dj .btn{font-family:var(--font-title);font-size:12.5px;font-weight:600;border:0;
+  background:transparent;color:var(--sub);padding:5px 9px;border-radius:8px;
+  transition:color .15s,background-color .15s}
+.dj .btn:hover{background-color:#F4F0E6;color:var(--brand);border-color:transparent}
+@media (max-width:900px){
+  .hduo{flex-direction:column}
+  .dj{width:100%}
+}
+
 /* 诉说与指南页的按钮/分类也要文字化（与全站一致，用户明确要求）：
    分类选中 = 墨绿加粗 + 赭石短下划线；按钮 = 宋体墨绿无框，
    hover 变赭石 + 暖光（「查看完整日历」同款定式）。
@@ -1228,7 +1259,8 @@ var S = {
   showWeek:false,                      /* 打歌节目「本周时间表」是否展开 */
   bdMore:false,                        /* 首页今日生日是否展开全部 */
   calMonth:null, calFrom:null, calTo:null,
-  tellKind:"想说的话", tellText:""     /* 诉说：类别与草稿（重渲染时不丢） */
+  tellKind:"想说的话", tellText:"",   /* 诉说：类别与草稿（重渲染时不丢） */
+  djList:null                         /* 随心歌单：抽好的 4 张，换一批才重抽 */
 };
 
 /* ============================ 打歌节目 ============================ */
@@ -1826,7 +1858,8 @@ function renderHome(){
     + '<div class="heroR" id="hstats"></div>'
     + '</div>';
 
-  /* 今天发行：横滑小卡，不占版面 */
+  /* 今天发行 + 今日生日 + 随心歌单：左边内容、右边歌单，把空位填上 */
+  h += '<div class="hduo"><div class="hduoL">';
   h += homeSec("今天发行", todayRel.length ? "共 "+todayRel.length+" 张" : "",
         todayRel.length ? '<div class="minibar">'+todayRel.map(miniHTML).join("")+'</div>'
                         : '<div class="hempty">今天没有发行安排</div>');
@@ -1834,6 +1867,7 @@ function renderHome(){
   /* 今日生日：默认 5 位，多了点「展开」 */
   h += homeSec("今日生日", bds.length ? "共 "+bds.length+" 位" : "",
         bds.length ? bdayListHTML(bds) : '<div class="hempty">今天没有收录到艺人生日</div>');
+  h += '</div>' + djHTML() + '</div>';
 
   /* 热门 MV：官方账号发布，按播放量排序（本月 → 三个月 → 一年 → 历史） */
   var hot = mvHot(), mm = hot.list;
@@ -1886,6 +1920,40 @@ function bdayListHTML(bds){
       + (S.bdMore ? '收起' : '还有 ' + (bds.length - lim) + ' 位 · 展开')
       + '</button>';
   }
+  return h;
+}
+
+/* 随心歌单：随机挑 4 张已发行的专辑。随机结果存 S.djList，
+   翻页 / 切页签都不会变，点「换一批」才重新抽 —— 不然每动一下就换一批，很吵 */
+function djPick(){
+  var pool = ALL.filter(function(r){ return r._img && r._dd < 0; });
+  if(pool.length < 4) pool = ALL.filter(function(r){ return r._img; });
+  var out = [], used = {}, guard = 0;
+  while(out.length < 4 && guard++ < 80){
+    var r = pool[Math.floor(Math.random() * pool.length)];
+    if(!r || used[r.id]) continue;
+    used[r.id] = 1; out.push(r);
+  }
+  return out;
+}
+function djHTML(){
+  if(!S.djList || !S.djList.length) S.djList = djPick();
+  var h = '<aside class="dj">'
+    + '<div class="djtop"><h3>随心歌单</h3>'
+    +   '<button class="btn" id="djMore">换一批</button></div>'
+    + '<div class="djsub">不知道听什么？听天由命</div>'
+    + '<div class="djgrid">';
+  for(var i = 0; i < S.djList.length; i++){
+    var r = S.djList[i], dn = dispName(r.artist);
+    h += '<button class="djc" data-open="'+esc(r.id)+'">'
+      +  '<span class="djcov">'
+      +    (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+      +  '</span>'
+      +  '<span class="djt">'+esc(r.title)+'</span>'
+      +  '<span class="dja">'+esc(dn.zh || r.artist)+'</span>'
+      +  '</button>';
+  }
+  h += '</div></aside>';
   return h;
 }
 
@@ -2488,6 +2556,10 @@ function copyText(s){
 document.addEventListener("click", function(e){
   var el, t = e.target;
   if(!t.closest) return;
+  /* 随心歌单：换一批 */
+  if(t.id === "djMore" || t.closest("#djMore")){
+    S.djList = null; render(); return;
+  }
   /* 指南里的跳转按钮：直接切到对应页签 */
   if((el = t.closest("[data-jump]"))){
     S.view = "calendar"; S.tab = el.getAttribute("data-jump");

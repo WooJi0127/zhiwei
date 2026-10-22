@@ -182,7 +182,8 @@ var S = {
   showWeek:false,                      /* 打歌节目「本周时间表」是否展开 */
   bdMore:false,                        /* 首页今日生日是否展开全部 */
   calMonth:null, calFrom:null, calTo:null,
-  tellKind:"想说的话", tellText:""     /* 诉说：类别与草稿（重渲染时不丢） */
+  tellKind:"想说的话", tellText:"",   /* 诉说：类别与草稿（重渲染时不丢） */
+  djList:null                         /* 随心歌单：抽好的 4 张，换一批才重抽 */
 };
 
 /* ============================ 打歌节目 ============================ */
@@ -780,7 +781,8 @@ function renderHome(){
     + '<div class="heroR" id="hstats"></div>'
     + '</div>';
 
-  /* 今天发行：横滑小卡，不占版面 */
+  /* 今天发行 + 今日生日 + 随心歌单：左边内容、右边歌单，把空位填上 */
+  h += '<div class="hduo"><div class="hduoL">';
   h += homeSec("今天发行", todayRel.length ? "共 "+todayRel.length+" 张" : "",
         todayRel.length ? '<div class="minibar">'+todayRel.map(miniHTML).join("")+'</div>'
                         : '<div class="hempty">今天没有发行安排</div>');
@@ -788,6 +790,7 @@ function renderHome(){
   /* 今日生日：默认 5 位，多了点「展开」 */
   h += homeSec("今日生日", bds.length ? "共 "+bds.length+" 位" : "",
         bds.length ? bdayListHTML(bds) : '<div class="hempty">今天没有收录到艺人生日</div>');
+  h += '</div>' + djHTML() + '</div>';
 
   /* 热门 MV：官方账号发布，按播放量排序（本月 → 三个月 → 一年 → 历史） */
   var hot = mvHot(), mm = hot.list;
@@ -840,6 +843,40 @@ function bdayListHTML(bds){
       + (S.bdMore ? '收起' : '还有 ' + (bds.length - lim) + ' 位 · 展开')
       + '</button>';
   }
+  return h;
+}
+
+/* 随心歌单：随机挑 4 张已发行的专辑。随机结果存 S.djList，
+   翻页 / 切页签都不会变，点「换一批」才重新抽 —— 不然每动一下就换一批，很吵 */
+function djPick(){
+  var pool = ALL.filter(function(r){ return r._img && r._dd < 0; });
+  if(pool.length < 4) pool = ALL.filter(function(r){ return r._img; });
+  var out = [], used = {}, guard = 0;
+  while(out.length < 4 && guard++ < 80){
+    var r = pool[Math.floor(Math.random() * pool.length)];
+    if(!r || used[r.id]) continue;
+    used[r.id] = 1; out.push(r);
+  }
+  return out;
+}
+function djHTML(){
+  if(!S.djList || !S.djList.length) S.djList = djPick();
+  var h = '<aside class="dj">'
+    + '<div class="djtop"><h3>随心歌单</h3>'
+    +   '<button class="btn" id="djMore">换一批</button></div>'
+    + '<div class="djsub">不知道听什么？听天由命</div>'
+    + '<div class="djgrid">';
+  for(var i = 0; i < S.djList.length; i++){
+    var r = S.djList[i], dn = dispName(r.artist);
+    h += '<button class="djc" data-open="'+esc(r.id)+'">'
+      +  '<span class="djcov">'
+      +    (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+      +  '</span>'
+      +  '<span class="djt">'+esc(r.title)+'</span>'
+      +  '<span class="dja">'+esc(dn.zh || r.artist)+'</span>'
+      +  '</button>';
+  }
+  h += '</div></aside>';
   return h;
 }
 
@@ -1442,6 +1479,10 @@ function copyText(s){
 document.addEventListener("click", function(e){
   var el, t = e.target;
   if(!t.closest) return;
+  /* 随心歌单：换一批 */
+  if(t.id === "djMore" || t.closest("#djMore")){
+    S.djList = null; render(); return;
+  }
   /* 指南里的跳转按钮：直接切到对应页签 */
   if((el = t.closest("[data-jump]"))){
     S.view = "calendar"; S.tab = el.getAttribute("data-jump");
