@@ -667,6 +667,26 @@ a.btn{display:inline-flex;align-items:center}
 .tellta:focus{border-color:var(--brand2);box-shadow:var(--ring)}
 .tellfoot{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .tellnote{font-size:11.5px;color:var(--sub);line-height:1.6}
+
+/* 诉说与指南页的按钮/分类也要文字化（与全站一致，用户明确要求）：
+   分类选中 = 墨绿加粗 + 赭石短下划线；按钮 = 宋体墨绿无框，
+   hover 变赭石 + 暖光（「查看完整日历」同款定式）。
+   必须写双类压过通栏 .btn / .chip.on，参考 .hfoot .btn.pri 的教训。 */
+.tellchips .chip{font-family:var(--font-title);font-size:13.5px;font-weight:600;
+  color:var(--sub)}
+.tellchips .chip:hover{color:var(--brand);background-color:#F4F0E6}
+.tellchips .chip.on{background:transparent;color:var(--brand);font-weight:700;
+  box-shadow:inset 0 -2px 0 var(--brand2);
+  text-shadow:0 1px 0 rgba(255,255,255,.65)}
+.tell .btn,.gacts .btn{font-family:var(--font-title);font-size:13px;font-weight:600;
+  border:0;background:transparent;color:var(--sub);padding:8px 10px;border-radius:8px;
+  transition:color .15s,background-color .15s}
+.tell .btn:hover,.gacts .btn:hover{background-color:#F4F0E6;color:var(--brand);
+  border-color:transparent;transform:none;box-shadow:none}
+.tell .btn.pri,.gacts .btn.pri{color:var(--brand);background:transparent;
+  box-shadow:none;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+.tell .btn.pri:hover,.gacts .btn.pri:hover{color:var(--brand2);background:transparent;
+  text-shadow:0 1px 0 rgba(255,255,255,.65),0 2px 12px rgba(181,118,79,.30)}
 footer{max-width:1280px;margin:26px auto 0;padding:20px 18px 40px;color:var(--sub);
   font-size:11.5px;border-top:1px solid var(--line)}
 footer a{color:var(--brand)}
