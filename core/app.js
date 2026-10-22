@@ -172,7 +172,7 @@ function isBias(n){ return bias.indexOf(n) >= 0; }
 
 var S = {
   view:"home",        /* home | calendar：首页是默认页 */
-  tab:"future",       /* future | past | mine | more */
+  tab:"future",       /* future | past | guide | mine | more */
   frange:"f7",        /* 未来子选项：f7 | month | nmonth */
   mine:"fav",         /* 我的子选项：fav | bias */
   q:"", type:"", kind:"", agency:"", sort:"date_asc",
@@ -181,7 +181,8 @@ var S = {
   showBiasMgr:false, detailId:null,
   showWeek:false,                      /* 打歌节目「本周时间表」是否展开 */
   bdMore:false,                        /* 首页今日生日是否展开全部 */
-  calMonth:null, calFrom:null, calTo:null
+  calMonth:null, calFrom:null, calTo:null,
+  tellKind:"想说的话", tellText:""     /* 诉说：类别与草稿（重渲染时不丢） */
 };
 
 /* ============================ 打歌节目 ============================ */
@@ -448,6 +449,118 @@ function gridHTML(list){
   if(!list.length) return '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>没有匹配的发行</h3>'
     + '<p>试试调整时间范围或筛选条件</p></div>';
   return '<div class="grid">' + list.map(cardHTML).join("") + '</div>';
+}
+
+/* ============================ 从头开始（新人入坑） ============================
+   给第一次接触 K-POP 的人看的。全部硬编码，不依赖数据接口——
+   这样就算数据源挂了这一页也永远在。写的时候守住两条：
+   1) 不编造数据（数字、规则只说确定的，拿不准的不写）
+   2) 每个概念都能落到本站的一个动作上（看完就知道下一步干嘛） */
+var GUIDE = [
+  { t:"先搞懂一件事：什么叫「回归」", s:"韩圈的「出新歌」不叫发歌，叫回归", p:[
+      "在 K-POP 里，艺人带着新作品出来活动一轮，叫一次「回归（Comeback）」。为什么不叫出道？因为每次出新专辑，艺人都会重新上一次打歌节目、重新做一轮宣传——像是「回到舞台」，所以叫回归。",
+      "一次回归的节奏大致是：先放预告图/预告片 → 发专辑和主打曲 MV → 接下来 2–4 周每周上打歌节目打歌 → 中间穿插综艺、签售、粉丝见面会。所以「回归日」指的是专辑发行那一天，不是宣传期的某一天。",
+      "本站记的就是这个日子。所有日期都按韩国时间（KST）算，比北京时间早 1 小时。"
+    ]},
+  { t:"专辑有三种，别被名字绕晕", s:"Single / EP（迷你） / 正规专辑", p:[],
+    l:[
+      ["Single", "单曲，通常 1–3 首歌。主打就一首，其他是伴奏或一两首收录曲。"],
+      ["EP / 迷你", "迷你专辑，一般 4–7 首。市面上最常见的一种，价位也最友好。"],
+      ["正规专辑", "通常 9 首以上，制作周期长，一两年才出一张。"],
+      ["为什么要在意", "主打曲是打歌和拿奖的那首；收录曲一般只在专辑里。想快速入门，先听主打就行。"]
+    ]},
+  { t:"打歌节目和「一位」", s:"每周打一次分，赢了叫拿一位", p:[
+      "韩国几家电视台每周各有一档音乐节目（本站「诉说」页上方就有本周时间表）。艺人带着新歌去表演，节目按音源、销量、播放量、投票等给分，当周第一名叫「一位」，赢了会有安可舞台——这是追回归最有仪式感的时刻。",
+      "打歌期通常 2–4 周，之后这轮回归就结束了，艺人进入下一轮准备。所以想看舞台，回归后前几周最关键。"
+    ]},
+  { t:"五个词，看懂饭圈在说什么", s:"黑话速成", p:[], l:[
+      ["本命", "你最喜欢、最认真追的那一个（团或人）。本站可以把本命标记出来，他们的新动态会单独出现在「我的」里。"],
+      ["团粉 / 唯粉", "喜欢整个团 / 只喜欢其中某一位。两种都很正常。"],
+      ["粉丝名", "官方给粉丝起的名字，比如某团的粉丝叫某某。本站搜索框可以直接搜粉丝名反查团体。"],
+      ["应援色", "官方指定的代表色，演唱会上一片同色灯海就是它。"],
+      ["音源 / 销量", "音源＝各音乐平台的播放和收听成绩；销量＝实体专辑卖了多少张。两者都是打歌评分的大头。"]
+    ]},
+  { t:"怎么用这个站追第一轮回归", s:"三步就够", p:[], l:[
+      ["① 看未来", "点上方「未来」，看未来 7 天 / 本月谁要发专辑。挑一个封面顺眼的，记住日期。"],
+      ["② 收藏", "卡片右上角点星标收藏，去「我的」里随时翻回来。"],
+      ["③ 设本命", "在「我的 · 本命动态」里加上你喜欢的团，他们的新专辑会自动置顶、带红心标记。"]
+    ],
+    acts:[["future","去看未来 7 天"],["mine","去设我的本命"],["more","看本周打歌时间表"]]},
+  { t:"数据从哪来，为什么有的查不到", s:"说实话", p:[
+      "专辑信息来自 Apple Music、网易云音乐和公开的日程站，每天自动更新一次；官方 MV 来自 B 站各团体的官方账号（只收正片，花絮和预告不算）。",
+      "小公司、小团体、年代久远的老专辑，公开数据本来就残缺，会出现查不到或信息不全的情况——这是数据本身没有，不是本站漏了，按「宁缺毋滥」的原则宁可留空也不编。发现错了，去「诉说」告诉我，我会改。"
+    ]}
+];
+
+function guideHTML(){
+  var h = '<div class="guide">'
+    + '<div class="ghead"><h2>从头开始</h2><p>没追过 K-POP 也能看懂。看完这一页，你就知道「回归」是什么、该看什么、先点哪里。</p></div>';
+  for(var i = 0; i < GUIDE.length; i++){
+    var g = GUIDE[i];
+    h += '<section class="gsec">'
+       +   '<h3>' + esc(g.t) + '</h3>'
+       +   (g.s ? '<div class="gsub">' + esc(g.s) + '</div>' : '');
+    for(var j = 0; j < (g.p || []).length; j++){
+      h += '<p class="gp">' + esc(g.p[j]) + '</p>';
+    }
+    if(g.l && g.l.length){
+      h += '<ul class="gl">';
+      for(var k = 0; k < g.l.length; k++){
+        h += '<li><b>' + esc(g.l[k][0]) + '</b><span>' + esc(g.l[k][1]) + '</span></li>';
+      }
+      h += '</ul>';
+    }
+    if(g.acts){
+      h += '<div class="gacts">';
+      for(var a = 0; a < g.acts.length; a++){
+        h += '<button class="btn gjump" data-jump="' + esc(g.acts[a][0]) + '">' + esc(g.acts[a][1]) + '</button>';
+      }
+      h += '</div>';
+    }
+    h += '</section>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ============================ 诉说（反馈 / 树洞） ============================
+   纯静态站没有后端，所以走 mailto：点「发送」会打开本机邮件应用，
+   内容已经填好。没有邮件应用的人可以点「复制」，自己粘到邮件里发。 */
+var TELL_KINDS = ["想说的话", "网站报错", "内容纠错", "功能建议"];
+function tellHTML(){
+  var h = '<div class="tell">'
+    + '<h3>诉说</h3>'
+    + '<div class="gsub">这里是一个可以说话的地方。发现日期错了、页面坏了、想要某个功能，'
+    + '或者只是今天有点想找个人说说——都可以写下来发给我。我都会看。</div>'
+    + '<div class="chips tellchips">';
+  for(var i = 0; i < TELL_KINDS.length; i++){
+    h += '<button class="chip' + (S.tellKind === TELL_KINDS[i] ? ' on' : '') + '"'
+       + ' data-tellkind="' + esc(TELL_KINDS[i]) + '">' + esc(TELL_KINDS[i]) + '</button>';
+  }
+  h += '</div>'
+    + '<textarea id="tellText" class="tellta" placeholder="'
+    + (S.tellKind === "网站报错" ? '哪个页面、点了什么、看到了什么异常情况…'
+       : S.tellKind === "内容纠错" ? '哪个团体 / 专辑、哪里不对、正确的是什么…'
+       : S.tellKind === "功能建议" ? '你希望这个站能多做一件什么事…'
+       : '想说什么都行，我会当成树洞听完。不用署名。')
+    + '">' + esc(S.tellText || "") + '</textarea>'
+    + '<div class="tellfoot">'
+    +   '<button class="btn pri" id="tellSend">发送到我邮箱</button>'
+    +   '<button class="btn" id="tellCopy">复制内容</button>'
+    +   '<span class="tellnote" id="tellNote">会打开你的邮件应用；没有邮件应用就点复制，'
+    +     '粘贴发到 ' + esc(REPORT_MAIL) + '</span>'
+    + '</div></div>';
+  return h;
+}
+function tellMail(){
+  var subj = "【知未】" + S.tellKind;
+  var body = (S.tellText || "")
+    + "\n\n———\n页面：" + location.href
+    + "\n时间：" + new Date().toLocaleString("zh-CN")
+    + "\n（这行以下是自动带的，方便我定位问题）";
+  return "mailto:" + REPORT_MAIL
+       + "?subject=" + encodeURIComponent(subj)
+       + "&body=" + encodeURIComponent(body);
 }
 function secHTML(title, list){
   if(!list.length) return "";
@@ -810,12 +923,16 @@ function renderList(){
 
   /* 控制条显隐：未来有三档子选项，过去有完整筛选，我的有收藏/本命切换 */
   var isFuture = (S.tab==="future"), isPast = (S.tab==="past");
-  var isMine = (S.tab==="mine"), isMore = (S.tab==="more");
+  var isMine = (S.tab==="mine"), isMore = (S.tab==="more"), isGuide = (S.tab==="guide");
   $("showsBar").style.display = isMore ? "" : "none";
   if(isMore) renderShows("showsBar");
   $("upBar").classList.toggle("on", isFuture);
   $("mineBar").classList.toggle("on", isMine);
   $("filters").style.display = isPast ? "" : "none";
+  if(isGuide){                       /* 指南页不需要任何筛选控件 */
+    $("content").innerHTML = guideHTML();
+    return;
+  }
   $("biasBox").style.display = (isMine && S.mine==="bias") || S.showBiasMgr ? "" : "none";
 
   if(isFuture){
@@ -866,8 +983,8 @@ function renderList(){
     html = fl.length ? secHTML("收藏 · 即将发行", fu) + secHTML("收藏 · 已发行", fp)
       : '<div class="empty"><div class="e">' + ico('star',24) + '</div><h3>还没有收藏</h3><p>在卡片右上角点星标即可收藏</p></div>';
   } else if(isMore){
-    html = '<div class="empty"><div class="e">' + ico('grid',24) + '</div><h3>小工具</h3>'
-         + '<p>打歌节目时间表在上方 · 后面还会往这里加别的</p></div>';
+    /* 打歌节目时间表在上方（showsBar），下面是「诉说」窗口 */
+    html = tellHTML();
   } else if(isMine && S.mine === "bias"){
     if(!bias.length){
       html = '<div class="empty"><div class="e">' + ico('heart',24) + '</div><h3>还没有设置本命</h3>'
@@ -1306,6 +1423,57 @@ document.addEventListener("click", function(e){
   if(!t.closest("#calPop") && !t.closest("#dateBtn")) closeCal();
   if(!t.closest(".selwrap")) closeAllSels();
 });
+
+/* 复制文本：优先用剪贴板接口，老浏览器退回 execCommand */
+function copyText(s){
+  var done = function(){ toast("已复制，粘贴到邮件里发给我就行"); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(s).then(done, fallback);
+  } else { fallback(); }
+  function fallback(){
+    var ta = document.createElement("textarea");
+    ta.value = s; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); }
+    catch(e){ toast("复制失败，请手动选中文本复制"); }
+    document.body.removeChild(ta);
+  }
+}
+
+/* ---- 诉说：类别切换 / 草稿 / 发送 ---- */
+document.addEventListener("click", function(e){
+  var el, t = e.target;
+  if(!t.closest) return;
+  /* 指南里的跳转按钮：直接切到对应页签 */
+  if((el = t.closest("[data-jump]"))){
+    S.view = "calendar"; S.tab = el.getAttribute("data-jump");
+    if(S.tab === "mine") S.mine = "bias";
+    syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
+  }
+  if((el = t.closest("[data-tellkind]"))){
+    S.tellKind = el.getAttribute("data-tellkind"); render(); return;
+  }
+  if(t.id === "tellSend" || t.closest("#tellSend")){
+    var txt = ($("tellText") || {}).value || "";
+    if(!txt.trim()){ toast("先写点什么吧"); return; }
+    S.tellText = txt;
+    window.location.href = tellMail();
+    toast("已唤起邮件应用，确认发送即可");
+    return;
+  }
+  if(t.id === "tellCopy" || t.closest("#tellCopy")){
+    var v = ($("tellText") || {}).value || "";
+    if(!v.trim()){ toast("先写点什么吧"); return; }
+    copyText(v + "\n\n（发送到 " + REPORT_MAIL + "）");
+    return;
+  }
+});
+/* textarea 直接绑不上（每次 render 都会重建），用事件委托 */
+document.addEventListener("input", function(e){
+  if(e.target && e.target.id === "tellText"){
+    S.tellText = e.target.value;
+  }
+});
 function toggleBias(n){
   var i = bias.indexOf(n);
   if(i>=0){ bias.splice(i,1); toast("已移出本命"); } else { bias.push(n); toast("已加入本命"); }
@@ -1426,7 +1594,7 @@ S.range = rangePreset("f30");
     return m ? decodeURIComponent(m[1]) : null;
   }
   var tab = arg("tab");
-  if(["future","past","mine","more"].indexOf(tab) >= 0){
+  if(["future","past","guide","mine","more"].indexOf(tab) >= 0){
     S.tab = tab; S.view = "calendar";
     /* 直链进过去时和点击标签一样纠正范围，否则默认「未来 30 天」会显示未来的专辑 */
     if(tab === "past" && S.range.kind === "f30" && S.range.mode === "quick"){

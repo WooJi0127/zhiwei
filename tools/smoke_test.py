@@ -215,6 +215,20 @@ step(function(){
   LOG.push("首页开关=" + HW.join("/") + " 有效=" + (HW[0] !== HW[1] && HW[0] === HW[2]));
 });
 
+/* 新页签：「从头开始」要有内容，「诉说」要有输入框 */
+step(function(){ document.querySelector('[data-tab="guide"]').click(); });
+step(function(){
+  LOG.push("从头开始小节=" + document.querySelectorAll("#content .gsec").length
+    + " 有跳转钮=" + (document.querySelectorAll("#content [data-jump]").length > 0)
+    + " 筛选栏隐藏=" + ($("filters").style.display === "none"));
+});
+step(function(){ document.querySelector('[data-tab="more"]').click(); });
+step(function(){
+  LOG.push("诉说输入框=" + !!$("tellText")
+    + " 分类数=" + document.querySelectorAll("[data-tellkind]").length
+    + " 打歌条=" + (document.querySelector("#showsBar .shnow") ? "有" : "无"));
+});
+
 
 step(function(){ document.querySelector('[data-view="home"]').click(); });
 step(function(){
@@ -293,6 +307,8 @@ REQUIRED = [
     ("节目条白底已去=true", "打歌节目条还是白卡片，没文字化"),
     ("首页MV有内容=true",  "首页热门 MV 是空的（近一个月的 MV 没抓到）"),
     ("首页MV不超6=true",   "首页热门 MV 超过 6 个（用户定死最多 6 个）"),
+    ("从头开始小节=6",     "「从头开始」页内容没渲染出来"),
+    ("诉说输入框=true",    "「诉说」页没有输入框"),
 ]
 
 
