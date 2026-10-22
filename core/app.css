@@ -697,9 +697,19 @@ a.btn{display:inline-flex;align-items:center}
   background:transparent;color:var(--sub);padding:5px 9px;border-radius:8px;
   transition:color .15s,background-color .15s}
 .dj .btn:hover{background-color:#F4F0E6;color:var(--brand);border-color:transparent}
-@media (max-width:900px){
-  .hduo{flex-direction:column}
-  .dj{width:100%}
+/* 宽屏：侧栏立着（默认） */
+/* 窄屏或竖屏：别再 2×2 立一大块，改成「一行四位」的矮条，才不臃肿 */
+@media (max-width:900px),(orientation:portrait){
+  .hduo{flex-direction:column;gap:0}
+  .dj{width:100%;padding:14px 16px 16px}
+  .djgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .djt{font-size:12px}
+  .dja{font-size:10.5px}
+}
+/* 超窄（手机竖屏）：四位横滑，避免封面被压成小方块 */
+@media (max-width:560px){
+  .djgrid{grid-template-columns:repeat(4,112px);overflow-x:auto;padding-bottom:4px;
+    scrollbar-width:thin}
 }
 
 /* 诉说与指南页的按钮/分类也要文字化（与全站一致，用户明确要求）：
