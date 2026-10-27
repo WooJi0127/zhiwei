@@ -746,6 +746,10 @@ a.btn{display:inline-flex;align-items:center}
 footer{max-width:1280px;margin:26px auto 0;padding:20px 18px 40px;color:var(--sub);
   font-size:11.5px;border-top:1px solid var(--line)}
 footer a{color:var(--brand)}
+/* 备案号单独一行，比数据来源那堆字稍大一点，别埋没在介绍里 */
+footer .beian{margin:0 0 8px;font-size:12.5px;letter-spacing:.02em}
+footer .beian a{color:var(--brand);font-weight:700}
+footer .beian #gaj:not(:empty)::before{content:"　·　"}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);
   background:var(--text);color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;
   font-weight:700;opacity:0;transition:.24s;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.22)}
@@ -1052,6 +1056,12 @@ footer a{color:var(--brand)}
 </main>
 
 <footer>
+  <!-- ICP 备案号：法规要求在首页底部展示并链到工信部，不挂可能被抽查注销。
+       公安备案号办下来后填在下面的 span 里（同一行，前面加分隔） -->
+  <div class="beian">
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">皖ICP备2026037456号</a>
+    <span id="gaj"></span>
+  </div>
   <span id="genAt"></span>数据来源：<a href="https://kpopping.com" target="_blank" rel="noopener">kpopping.com</a>（回归日程）、
   <a href="https://music.apple.com" target="_blank" rel="noopener">Apple Music</a>（发行归档 / 曲目 / 跳转）、
   <a href="https://kpopcal.com" target="_blank" rel="noopener">kpopcal.com</a>（官方确认事件，CC BY 4.0）。
