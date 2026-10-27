@@ -55,3 +55,6 @@ desktop.ini
 
 # SQLite 事务日志（瞬时文件，跟着 kpop.db 一起忽略）
 *.db-journal
+
+# 部署打包产物（本地用，不入库）
+zhiwei-site.zip
