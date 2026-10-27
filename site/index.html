@@ -159,6 +159,8 @@ footer .brand b{letter-spacing:2px;font-size:15px}
 footer p{font-size:12.5px;color:#8b90a3;line-height:1.9;max-width:520px}
 footer a{color:#6f74ff;text-decoration:none}
 footer a:hover{text-decoration:underline}
+footer .beian{margin-top:14px;font-size:12.5px}
+footer .beian a{color:#6f74ff;font-weight:600}
 @media(max-width:640px){
   .hero{padding:44px 0 18px}
   section{padding:54px 0}
@@ -401,11 +403,22 @@ footer a:hover{text-decoration:underline}
         <a href="https://kpopcal.com" target="_blank" rel="noopener">kpopcal.com</a>
       </p>
       <p>本站仅做信息聚合，不提供音源，不承担内容版权。</p>
+      <!-- ICP 备案：法规要求首页底部展示并链到工信部 -->
+      <p class="beian"><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">皖ICP备2026037456号</a><span id="gaj"></span></p>
     </div>
   </div>
 </footer>
 
 <script>
+// 公安备案号：拿到后填数字，页脚自动出现并带查询链接
+var GAJ_CODE = "";
+if (GAJ_CODE) {
+  document.getElementById("gaj").innerHTML =
+    '　·　<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode='
+    + encodeURIComponent(GAJ_CODE) + '" target="_blank" rel="noopener">'
+    + '皖公网安备 ' + GAJ_CODE + '号</a>';
+}
+
 // 滚动时给导航加分割线
 var hd = document.getElementById("hd");
 addEventListener("scroll", function(){
