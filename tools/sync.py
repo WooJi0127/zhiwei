@@ -23,11 +23,14 @@ DATA = os.path.join(ROOT, "data", "data.js")
 TARGETS = {
     "desktop": os.path.join(ROOT, "desktop", "app"),
     "mobile":  os.path.join(ROOT, "mobile", "www"),
-    "site":    os.path.join(ROOT, "site", "app"),
+    # 站点根目录直接就是应用本身：打开域名就用，不再经过营销落地页
+    # （落地页 site/index.html 已于 2026-10-28 移除，用户拍板）
+    "site":    os.path.join(ROOT, "site"),
 }
 
 # 同步时会被覆盖重建的目录（data 由 data/data.js 单独复制）
-SKIP = {"data"}
+# downloads 与几个图标是站点自己的东西，不能被镜像 core/ 时清掉
+SKIP = {"data", "downloads", "favicon.png", "apple-touch-icon.png", "screenshot.png"}
 
 
 def read(p):
