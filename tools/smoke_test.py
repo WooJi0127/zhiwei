@@ -289,6 +289,13 @@ step(function(){
     + " 下载页=" + ($("dlView") ? "仍在" : "已移除"));
 });
 
+/* 页脚备案号：法规要求，不能丢 */
+step(function(){
+  var fb = document.querySelector("footer .beian");
+  LOG.push("页脚备案=" + (fb ? fb.textContent.trim().slice(0, 20) : "缺失")
+    + " 链工信部=" + !!(fb && fb.querySelector('a[href*="beian.miit.gov.cn"]')));
+});
+
 function next(){
   if(i >= steps.length){
     var d = document.createElement("div");
@@ -323,6 +330,7 @@ REQUIRED = [
     ("诉说输入框=true",    "「诉说」页没有输入框"),
     ("随心歌单=4",         "首页「随心歌单」卡片数不对"),
     ("未发行混入=0",       "「随心歌单」混进了还没发行的专辑"),
+    ("链工信部=true",      "页脚 ICP 备案号或工信部链接不见了（法规要求）"),
 ]
 
 
