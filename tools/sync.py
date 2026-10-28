@@ -30,7 +30,7 @@ TARGETS = {
 
 # 同步时会被覆盖重建的目录（data 由 data/data.js 单独复制）
 # downloads 与几个图标是站点自己的东西，不能被镜像 core/ 时清掉
-SKIP = {"data", "downloads", "favicon.png", "apple-touch-icon.png", "screenshot.png"}
+SKIP = {"data", "downloads", "favicon.png", "apple-touch-icon.png"}
 
 
 def read(p):
