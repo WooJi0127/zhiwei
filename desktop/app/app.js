@@ -43,6 +43,26 @@ function typeLabel(r){
   return "";                              /* 空 → 调用方不显示类型标签 */
 }
 
+/* 本地封面文件名：和数据里的 id 一一对应（tools/fetch_covers.py 用同样规则）。
+   只保留字母数字，其余换成下划线。 */
+function coverFile(id){
+  return "covers/" + String(id || "").replace(/[^a-zA-Z0-9]/g, "_") + ".jpg";
+}
+/* 图片标签：先试本地封面，失败自动换成外链，再失败才隐藏。
+   以前是「加载失败就隐藏」，图一挂整块就空了，观感很差。 */
+function imgTag(r, extra){
+  var src = r._cover || "";
+  var fb = r._img || "";
+  if(!src && !fb) return "";
+  var e = extra ? " " + extra : "";
+  if(src && fb){
+    return '<img' + e + ' src="' + esc(src) + '" alt="" '
+      + 'onerror="this.onerror=null;this.src=\'' + esc(fb) + '\'">' ;
+  }
+  return '<img' + e + ' src="' + esc(src || fb) + '" alt="" '
+    + 'onerror="this.style.display=\'none\'">';
+}
+
 /* 规范化：主数据和分片数据都要过一遍，抽成函数 */
 function normOne(r){
   r._cat = catOf(r);
@@ -57,6 +77,10 @@ function normOne(r){
   r._img = (r.image && r.image.indexOf("mzstatic")>=0)
     ? r.image.replace(/\/\d+x\d+bb\.(jpg|png)$/, "/600x600bb.$1")
     : (r.image || "");
+  /* 本地封面：cdn.kpopping.com 有防盗链（站外引用一律 403），那批图已经
+     下载到 site/covers/。优先用本地的，加载不到再回退外链 —— 这样
+     Cloudflare 版（没有 covers 目录）也能自动用回外链，两边都不空白。 */
+  r._cover = coverFile(r.id);
   r._tracks = r.tracks || [];
   r._tn = r._tracks.length || 0;
   r._dur = r.durationMs || 0;
@@ -429,7 +453,7 @@ function cardHTML(r){
   return '<div class="card'+(bi?' bias':'')+'" data-open="'+esc(r.id)+'">'
     + '<div class="cov">'
     +   '<div class="ph">' + ico('note',22) + '</div>'
-    +   (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+    +   imgTag(r, 'loading="lazy"')
     +   ddayHTML(r)
     +   '<button class="favbtn'+(fa?' on':'')+'" data-fav="'+esc(r.id)+'" title="收藏">'+(fa?ico('star',15,true):ico('star',15))+'</button>'
     +   badges
@@ -575,7 +599,7 @@ function detailHTML(r){
 
   h += '<div class="dhero">'
     +  '<div class="art"><div class="ph">' + ico('note',22) + '</div>'
-    +    (r._img ? '<img src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+    +    imgTag(r, 'loading="lazy"')
     +  '</div>'
     +  '<div class="dinfo">'
     +    '<div class="dtitle">'+esc(r.title)+'</div>'
@@ -724,7 +748,7 @@ function miniHTML(r){
   var dn = dispName(r.artist);
   return '<div class="mini'+(isBias(r.artist)?' bias':'')+'" data-open="'+esc(r.id)+'">'
     + '<div class="mcov"><div class="ph">' + ico('note',22) + '</div>'
-    +   (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+    +   imgTag(r, 'loading="lazy"')
     +   ddayHTML(r)
     + '</div>'
     + '<div class="mt">'+esc(dn.zh)+'</div>'

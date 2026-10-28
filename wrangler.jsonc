@@ -5,6 +5,8 @@
   "preview_urls": false,
   "workers_dev": true,
   "assets": {
-    "directory": "./site/app"
+    // 2026-10-28：营销落地页删除后，站点根目录本身就是应用，不再是 site/app。
+    // 这里不改会导致 Cloudflare 部署时找不到目录（线上 workers.dev 版全挂）。
+    "directory": "./site"
   }
 }

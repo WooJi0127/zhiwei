@@ -30,7 +30,7 @@ TARGETS = {
 
 # 同步时会被覆盖重建的目录（data 由 data/data.js 单独复制）
 # downloads 与几个图标是站点自己的东西，不能被镜像 core/ 时清掉
-SKIP = {"data", "downloads", "favicon.png", "apple-touch-icon.png"}
+SKIP = {"data", "downloads", "covers", "favicon.png", "apple-touch-icon.png"}
 
 
 def read(p):
@@ -112,6 +112,22 @@ def copy_data(dd):
     return total
 
 
+def copy_covers(dst):
+    """本地化的封面：从项目根 covers/ 分发到站点（site/ 每次同步会被重建）。"""
+    src = os.path.join(ROOT, "covers")
+    if not os.path.isdir(src):
+        return 0
+    d = os.path.join(dst, "covers")
+    os.makedirs(d, exist_ok=True)
+    n = 0
+    for name in os.listdir(src):
+        s0, d0 = os.path.join(src, name), os.path.join(d, name)
+        if os.path.isfile(s0):
+            shutil.copy2(s0, d0)
+            n += 1
+    return n
+
+
 def main():
     only_web = "--web" in sys.argv
 
@@ -133,8 +149,12 @@ def main():
     for name, dst in TARGETS.items():
         os.makedirs(dst, exist_ok=True)
         dsz = sync_dir(dst)
+        # 本地化的封面只发给站点：桌面/移动是离线包，外链图在它们那边
+        # 由 WebView 直接取，塞 2.8MB 图进离线包不划算
+        cn = copy_covers(dst) if name == "site" else 0
         print(f"· {name:<8} {os.path.relpath(dst, ROOT)}"
-              + (f"  数据 {dsz/1024:.0f} KB" if dsz else ""))
+              + (f"  数据 {dsz/1024:.0f} KB" if dsz else "")
+              + (f"  封面 {cn} 张" if cn else ""))
     return 0
 
 
