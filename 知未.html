@@ -274,20 +274,21 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .bday .bage{font-size:11px;color:#8C8878;font-weight:700;flex:none}
 
 /* 即将回归：横向迷你卡 */
-.minibar{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
-.mini{flex:none;width:148px;background-color:var(--kraft);background-image:var(--kraft-tex);
-  background-size:200px 200px;border:0;padding:10px;cursor:pointer;box-shadow:var(--shadow);
+/* 卡片整体放大（148 → 176）：首页右侧原本空一大块，大一点才撑得住版面 */
+.minibar{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.mini{flex:none;width:176px;background-color:var(--kraft);background-image:var(--kraft-tex);
+  background-size:200px 200px;border:0;padding:12px;cursor:pointer;box-shadow:var(--shadow);
   /* 四角半径各不相同 —— 手切纸不会四个角一样圆 */
   border-radius:11px 8px 12px 9px / 9px 12px 8px 11px;
   transition:transform .15s,box-shadow .15s}
 .mini:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .mini.bias{box-shadow:0 0 0 2px rgba(255,47,82,.16),var(--shadow)}
-.mini .mcov{position:relative;width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;
+.mini .mcov{position:relative;width:100%;aspect-ratio:1;border-radius:11px;overflow:hidden;
   background:var(--grad-soft);display:grid;place-items:center}
-.mini .mcov .ph{font-size:20px;opacity:.35}
+.mini .mcov .ph{font-size:22px;opacity:.35}
 .mini .mcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.mini .mt{margin-top:7px;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mini .ms{font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .mt{margin-top:8px;font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .ms{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* 本月 MV（首页） */
 /* 6 张 × 190 + 5 间距 ≈ 1200，正好铺满 1280 的内容区，不用横向滚 */
@@ -1380,7 +1381,7 @@ function mvHot(){
   }
   pool.sort(function(x, y){ return (y.p || 0) - (x.p || 0); });
   var out = pool.slice(0, MV_MAX);
-  return {list:out, label: out.length ? "近一个月 · 按播放量" : ""};
+  return {list:out, label: ""};
 }
 
 /* 今天过生日的成员。b 形如 2000-04-11，比月日即可。
@@ -1545,38 +1546,14 @@ function gridHTML(list){
    1) 不编造数据（数字、规则只说确定的，拿不准的不写）
    2) 每个概念都能落到本站的一个动作上（看完就知道下一步干嘛） */
 var GUIDE = [
-  { t:"先搞懂一件事：什么叫「回归」", s:"韩圈的「出新歌」不叫发歌，叫回归", p:[
-      "在 K-POP 里，艺人带着新作品出来活动一轮，叫一次「回归（Comeback）」。为什么不叫出道？因为每次出新专辑，艺人都会重新上一次打歌节目、重新做一轮宣传——像是「回到舞台」，所以叫回归。",
-      "一次回归的节奏大致是：先放预告图/预告片 → 发专辑和主打曲 MV → 接下来 2–4 周每周上打歌节目打歌 → 中间穿插综艺、签售、粉丝见面会。所以「回归日」指的是专辑发行那一天，不是宣传期的某一天。",
-      "本站记的就是这个日子。所有日期都按韩国时间（KST）算，比北京时间早 1 小时。"
-    ]},
-  { t:"专辑有三种，别被名字绕晕", s:"Single / EP（迷你） / 正规专辑", p:[],
-    l:[
-      ["Single", "单曲，通常 1–3 首歌。主打就一首，其他是伴奏或一两首收录曲。"],
-      ["EP / 迷你", "迷你专辑，一般 4–7 首。市面上最常见的一种，价位也最友好。"],
-      ["正规专辑", "通常 9 首以上，制作周期长，一两年才出一张。"],
-      ["为什么要在意", "主打曲是打歌和拿奖的那首；收录曲一般只在专辑里。想快速入门，先听主打就行。"]
-    ]},
-  { t:"打歌节目和「一位」", s:"每周打一次分，赢了叫拿一位", p:[
-      "韩国几家电视台每周各有一档音乐节目（本站「诉说」页上方就有本周时间表）。艺人带着新歌去表演，节目按音源、销量、播放量、投票等给分，当周第一名叫「一位」，赢了会有安可舞台——这是追回归最有仪式感的时刻。",
-      "打歌期通常 2–4 周，之后这轮回归就结束了，艺人进入下一轮准备。所以想看舞台，回归后前几周最关键。"
-    ]},
-  { t:"五个词，看懂饭圈在说什么", s:"黑话速成", p:[], l:[
-      ["本命", "你最喜欢、最认真追的那一个（团或人）。本站可以把本命标记出来，他们的新动态会单独出现在「我的」里。"],
-      ["团粉 / 唯粉", "喜欢整个团 / 只喜欢其中某一位。两种都很正常。"],
-      ["粉丝名", "官方给粉丝起的名字，比如某团的粉丝叫某某。本站搜索框可以直接搜粉丝名反查团体。"],
-      ["应援色", "官方指定的代表色，演唱会上一片同色灯海就是它。"],
-      ["音源 / 销量", "音源＝各音乐平台的播放和收听成绩；销量＝实体专辑卖了多少张。两者都是打歌评分的大头。"]
-    ]},
-  { t:"怎么用这个站追第一轮回归", s:"三步就够", p:[], l:[
-      ["① 看未来", "点上方「未来」，看未来 7 天 / 本月谁要发专辑。挑一个封面顺眼的，记住日期。"],
-      ["② 收藏", "卡片右上角点星标收藏，去「我的」里随时翻回来。"],
-      ["③ 设本命", "在「我的 · 本命动态」里加上你喜欢的团，他们的新专辑会自动置顶、带红心标记。"]
-    ],
-    acts:[["future","去看未来 7 天"],["mine","去设我的本命"],["more","看本周打歌时间表"]]},
-  { t:"数据从哪来，为什么有的查不到", s:"说实话", p:[
-      "专辑信息来自 Apple Music、网易云音乐和公开的日程站，每天自动更新一次；官方 MV 来自 B 站各团体的官方账号（只收正片，花絮和预告不算）。",
-      "小公司、小团体、年代久远的老专辑，公开数据本来就残缺，会出现查不到或信息不全的情况——这是数据本身没有，不是本站漏了，按「宁缺毋滥」的原则宁可留空也不编。发现错了，去「诉说」告诉我，我会改。"
+  /* 站长要自己重写这一页，先挂个占位：COMING SOON。
+     写的时候还是用下面这个结构：
+       { t:"小节标题", s:"副标题", p:["段落…"],
+         l:[["词条","解释"]], acts:[["future","按钮文字"]] }
+     p = 整段文字，l = 词条表，acts = 跳转按钮（future/mine/more = 对应页签） */
+  { t:"Coming soon", s:"新人入坑指南 · 正在写", p:[
+      "这一页会讲清楚：回归是什么、专辑有几种、打歌节目怎么玩、黑话怎么说，以及怎么用这个站追第一轮回归。",
+      "站长正在自己写，很快就来。"
     ]}
 ];
 
@@ -1881,7 +1858,8 @@ function renderHome(){
 
   /* 热门 MV：官方账号发布，按播放量排序（本月 → 三个月 → 一年 → 历史） */
   var hot = mvHot(), mm = hot.list;
-  h += homeSec("热门 MV", hot.label,
+  /* 副标题不写了：播放量排序本来就看得出来，字多了反而啰嗦（用户拍板删） */
+  h += homeSec("热门 MV", "",
         mm.length
           ? '<div class="mvbar">' + mm.map(function(m){
               return '<a class="mvmini" href="'+mvURL(m)+'" target="_blank" rel="noopener nofollow">'

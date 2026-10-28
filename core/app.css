@@ -253,20 +253,21 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .bday .bage{font-size:11px;color:#8C8878;font-weight:700;flex:none}
 
 /* 即将回归：横向迷你卡 */
-.minibar{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
-.mini{flex:none;width:148px;background-color:var(--kraft);background-image:var(--kraft-tex);
-  background-size:200px 200px;border:0;padding:10px;cursor:pointer;box-shadow:var(--shadow);
+/* 卡片整体放大（148 → 176）：首页右侧原本空一大块，大一点才撑得住版面 */
+.minibar{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.mini{flex:none;width:176px;background-color:var(--kraft);background-image:var(--kraft-tex);
+  background-size:200px 200px;border:0;padding:12px;cursor:pointer;box-shadow:var(--shadow);
   /* 四角半径各不相同 —— 手切纸不会四个角一样圆 */
   border-radius:11px 8px 12px 9px / 9px 12px 8px 11px;
   transition:transform .15s,box-shadow .15s}
 .mini:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .mini.bias{box-shadow:0 0 0 2px rgba(255,47,82,.16),var(--shadow)}
-.mini .mcov{position:relative;width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;
+.mini .mcov{position:relative;width:100%;aspect-ratio:1;border-radius:11px;overflow:hidden;
   background:var(--grad-soft);display:grid;place-items:center}
-.mini .mcov .ph{font-size:20px;opacity:.35}
+.mini .mcov .ph{font-size:22px;opacity:.35}
 .mini .mcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.mini .mt{margin-top:7px;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mini .ms{font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .mt{margin-top:8px;font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .ms{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* 本月 MV（首页） */
 /* 6 张 × 190 + 5 间距 ≈ 1200，正好铺满 1280 的内容区，不用横向滚 */
