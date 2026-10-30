@@ -13,11 +13,14 @@
 
 TARGET="/www/wwwroot/mywooji.cn"
 
-# 镜像列表：按顺序试，第一个下载成功的就用它
+# 镜像列表：按顺序试，第一个下载成功的就用它。
+# 2026-10-30 教训：jsdelivr 一度整体不通，而定时任务又是「先从 jsdelivr 拉脚本」，
+# 结果静默失败两天没人发现。所以：① 脚本要常驻服务器 ② 镜像要给足备选。
 MIRRORS="
 https://cdn.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
 https://fastly.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
 https://gcore.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
+https://hub.gitmirror.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 https://ghfast.top/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 https://ghproxy.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
@@ -70,6 +73,8 @@ done
 
 echo "· 同步完成 $(date '+%Y-%m-%d %H:%M:%S')：成功 $ok，失败 $fail"
 [ -n "$USED" ] && echo "· 使用的镜像：$USED"
+# 留一份日志，哪天没更新时打开这个文件就知道是网络还是别的原因
+echo "$(date '+%F %T') ok=$ok fail=$fail mirror=${USED:-无}" >> /root/sync.log 2>/dev/null
 if [ $fail -gt 0 ]; then
   echo "· 有文件没拉到：所有镜像在这台服务器上都不通。"
   echo "· 退路：改成本地上传（本地能连 GitHub，由本机推送到服务器）"
