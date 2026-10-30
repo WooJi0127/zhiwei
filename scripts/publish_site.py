@@ -42,8 +42,8 @@ def main():
             backup = '/root/zhiwei-backups/' + stamp
             files = [p for p in (ROOT / 'site').rglob('*') if p.is_file()
                      and 'downloads' not in p.relative_to(ROOT / 'site').parts]
-            # Publish entry points last, after their dependencies.
-            files.sort(key=lambda p: (p.name in ('index.html','app.js'), p.name == 'index.html', str(p)))
+            # New HTML works with old JS. Publish it before JS that binds its new controls.
+            files.sort(key=lambda p: (p.name in ('index.html','app.js'), p.name == 'app.js', str(p)))
             changed = 0
             for local in files:
                 rel = local.relative_to(ROOT / 'site').as_posix()
