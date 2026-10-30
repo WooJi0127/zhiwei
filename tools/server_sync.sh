@@ -44,8 +44,8 @@ sync_covers(){
   mkdir -p "$COVERS"
   local list="$TARGET/covers.txt"
   local got=0 skip=0 miss=0
-  for base in $MIRRORS; do
-    if curl -fsSL --connect-timeout 10 --max-time 40 "$base/../covers.txt" -o "$list.tmp" \
+  for base in $ROOTS; do
+    if curl -fsSL --connect-timeout 10 --max-time 40 "$base/covers.txt" -o "$list.tmp" \
        && [ -s "$list.tmp" ]; then
       mv "$list.tmp" "$list"
       break
@@ -57,8 +57,8 @@ sync_covers(){
     [ -n "$f" ] || continue
     if [ -s "$COVERS/$f" ]; then skip=$((skip+1)); continue; fi
     local okone=0
-    for base in $MIRRORS; do
-      if curl -fsSL --connect-timeout 8 --max-time 40 "$base/../covers/$f" -o "$COVERS/$f.tmp" \
+    for base in $ROOTS; do
+      if curl -fsSL --connect-timeout 8 --max-time 40 "$base/covers/$f" -o "$COVERS/$f.tmp" \
          && [ -s "$COVERS/$f.tmp" ]; then
         mv "$COVERS/$f.tmp" "$COVERS/$f"; got=$((got+1)); okone=1; break
       fi
