@@ -112,6 +112,15 @@ def copy_data(dd):
     return total
 
 
+def copy_ics(dst):
+    """iCal 订阅文件：跟数据一起每天更新，放到站点根供日历 App 订阅。"""
+    src = os.path.join(ROOT, "data", "zhiwei.ics")
+    if not os.path.isfile(src):
+        return False
+    shutil.copy2(src, os.path.join(dst, "zhiwei.ics"))
+    return True
+
+
 def copy_covers(dst):
     """本地化的封面：从项目根 covers/ 分发到站点（site/ 每次同步会被重建）。"""
     src = os.path.join(ROOT, "covers")
@@ -145,6 +154,7 @@ def main():
     else:
         # core 自己也放一份，直接双击 core/index.html 就能预览
         copy_data(os.path.join(CORE, "data"))
+        copy_ics(CORE)          # 本地预览（core/index.html）也能测订阅链接
 
     for name, dst in TARGETS.items():
         os.makedirs(dst, exist_ok=True)
@@ -152,9 +162,11 @@ def main():
         # 本地化的封面只发给站点：桌面/移动是离线包，外链图在它们那边
         # 由 WebView 直接取，塞 2.8MB 图进离线包不划算
         cn = copy_covers(dst) if name == "site" else 0
+        ic = copy_ics(dst) if name in ("site", "core") else False
         print(f"· {name:<8} {os.path.relpath(dst, ROOT)}"
               + (f"  数据 {dsz/1024:.0f} KB" if dsz else "")
-              + (f"  封面 {cn} 张" if cn else ""))
+              + (f"  封面 {cn} 张" if cn else "")
+              + ("  +ics" if ic else ""))
     return 0
 
 

@@ -818,7 +818,10 @@ function renderHome(){
         soon.length ? '<div class="minibar">'+soon.slice(0,12).map(miniHTML).join("")+'</div>'
                     : '<div class="hempty">未来 7 天没有回归安排</div>');
 
-  h += '<div class="hfoot"><button class="btn pri" id="toCal">查看完整日历</button></div>';
+  h += '<div class="hfoot">'
+    + '<button class="btn pri" id="toCal">查看完整日历</button>'
+    + '<button class="btn pri" id="subCal">订阅到手机日历</button>'
+    + '</div>';
 
   box.innerHTML = h;
   renderShows("homeShows");
@@ -1420,6 +1423,18 @@ document.addEventListener("click", function(e){
   if(t.id === "backBtn"){ S.detailId = null; render(); return; }
   if(t.id === "bdMore"){ S.bdMore = !S.bdMore; render(); return; }
   if(t.id === "toCal"){ S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
+  /* 订阅日历：复制订阅链接，各平台怎么用的说明放在提示里 */
+  if(t.id === "subCal"){
+    var u = (location.protocol === "file:" ? "https://mywooji.cn/" : location.origin + "/")
+          + "zhiwei.ics";
+    copyText(u);
+    alert("订阅链接已复制：\n" + u + "\n\n怎么用：\n"
+      + "iPhone：设置 → 日历 → 账户 → 添加订阅账户，粘贴链接\n"
+      + "安卓：Google 日历 → 设置 → 添加日历 → 通过网址订阅\n"
+      + "电脑：把链接加进系统日历或 Outlook 的网络日历\n\n"
+      + "订阅后每天自动更新，不用再回来看。");
+    return;
+  }
   if(t.id === "brandHome"){ S.detailId = null; S.view = "home"; syncTabs(); render(); return; }
   /* 收藏按钮（详情页） */
   if(t.id === "favDetail"){

@@ -10,6 +10,7 @@ K-Pop 回归追踪器 —— 数据构建脚本
 """
 import os
 import re
+import io
 import sys
 import json
 import time
@@ -1330,6 +1331,89 @@ def export_data(con):
     return payload
 
 
+# --------------------------------------------------- 导出 iCal 订阅文件
+ICS_FILE = os.path.join(DATA_DIR, "zhiwei.ics")
+ICS_PAST, ICS_FUTURE = 60, 180      # 往前 60 天、往后 180 天，控制文件大小
+
+
+def _ics_escape(s):
+    """RFC 5545：反斜杠、分号、逗号要转义，换行变成 \\n。"""
+    return (str(s or "").replace("\\", "\\\\").replace(";", "\\;")
+            .replace(",", "\\,").replace("\n", "\\n"))
+
+
+def _ics_fold(line):
+    """一行超过 75 字节就折行（续行以空格开头）。按字节切，中文不会乱码。"""
+    raw = line.encode("utf-8")
+    if len(raw) <= 75:
+        return line
+    out, cur = [], b""
+    for ch in line:                       # 按字符切，避免把汉字切成半个
+        b = ch.encode("utf-8")
+        if len(cur) + len(b) > 73:
+            out.append(cur)
+            cur = b""
+        cur += b
+    if cur:
+        out.append(cur)
+    return "\r\n ".join(p.decode("utf-8") for p in out)
+
+
+def export_ics(con):
+    """生成一个可直接订阅的 .ics：订阅后手机日历里就有每天的回归。
+
+    纯静态，不需要服务器 —— 文件随每天的数据一起更新，用户日历会自动同步。
+    """
+    today = datetime.date.today()
+    lo = (today - datetime.timedelta(days=ICS_PAST)).isoformat()
+    hi = (today + datetime.timedelta(days=ICS_FUTURE)).isoformat()
+
+    rows = list(con.execute(
+        "SELECT id,date,artist,title,rtype FROM releases "
+        "WHERE date>=? AND date<=? ORDER BY date", (lo, hi)))
+    if not rows:
+        return 0
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//zhiwei//K-POP Comeback Calendar//CN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:知未 · K-POP 回归日历",
+        "X-WR-CALDESC:每天有哪些 K-POP 专辑发行",
+        "X-WR-TIMEZONE:Asia/Shanghai",
+        "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
+    ]
+    stamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%SZ")
+    for rid, date, artist, title, rtype in rows:
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{rid}@mywooji.cn",
+            f"DTSTAMP:{stamp}",
+            # 全天事件：发行日是「那一天」，不该带时区偏移
+            f"DTSTART;VALUE=DATE:{date.replace('-', '')}",
+            f"DTEND;VALUE=DATE:{(datetime.date.fromisoformat(date) + datetime.timedelta(days=1)).strftime('%Y%m%d')}",
+            _ics_fold("SUMMARY:" + _ics_escape(f"{artist} · {title}")),
+            _ics_fold("DESCRIPTION:" + _ics_escape(
+                f"{artist} 发行《{title}》"
+                + (f"（{rtype}）" if rtype else "")
+                + " —— 来自 知未 K-POP 回归日历")),
+            "URL:https://mywooji.cn/",
+            "TRANSP:TRANSPARENT",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+
+    # RFC 5545 要求 CRLF 行尾
+    body = "\r\n".join(lines) + "\r\n"
+    with io.open(ICS_FILE, "w", encoding="utf-8", newline="") as fh:
+        fh.write(body)
+    log(f"  iCal：{len(rows)} 个事件 -> {os.path.basename(ICS_FILE)} "
+        f"{os.path.getsize(ICS_FILE)/1024:.0f} KB")
+    return len(rows)
+
+
 # ------------------------------------------------------------------ 主流程
 def step_birthdays(con):
     """成员生日（kpopping 档案页 JSON-LD）。增量：只补库里还缺的艺人。"""
@@ -1359,6 +1443,10 @@ def main():
         except Exception:                           # noqa: BLE001
             log("  ! 重新归类失败: " + traceback.format_exc(limit=1).strip())
         export_data(con)
+        try:
+            export_ics(con)
+        except Exception:                           # noqa: BLE001
+            log("  ! iCal 生成失败: " + traceback.format_exc(limit=1).strip())
         con.close()
         log("更新完成")
         return 0
@@ -1457,6 +1545,10 @@ def main():
         return 2
 
     export_data(con)
+    try:
+        export_ics(con)
+    except Exception:                               # noqa: BLE001
+        log("  ! iCal 生成失败: " + traceback.format_exc(limit=1).strip())
     con.close()
     log("更新完成")
     return 0

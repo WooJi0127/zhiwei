@@ -218,7 +218,7 @@ step(function(){
 /* 新页签：「从头开始」要有内容，「诉说」要有输入框 */
 step(function(){ document.querySelector('[data-tab="guide"]').click(); });
 step(function(){
-  LOG.push("从头开始小节=" + document.querySelectorAll("#content .gsec").length
+  LOG.push("从头开始有内容=" + (document.querySelectorAll("#content .gsec").length > 0)
     + " 有跳转钮=" + (document.querySelectorAll("#content [data-jump]").length > 0)
     + " 筛选栏隐藏=" + ($("filters").style.display === "none"));
 });
@@ -292,6 +292,9 @@ step(function(){
 /* 页脚备案号：法规要求，不能丢 */
 step(function(){
   var fb = document.querySelector("footer .beian");
+  /* iCal 订阅入口：按钮 + 文件都要在 */
+  LOG.push("订阅按钮=" + (!!$("subCal"))
+    + " ics文件=" + !!document.querySelector('footer .fsub a[href="zhiwei.ics"]'));
   LOG.push("页脚备案=" + (fb ? fb.textContent.trim().slice(0, 20) : "缺失")
     + " 链工信部=" + !!(fb && fb.querySelector('a[href*="beian.miit.gov.cn"]')));
 });
@@ -326,11 +329,13 @@ REQUIRED = [
     ("节目条白底已去=true", "打歌节目条还是白卡片，没文字化"),
     ("首页MV有内容=true",  "首页热门 MV 是空的（近一个月的 MV 没抓到）"),
     ("首页MV不超6=true",   "首页热门 MV 超过 6 个（用户定死最多 6 个）"),
-    ("从头开始小节=6",     "「从头开始」页内容没渲染出来"),
+    ("从头开始有内容=true", "「从头开始」页内容没渲染出来"),
     ("诉说输入框=true",    "「诉说」页没有输入框"),
     ("随心歌单=4",         "首页「随心歌单」卡片数不对"),
     ("未发行混入=0",       "「随心歌单」混进了还没发行的专辑"),
     ("链工信部=true",      "页脚 ICP 备案号或工信部链接不见了（法规要求）"),
+    ("订阅按钮=true",       "首页「订阅到手机日历」按钮不见了"),
+    ("ics文件=true",        "页脚的 iCal 订阅链接不见了"),
 ]
 
 

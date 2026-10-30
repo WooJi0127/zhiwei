@@ -744,6 +744,7 @@ footer a{color:var(--brand)}
 footer .beian{margin:0 0 8px;font-size:12.5px;letter-spacing:.02em}
 footer .beian a{color:var(--brand);font-weight:700}
 footer .beian #gaj:not(:empty)::before{content:"　·　"}
+footer .fsub{margin:0 0 10px;font-size:12.5px}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);
   background:var(--text);color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;
   font-weight:700;opacity:0;transition:.24s;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.22)}
@@ -1053,6 +1054,9 @@ footer .beian #gaj:not(:empty)::before{content:"　·　"}
     <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">皖ICP备2026037456号</a>
     <span id="gaj"></span>
   </div>
+  <!-- iCal 订阅：链接直接指向站点根的 zhiwei.ics，每天随数据一起更新 -->
+  <div class="fsub">订阅日历：<a href="zhiwei.ics">mywooji.cn/zhiwei.ics</a>
+    —— 加进手机日历，回归日自动出现</div>
   <span id="genAt"></span>数据来源：<a href="https://kpopping.com" target="_blank" rel="noopener">kpopping.com</a>（回归日程）、
   <a href="https://music.apple.com" target="_blank" rel="noopener">Apple Music</a>（发行归档 / 曲目 / 跳转）、
   <a href="https://kpopcal.com" target="_blank" rel="noopener">kpopcal.com</a>（官方确认事件，CC BY 4.0）。
@@ -1906,7 +1910,10 @@ function renderHome(){
         soon.length ? '<div class="minibar">'+soon.slice(0,12).map(miniHTML).join("")+'</div>'
                     : '<div class="hempty">未来 7 天没有回归安排</div>');
 
-  h += '<div class="hfoot"><button class="btn pri" id="toCal">查看完整日历</button></div>';
+  h += '<div class="hfoot">'
+    + '<button class="btn pri" id="toCal">查看完整日历</button>'
+    + '<button class="btn pri" id="subCal">订阅到手机日历</button>'
+    + '</div>';
 
   box.innerHTML = h;
   renderShows("homeShows");
@@ -2508,6 +2515,18 @@ document.addEventListener("click", function(e){
   if(t.id === "backBtn"){ S.detailId = null; render(); return; }
   if(t.id === "bdMore"){ S.bdMore = !S.bdMore; render(); return; }
   if(t.id === "toCal"){ S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
+  /* 订阅日历：复制订阅链接，各平台怎么用的说明放在提示里 */
+  if(t.id === "subCal"){
+    var u = (location.protocol === "file:" ? "https://mywooji.cn/" : location.origin + "/")
+          + "zhiwei.ics";
+    copyText(u);
+    alert("订阅链接已复制：\n" + u + "\n\n怎么用：\n"
+      + "iPhone：设置 → 日历 → 账户 → 添加订阅账户，粘贴链接\n"
+      + "安卓：Google 日历 → 设置 → 添加日历 → 通过网址订阅\n"
+      + "电脑：把链接加进系统日历或 Outlook 的网络日历\n\n"
+      + "订阅后每天自动更新，不用再回来看。");
+    return;
+  }
   if(t.id === "brandHome"){ S.detailId = null; S.view = "home"; syncTabs(); render(); return; }
   /* 收藏按钮（详情页） */
   if(t.id === "favDetail"){
