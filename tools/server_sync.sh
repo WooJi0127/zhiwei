@@ -54,7 +54,7 @@ sync_covers(){
   for base in $ROOTS; do
     if curl -fsSL --connect-timeout 10 --max-time 60 "$base/covers.txt$BUST" -o "$list.tmp" \
        && [ -s "$list.tmp" ]; then
-      mv "$list.tmp" "$list"
+      mv -f "$list.tmp" "$list"
       break
     fi
     rm -f "$list.tmp"
@@ -67,7 +67,7 @@ sync_covers(){
     for base in $ROOTS; do
       if curl -fsSL --connect-timeout 8 --max-time 60 "$base/covers/$f$BUST" -o "$COVERS/$f.tmp" \
          && [ -s "$COVERS/$f.tmp" ]; then
-        mv "$COVERS/$f.tmp" "$COVERS/$f"; got=$((got+1)); okone=1; break
+        mv -f "$COVERS/$f.tmp" "$COVERS/$f"; got=$((got+1)); okone=1; break
       fi
       rm -f "$COVERS/$f.tmp"
     done
@@ -109,7 +109,7 @@ for f in $FILES; do
   for base in $MIRRORS; do
     if curl -fsSL --connect-timeout 8 --max-time 60 "$base/$f$BUST" -o "$TARGET/$f.tmp"; then
       if [ -s "$TARGET/$f.tmp" ]; then
-        mv "$TARGET/$f.tmp" "$TARGET/$f"
+        mv -f "$TARGET/$f.tmp" "$TARGET/$f"
         ok=$((ok+1)); got=1
         [ -z "$USED" ] && USED="$base"
         break
