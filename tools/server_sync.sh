@@ -70,6 +70,7 @@ sync_covers(){
 }
 
 FILES="
+version.txt
 index.html
 app.css
 app.js
@@ -114,6 +115,7 @@ for f in $FILES; do
   fi
 done
 
+echo "· 仓库版本：$(cat "$TARGET/version.txt" 2>/dev/null || echo '（version.txt 没拉到）')"
 echo "· 同步完成 $(date '+%Y-%m-%d %H:%M:%S')：成功 $ok，失败 $fail"
 [ -n "$USED" ] && echo "· 使用的镜像：$USED"
 # 留一份日志，哪天没更新时打开这个文件就知道是网络还是别的原因

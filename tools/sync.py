@@ -9,6 +9,7 @@
     python tools/sync.py            # 同步全部
     python tools/sync.py --web      # 只生成 知未.html
 """
+import datetime
 import io
 import os
 import re
@@ -112,6 +113,20 @@ def copy_data(dd):
     return total
 
 
+def write_version(dst):
+    """写一份版本标记：同步完能一眼看出服务器拿到的是不是最新代码。"""
+    import subprocess
+    try:
+        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                             capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception:  # noqa: BLE001
+        sha = ""
+    txt = (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+           + ("  commit " + sha if sha else ""))
+    io.open(os.path.join(dst, "version.txt"), "w", encoding="utf-8").write(txt + "\n")
+    return txt
+
+
 def copy_ics(dst):
     """iCal 订阅文件：跟数据一起每天更新，放到站点根供日历 App 订阅。"""
     src = os.path.join(ROOT, "data", "zhiwei.ics")
@@ -163,10 +178,13 @@ def main():
         # 由 WebView 直接取，塞 2.8MB 图进离线包不划算
         cn = copy_covers(dst) if name == "site" else 0
         ic = copy_ics(dst) if name in ("site", "core") else False
+        if name == "site":
+            ver = write_version(dst)
         print(f"· {name:<8} {os.path.relpath(dst, ROOT)}"
               + (f"  数据 {dsz/1024:.0f} KB" if dsz else "")
               + (f"  封面 {cn} 张" if cn else "")
-              + ("  +ics" if ic else ""))
+              + ("  +ics" if ic else "")
+              + (f"  版本 {ver}" if name == "site" else ""))
     return 0
 
 

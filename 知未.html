@@ -2217,8 +2217,8 @@ function detailHTML(r){
   h += '<div class="dact">'
     +  '<button class="btn" id="favDetail" style="padding:10px 18px;border-radius:11px;font-size:13px">'
     +    (isFav(r.id) ? ico('star',14,true)+' 已收藏' : ico('star',14)+' 收藏') + '</button>'
-    +  '<a class="btn" id="reportBtn" href="'+esc(reportMail(r))+'"'
-    +    ' style="padding:10px 16px;border-radius:11px;font-size:13px">信息有误？告诉我们</a>'
+    +  '<button class="btn" id="reportBtn"'
+    +    ' style="padding:10px 16px;border-radius:11px;font-size:13px">信息有误？告诉我们</button>'
     +  '<span class="dsrc">数据来源：' + esc(srcLabel(r)) + '</span>'
     + '</div>';
 
@@ -3047,6 +3047,20 @@ document.addEventListener("click", function(e){
   if(t.id === "toCal"){ S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
   /* 订阅日历：首页和「未来」页两个按钮共用 */
   if(t.id === "subCal" || t.id === "subCal2"){ subscribeCalendar(); return; }
+  /* 信息有误：不再走 mailto（弹出系统邮件或浏览器很突兀），
+     改成跳到站内「诉说」窗口，并预填这张专辑的信息 */
+  if(t.id === "reportBtn"){
+    var rr = null;
+    for(var i = 0; i < ALL.length; i++){ if(ALL[i].id === S.detailId){ rr = ALL[i]; break; } }
+    closeDetail();
+    S.view = "calendar"; S.tab = "more"; S.tellKind = "内容纠错";
+    S.tellText = "专辑：" + ((rr && rr.artist) || "") + " - " + ((rr && rr.title) || "")
+               + "（" + ((rr && rr.date) || "") + "）\n哪里不对：\n正确信息应该是：\n";
+    syncTabs(); render();
+    var ta = $("tellText");
+    if(ta){ ta.scrollIntoView({behavior:"smooth", block:"center"}); ta.focus(); }
+    return;
+  }
   if(t.id === "brandHome"){ closeDetail(); S.view = "home"; syncTabs(); render(); return; }
   /* 收藏按钮（详情页） */
   if(t.id === "favDetail"){
