@@ -55,11 +55,15 @@
 | 服务器 | 阿里云轻量（杭州），宝塔 9.2.0，Nginx 静态，SSL 已开 |
 | 公网 IP | 116.62.30.229（控制台概览显示 .239 是错的） |
 | 宝塔面板 | `http://116.62.30.229:10127/wooji`（端口 10127，安全入口 /wooji） |
-| 备案 | ICP 皖ICP备2026037456号（页脚已挂）；公安备案已提交待审 |
-| 同步 | 服务器每天 10:00 跑 `tools/server_sync.sh`（jsdelivr 镜像） |
+| 备案 | ICP 皖ICP备2026037456号 + 公安皖公网安备34011102004379号（两个号都在页脚，已合规完成） |
+| 同步 | 服务器每天 10:00 跑**常驻脚本** `/root/server_sync.sh`（7 镜像依次试，写 `/root/sync.log`） |
+| iCal | `https://mywooji.cn/zhiwei.ics`，由 `build.py` 每次导出时生成（过去 60 天 + 未来 180 天） |
 
-坑（别重踩）：服务器上 GitHub 全家拉不动，只有 **jsdelivr** 通；`rm` 带 `-i` 要加 `-f`；
-宝塔镜像里没有 git；断链 `/www/wwwroot/mywooji.cn` 曾经导致 curl 全部失败。
+坑（别重踩）：
+- 定时任务**只能**写 `bash /root/server_sync.sh`。写成 `curl …| bash`（联网拉脚本）会在镜像不通时
+  **静默失败**，网站断更两天才发现（2026-10-30 事故）。
+- GitHub 系域名（raw / ghfast / ghproxy / jsdelivr）在国内时通时不通，任何联网拉文件的步骤都要有备选。
+- `rm` 带 `-i` 要加 `-f`；宝塔镜像里没有 git；断链 `/www/wwwroot/mywooji.cn` 曾导致 curl 全部失败。
 
 ## 设计定式（改样式前必看）
 
