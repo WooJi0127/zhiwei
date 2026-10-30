@@ -12,6 +12,10 @@
 # 每天自动（宝塔 → 计划任务 → Shell 脚本 → 每天 10:00）：同上那一行
 
 TARGET="/www/wwwroot/mywooji.cn"
+# jsdelivr 会缓存 GitHub 内容最多 12 小时。不带下面这个参数时，文件看起来
+# 「下载成功」，实际拿到的还是缓存里的旧代码（2026-10-30 断更 12 小时就是这个原因）。
+# URL 后面挂一个每次都不同的参数，镜像就会回源取最新内容。
+BUST="?nocache=$(date +%s)-$$"
 COVERS="$TARGET/covers"
 
 # 仓库根目录的镜像（用于 covers.txt 和 covers/ 这些不在 site/ 里的文件）
@@ -45,7 +49,7 @@ sync_covers(){
   local list="$TARGET/covers.txt"
   local got=0 skip=0 miss=0
   for base in $ROOTS; do
-    if curl -fsSL --connect-timeout 10 --max-time 40 "$base/covers.txt" -o "$list.tmp" \
+    if curl -fsSL --connect-timeout 10 --max-time 60 "$base/covers.txt$BUST" -o "$list.tmp" \
        && [ -s "$list.tmp" ]; then
       mv "$list.tmp" "$list"
       break
@@ -58,7 +62,7 @@ sync_covers(){
     if [ -s "$COVERS/$f" ]; then skip=$((skip+1)); continue; fi
     local okone=0
     for base in $ROOTS; do
-      if curl -fsSL --connect-timeout 8 --max-time 40 "$base/covers/$f" -o "$COVERS/$f.tmp" \
+      if curl -fsSL --connect-timeout 8 --max-time 60 "$base/covers/$f$BUST" -o "$COVERS/$f.tmp" \
          && [ -s "$COVERS/$f.tmp" ]; then
         mv "$COVERS/$f.tmp" "$COVERS/$f"; got=$((got+1)); okone=1; break
       fi
@@ -100,7 +104,7 @@ for f in $FILES; do
   mkdir -p "$d"
   got=0
   for base in $MIRRORS; do
-    if curl -fsSL --connect-timeout 8 --max-time 40 "$base/$f" -o "$TARGET/$f.tmp"; then
+    if curl -fsSL --connect-timeout 8 --max-time 60 "$base/$f$BUST" -o "$TARGET/$f.tmp"; then
       if [ -s "$TARGET/$f.tmp" ]; then
         mv "$TARGET/$f.tmp" "$TARGET/$f"
         ok=$((ok+1)); got=1
