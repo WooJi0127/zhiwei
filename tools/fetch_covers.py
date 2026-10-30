@@ -130,6 +130,10 @@ def main():
                 else:
                     ok += 1
         print(f"完成：新下载 {ok}，已有 {skip}，失败 {fail}")
+        names = sorted(os.listdir(OUT))
+        io.open(os.path.join(ROOT, "covers.txt"), "w", encoding="utf-8").write(
+            "\n".join(names) + "\n")
+        print(f"covers.txt：{len(names)} 条")
         return
     if "--probe" in sys.argv:
         probe()
@@ -153,6 +157,11 @@ def main():
     total = sum(os.path.getsize(os.path.join(OUT, f))
                 for f in os.listdir(OUT)) / 1048576
     print(f"covers 目录：{len(os.listdir(OUT))} 张，共 {total:.1f} MB")
+    # 写一份清单：服务器没装 git，列不出目录内容，只能按清单逐行下载
+    names = sorted(os.listdir(OUT))
+    io.open(os.path.join(ROOT, "covers.txt"), "w", encoding="utf-8").write(
+        "\n".join(names) + "\n")
+    print(f"covers.txt：{len(names)} 条（服务器按这个清单拉图）")
 
 
 if __name__ == "__main__":

@@ -12,6 +12,18 @@
 # 每天自动（宝塔 → 计划任务 → Shell 脚本 → 每天 10:00）：同上那一行
 
 TARGET="/www/wwwroot/mywooji.cn"
+COVERS="$TARGET/covers"
+
+# 仓库根目录的镜像（用于 covers.txt 和 covers/ 这些不在 site/ 里的文件）
+ROOTS="
+https://cdn.jsdelivr.net/gh/WooJi0127/zhiwei@main
+https://fastly.jsdelivr.net/gh/WooJi0127/zhiwei@main
+https://gcore.jsdelivr.net/gh/WooJi0127/zhiwei@main
+https://hub.gitmirror.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main
+https://ghfast.top/https://raw.githubusercontent.com/WooJi0127/zhiwei/main
+https://ghproxy.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main
+https://raw.githubusercontent.com/WooJi0127/zhiwei/main
+"
 
 # 镜像列表：按顺序试，第一个下载成功的就用它。
 # 2026-10-30 教训：jsdelivr 一度整体不通，而定时任务又是「先从 jsdelivr 拉脚本」，
@@ -25,6 +37,37 @@ https://ghfast.top/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 https://ghproxy.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 "
+
+# 封面图：按 covers.txt 清单逐行下载（服务器没有 git，列不出目录内容）。
+# 已存在的跳过 —— 封面图不会变，不用每天重下 246 张。
+sync_covers(){
+  mkdir -p "$COVERS"
+  local list="$TARGET/covers.txt"
+  local got=0 skip=0 miss=0
+  for base in $MIRRORS; do
+    if curl -fsSL --connect-timeout 10 --max-time 40 "$base/../covers.txt" -o "$list.tmp" \
+       && [ -s "$list.tmp" ]; then
+      mv "$list.tmp" "$list"
+      break
+    fi
+    rm -f "$list.tmp"
+  done
+  [ -s "$list" ] || { echo "  ! covers.txt 没拉到，跳过封面同步"; return 0; }
+  while read -r f; do
+    [ -n "$f" ] || continue
+    if [ -s "$COVERS/$f" ]; then skip=$((skip+1)); continue; fi
+    local okone=0
+    for base in $MIRRORS; do
+      if curl -fsSL --connect-timeout 8 --max-time 40 "$base/../covers/$f" -o "$COVERS/$f.tmp" \
+         && [ -s "$COVERS/$f.tmp" ]; then
+        mv "$COVERS/$f.tmp" "$COVERS/$f"; got=$((got+1)); okone=1; break
+      fi
+      rm -f "$COVERS/$f.tmp"
+    done
+    [ $okone -eq 0 ] && miss=$((miss+1))
+  done < "$list"
+  echo "· 封面：新增 $got，已有 $skip，失败 $miss"
+}
 
 FILES="
 index.html
@@ -74,6 +117,7 @@ done
 echo "· 同步完成 $(date '+%Y-%m-%d %H:%M:%S')：成功 $ok，失败 $fail"
 [ -n "$USED" ] && echo "· 使用的镜像：$USED"
 # 留一份日志，哪天没更新时打开这个文件就知道是网络还是别的原因
+sync_covers
 echo "$(date '+%F %T') ok=$ok fail=$fail mirror=${USED:-无}" >> /root/sync.log 2>/dev/null
 if [ $fail -gt 0 ]; then
   echo "· 有文件没拉到：所有镜像在这台服务器上都不通。"
