@@ -279,6 +279,9 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .mvmini:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .mvmini .mvcov{position:relative;display:block;width:100%;aspect-ratio:16/9;background:var(--grad-soft)}
 .mvmini .mvcov img{width:100%;height:100%;object-fit:cover;display:block}
+/* 图没抓到时的占位（音符图标）：垫在图片下面，图片加载成功会盖住它 */
+.mvmini .mvcov .ph{position:absolute;inset:0;display:grid;place-items:center;
+  font-size:22px;opacity:.35}
 .mvmini .mvplay{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.62);color:#fff;
   font-size:11.5px;font-weight:700;padding:3px 7px;border-radius:6px}
 .mvmini .mvtt{display:block;padding:9px 10px 0;font-size:13.5px;font-weight:700;line-height:1.35;

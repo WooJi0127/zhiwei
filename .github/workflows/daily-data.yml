@@ -70,6 +70,18 @@ jobs:
             python scripts/build.py --full
           fi
 
+      # 封面图本地化：kpopping（防盗链 403）和 B 站图床（Referer 检查）
+      # 在国内 / 站外都显示不出来，所以这两批图必须搬回仓库。
+      # 每天只补新增的那几张（已存在的会跳过），几秒就跑完。
+      # 放在 sync 之前：这样新下载的图会被一起复制进 site/。
+      # 用 continue-on-error：图床抽风只丢几张图，不该影响数据更新。
+      - name: 下载新增封面（专辑 + MV）
+        continue-on-error: true
+        run: |
+          pip install --quiet Pillow
+          python tools/fetch_covers.py
+          python tools/fetch_covers.py --mv
+
       # 把界面源码与数据复制到 知未.html / desktop/app / site/app
       - name: 分发到各端
         run: python tools/sync.py

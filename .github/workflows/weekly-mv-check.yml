@@ -49,6 +49,14 @@ jobs:
       - name: 重新导出 data.js
         run: python scripts/build.py --export-only
 
+      # 整刷会补进迟传的新 MV，它们的封面也得搬回来，否则首页又是一排空白
+      - name: 下载新增封面
+        continue-on-error: true
+        run: |
+          pip install --quiet Pillow
+          python tools/fetch_covers.py
+          python tools/fetch_covers.py --mv
+
       - name: 分发到各端
         run: python tools/sync.py
 

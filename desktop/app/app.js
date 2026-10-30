@@ -832,6 +832,7 @@ function renderHome(){
           ? '<div class="mvbar">' + mm.map(function(m){
               return '<a class="mvmini" href="'+mvURL(m)+'" target="_blank" rel="noopener nofollow">'
                 + '<span class="mvcov">'
+                +   '<div class="ph">' + ico('note',22) + '</div>'   /* 图没抓到时的占位，别留空白 */
                 +   mvImgTag(m)
                 +   '<span class="mvplay">▶ '+fmtPlay(m.p)+'</span>'
                 + '</span>'
