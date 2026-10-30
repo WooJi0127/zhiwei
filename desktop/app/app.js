@@ -1,3 +1,116 @@
+/* BEGIN BACKUP MODULE */
+/* 收藏 / 本命备份。只处理数据，不访问页面、曲库或 localStorage。 */
+(function(root){
+  "use strict";
+
+  var FORMAT = "zhiwei-backup";
+  var VERSION = 1;
+  var MAX_BYTES = 1024 * 1024;
+  var MAX_FAVS = 20000;
+  var MAX_BIAS = 2000;
+  var MAX_ITEM_LENGTH = 512;
+
+  function fail(code, message){
+    var error = new Error(message);
+    error.code = code;
+    throw error;
+  }
+
+  /* 按文件的 UTF-8 字节数限制，不把中文和代理对误当作一个字节。 */
+  function checkSize(text){
+    var bytes = 0;
+    for(var i = 0; i < text.length; i++){
+      var code = text.charCodeAt(i);
+      if(code < 0x80) bytes++;
+      else if(code < 0x800) bytes += 2;
+      else if(code >= 0xD800 && code <= 0xDBFF &&
+              i + 1 < text.length && text.charCodeAt(i + 1) >= 0xDC00 &&
+              text.charCodeAt(i + 1) <= 0xDFFF){
+        bytes += 4;
+        i++;
+      } else bytes += 3;
+      if(bytes > MAX_BYTES) fail("TOO_LARGE", "备份文件不能超过 1 MB。");
+    }
+  }
+
+  function unique(list){
+    var seen = Object.create(null);
+    return list.filter(function(value){
+      if(seen[value]) return false;
+      seen[value] = true;
+      return true;
+    });
+  }
+
+  function selectionList(list, label, maxItems){
+    if(!Array.isArray(list)) fail("INVALID_LIST", label + "必须是列表。");
+    if(list.length > maxItems) fail("TOO_MANY_ITEMS", label + "条目过多，无法导入。");
+    for(var i = 0; i < list.length; i++){
+      if(typeof list[i] !== "string" || !list[i].trim() ||
+         list[i].length > MAX_ITEM_LENGTH || /[\u0000-\u001F\u007F]/.test(list[i])){
+        fail("INVALID_ITEM", label + "中含有无效条目，原有内容未改变。");
+      }
+    }
+    /* 不改写 ID 或艺人名；即使历史年份尚未加载，也保留原值。 */
+    return unique(list);
+  }
+
+  function validate(value){
+    if(!value || typeof value !== "object" || Array.isArray(value) || value.format !== FORMAT){
+      fail("INVALID_FORMAT", "这不是知未的收藏备份文件。");
+    }
+    if(value.version !== VERSION){
+      fail("INVALID_VERSION", "暂不支持这个备份版本，请使用当前版本导出的文件。");
+    }
+    var result = {
+      format:FORMAT,
+      version:VERSION,
+      favs:selectionList(value.favs, "收藏", MAX_FAVS),
+      bias:selectionList(value.bias, "本命", MAX_BIAS)
+    };
+    if(typeof value.exportedAt === "string" && value.exportedAt.length <= 64){
+      result.exportedAt = value.exportedAt;
+    }
+    return result;
+  }
+
+  function create(favs, bias){
+    var result = validate({format:FORMAT, version:VERSION, favs:favs, bias:bias});
+    result.exportedAt = new Date().toISOString();
+    /* 界面以两个空格缩进下载；导出的文件也必须可再次导入。 */
+    checkSize(JSON.stringify(result, null, 2));
+    return result;
+  }
+
+  function parse(text){
+    if(typeof text !== "string") fail("INVALID_JSON", "请选择 JSON 格式的备份文件。");
+    checkSize(text);
+    var value;
+    try{
+      value = JSON.parse(text.replace(/^\uFEFF/, ""));
+    }catch(error){
+      fail("INVALID_JSON", "文件不是有效的 JSON，原有内容未改变。");
+    }
+    return validate(value);
+  }
+
+  function merge(favs, bias, incoming){
+    var checked = validate(incoming);
+    var currentFavs = selectionList(favs, "收藏", MAX_FAVS);
+    var currentBias = selectionList(bias, "本命", MAX_BIAS);
+    var result = create(unique(currentFavs.concat(checked.favs)), unique(currentBias.concat(checked.bias)));
+    return {
+      favs:result.favs,
+      bias:result.bias,
+      addedFavs:result.favs.length - currentFavs.length,
+      addedBias:result.bias.length - currentBias.length
+    };
+  }
+
+  root.ZWBackup = {create:create, parse:parse, merge:merge, MAX_BYTES:MAX_BYTES};
+})(window);
+
+/* END BACKUP MODULE */
 (function(){
 "use strict";
 
@@ -132,12 +245,18 @@ ALL.forEach(function(r){ if(r.date) DATE_COUNT[r.date] = (DATE_COUNT[r.date]||0)
 /* 主文件只带最近 RECENT_DAYS 天的发行，更早的按年份切成 data-<年>.js，
    需要时才加载——否则补满 10 年历史后一次性 17MB 会把手机首屏拖死。 */
 var YEARS = DATA.years || {};      /* {"2025": 523, ...} */
-var LOADED = {}, PENDING = {};
+var LOADED = {}, PENDING = {}, FAILED = {};
 
 function loadYear(y, cb){
   if(LOADED[y]){ if(cb) cb(); return; }
-  if(PENDING[y]) return;      /* 正在加载，等它自己的回调，别重复 render */
-  PENDING[y] = 1;
+  if(FAILED[y]){ if(cb) cb(); return; }  /* 刷新后重试，避免失败→重绘→失败循环 */
+  if(PENDING[y]){ if(cb) PENDING[y].push(cb); return; }
+  PENDING[y] = cb ? [cb] : [];
+  function finish(){
+    var callbacks = PENDING[y];
+    delete PENDING[y];
+    callbacks.forEach(function(done){ done(); });
+  }
   toast("正在加载 " + y + " 年数据…");
   var s = document.createElement("script");
   s.src = "data/data-" + y + ".js";
@@ -147,13 +266,13 @@ function loadYear(y, cb){
     arr.forEach(normOne);
     ALL = ALL.concat(arr);
     arr.forEach(function(r){ if(r.date) DATE_COUNT[r.date] = (DATE_COUNT[r.date]||0)+1; });
-    LOADED[y] = 1; delete PENDING[y];
-    if(cb) cb();
+    LOADED[y] = 1;
+    finish();
   };
   s.onerror = function(){
-    delete PENDING[y];
-    toast("加载 " + y + " 年数据失败，请检查网络或刷新重试");
-    if(cb) cb();
+    FAILED[y] = 1;
+    toast("加载 " + y + " 年数据失败，请检查网络后刷新重试");
+    finish();
   };
   document.head.appendChild(s);
 }
@@ -163,6 +282,17 @@ function loadYears(list, done){
   (function next(){
     if(i >= list.length){ if(done) done(); return; }
     loadYear(list[i++], next);
+  })();
+}
+/* 分享旧专辑时，主数据尚无该条目；逐年查找，命中即停。 */
+function findRelease(id, done){
+  var years = Object.keys(YEARS).sort().reverse(), i = 0;
+  (function next(){
+    var r = ALL.find(function(item){ return item.id === id; });
+    if(r){ done(r); return; }
+    while(i < years.length && (LOADED[years[i]] || FAILED[years[i]])) i++;
+    if(i === years.length){ done(null); return; }
+    loadYear(years[i++], next);
   })();
 }
 /* 选了更早的时间范围时，自动把涉及的年份补齐 */
@@ -175,16 +305,16 @@ function ensureYears(){
   if(S.tab === "mine"){
     /* 「我的」页：收藏和本命可能来自任何年份，只加载主文件（近一年）会让
        旧专辑刷新后「消失」，用户会以为收藏丢了。这里把所有年份补齐。 */
-    need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y]; });
+    need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y] && !FAILED[y]; });
   } else if(!f){
     /* 「全部已发布」或在搜索 → 用户想要的就是全部，补齐所有年份 */
     if(S.tab !== "past" && !S.q) return false;
-    need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y]; });
+    need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y] && !FAILED[y]; });
   } else if(f < CUTOFF_S){
     var y0 = +f.slice(0, 4), y1 = +((S.range.to || f).slice(0, 4));
     for(var y = y1; y >= y0; y--){
       var k = String(y);
-      if(YEARS[k] && !LOADED[k] && !PENDING[k]) need.push(k);
+      if(YEARS[k] && !LOADED[k] && !PENDING[k] && !FAILED[k]) need.push(k);
     }
   }
   if(!need.length) return false;
@@ -227,6 +357,8 @@ var LS = {
 };
 var favs = LS.get("favs", []);
 var bias = LS.get("bias", []);
+favs = Array.isArray(favs) ? favs.filter(function(v){ return typeof v === "string"; }) : [];
+bias = Array.isArray(bias) ? bias.filter(function(v){ return typeof v === "string"; }) : [];
 function isFav(id){ return favs.indexOf(id) >= 0; }
 function isBias(n){ return bias.indexOf(n) >= 0; }
 
@@ -1537,6 +1669,7 @@ function renderList(){
       html = '<div class="empty"><div class="e">' + ico('heart',24) + '</div><h3>还没有设置本命</h3>'
            + '<p>在上方「本命团体管理」里添加，或点卡片上的爱心</p></div>';
     } else {
+      ensureYears();
       var bl = ALL.filter(function(r){ return isBias(r.artist); });
       var bu = bl.filter(function(r){ return r._dd>=0; }).sort(function(a,b){ return a._dd-b._dd; });
       var bp = bl.filter(function(r){ return r._dd<0; });
@@ -1640,6 +1773,7 @@ function animIn(el){
   void el.offsetWidth;
   el.classList.add("rise");
 }
+var detailLoading = {}, detailMissing = {};
 function render(){
   /* 首页（默认页）与日历界面互斥；打开详情时让位 */
   var home = (S.view === "home" && !S.detailId);
@@ -1657,7 +1791,22 @@ function render(){
     $("detailView").style.display = "";
     var r = null;
     for(var i=0;i<ALL.length;i++){ if(ALL[i].id===S.detailId){ r=ALL[i]; break; } }
-    if(!r){ S.detailId=null; render(); return; }
+    if(!r){
+      var rid = S.detailId;
+      $("detailView").innerHTML = '<div class="empty" role="status"><h3>'
+        + (detailMissing[rid] ? '暂未找到这张专辑' : '正在查找历史专辑…')
+        + '</h3><p>' + (detailMissing[rid] ? '可能尚未收录，或历史数据加载失败。可刷新后重试。' : '首次打开旧专辑需要加载对应年份，请稍候。')
+        + '</p><button class="btn" id="backBtn">返回</button></div>';
+      if(!detailMissing[rid] && !detailLoading[rid]){
+        detailLoading[rid] = true;
+        findRelease(rid, function(found){
+          delete detailLoading[rid];
+          if(!found) detailMissing[rid] = true;
+          if(S.detailId === rid) render();
+        });
+      }
+      return;
+    }
     $("detailView").innerHTML = detailHTML(r);
     animIn($("detailView"));
     window.scrollTo({top:0,behavior:"instant"});
@@ -1672,8 +1821,8 @@ function render(){
 function subscribeCalendar(){
   var u = (location.protocol === "file:" ? "https://mywooji.cn/" : location.origin + "/")
         + "zhiwei.ics";
-  copyText(u);
-  alert("订阅链接已复制：\n" + u + "\n\n怎么用：\n"
+  copyText(u, "订阅链接已复制");
+  alert("日历订阅链接：\n" + u + "\n\n怎么用：\n"
     + "iPhone：设置 → 日历 → 账户 → 添加订阅账户，粘贴链接\n"
     + "安卓：Google 日历 → 设置 → 添加日历 → 通过网址订阅\n"
     + "电脑：把链接加进系统日历或 Outlook 的网络日历\n\n"
@@ -1683,6 +1832,13 @@ function subscribeCalendar(){
 /* 打开详情时把专辑写进网址（#release=id），这样复制网址就能分享这张专辑；
    关掉时把地址还原回列表，浏览器前进/后退也能正常走。 */
 function openDetail(id){
+  if(!S.detailId){
+    var origin = S.view === "home" ? "#view=home" : "#tab=" + (S.tab === "mine" ? S.mine : S.tab);
+    if(S.view !== "home" && S.tab === "past" && S.range.from){
+      origin += "&from=" + encodeURIComponent(S.range.from) + "&to=" + encodeURIComponent(S.range.to || S.range.from);
+    }
+    history.replaceState(null, "", origin);
+  }
   S.detailId = id;
   var h = "#release=" + encodeURIComponent(id);
   if(location.hash !== h) history.pushState(null, "", h);
@@ -1695,6 +1851,49 @@ function closeDetail(){
   if(location.hash !== h) history.pushState(null, "", h);
   return true;
 }
+
+/* 本地备份：校验全部通过才写入，存储失败时恢复原值。 */
+function importBackupText(text){
+  var next = window.ZWBackup.merge(favs, bias, window.ZWBackup.parse(text));
+  var oldFavs = localStorage.getItem("zw_favs"), oldBias = localStorage.getItem("zw_bias");
+  try {
+    localStorage.setItem("zw_favs", JSON.stringify(next.favs));
+    localStorage.setItem("zw_bias", JSON.stringify(next.bias));
+  } catch(e){
+    try {
+      if(oldFavs === null) localStorage.removeItem("zw_favs"); else localStorage.setItem("zw_favs", oldFavs);
+      if(oldBias === null) localStorage.removeItem("zw_bias"); else localStorage.setItem("zw_bias", oldBias);
+    } catch(ignore){}
+    throw new Error("浏览器未能保存备份，请检查存储空间或隐私设置后重试。");
+  }
+  favs = next.favs; bias = next.bias;
+  S.view = "calendar"; S.tab = "mine"; S.detailId = null;
+  syncTabs(); render();
+  $("backupStatus").textContent = "已合并：新增 " + next.addedFavs + " 张收藏、" + next.addedBias + " 位本命。";
+}
+$("exportBackup").addEventListener("click", function(){
+  try {
+    var blob = new Blob([JSON.stringify(window.ZWBackup.create(favs, bias), null, 2)], {type:"application/json;charset=utf-8"});
+    var url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = "zhiwei-backup-" + d2s(new Date()) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+    $("backupStatus").textContent = "备份文件已生成，请保存好，换设备时可导入。";
+  } catch(e){ $("backupStatus").textContent = e.message; }
+});
+$("importBackup").addEventListener("click", function(){ $("backupFile").click(); });
+$("backupFile").addEventListener("change", function(){
+  var file = this.files[0]; this.value = "";
+  if(!file) return;
+  if(file.size > window.ZWBackup.MAX_BYTES){ $("backupStatus").textContent = "备份文件不能超过 1 MB。"; return; }
+  var reader = new FileReader();
+  reader.onerror = function(){ $("backupStatus").textContent = "文件读取失败，请重新选择。"; };
+  reader.onload = function(){
+    try { importBackupText(reader.result); }
+    catch(e){ $("backupStatus").textContent = "未导入：" + e.message; }
+  };
+  reader.readAsText(file);
+});
 
 /* ============================ 爱心动画 ============================ */
 function burst(el){
@@ -2014,8 +2213,8 @@ document.addEventListener("click", function(e){
 });
 
 /* 复制文本：优先用剪贴板接口，老浏览器退回 execCommand */
-function copyText(s){
-  var done = function(){ toast("已复制，粘贴到邮件里发给我就行"); };
+function copyText(s, message){
+  var done = function(){ toast(message || "已复制，粘贴到邮件里发给我就行"); };
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(s).then(done, fallback);
   } else { fallback(); }
@@ -2023,7 +2222,7 @@ function copyText(s){
     var ta = document.createElement("textarea");
     ta.value = s; ta.style.position = "fixed"; ta.style.opacity = "0";
     document.body.appendChild(ta); ta.select();
-    try { document.execCommand("copy"); done(); }
+    try { if(!document.execCommand("copy")) throw new Error("copy failed"); done(); }
     catch(e){ toast("复制失败，请手动选中文本复制"); }
     document.body.removeChild(ta);
   }
@@ -2177,20 +2376,19 @@ var GAJ_CODE = "34011102004379";   /* 公安备案号：皖公网安备 34011102
 /* 数据新鲜度 */
 (function(){
   var g = DATA.generated;
-  if(!g){ $("noticeTxt").textContent = "数据未生成，请先运行更新脚本。"; $("notice").classList.add("on"); return; }
+  if(!g){ $("noticeTxt").textContent = "数据暂时不可用，请稍后刷新重试。"; $("notice").classList.add("on"); return; }
   var d = new Date(g.replace(" ", "T"));
   var h = (Date.now() - d.getTime()) / 3600000;
   var ge = $("genAt");
   if(ge){ ge.textContent = "数据更新于 " + g + " · "; }
   if(h > 30){
     $("noticeTxt").textContent = "数据更新于 " + g + "（已过 " + Math.floor(h) + " 小时）。"
-      + "每天应自动更新一次，若未更新请检查计划任务。";
+      + "最新回归可能尚未收录，请稍后再来看看。";
     $("notice").classList.add("on");
   }
 })();
 $("noticeBtn").addEventListener("click", function(){
-  alert("更新方式：\n\n1）自动：双击 install_task.bat 注册后，每天固定时间自动运行。\n"
-      + "2）手动：双击 update.bat。\n\n更新完成后刷新本页即可。");
+  location.reload();
 });
 
 S.range = rangePreset("f30");
@@ -2199,9 +2397,12 @@ S.range = rangePreset("f30");
    抽成函数：初始化时读一次，浏览器前进/后退（popstate）时再读一次。 */
 function applyHash(){
   var h = location.hash || "";
+  S.detailId = null;
+  S.view = "home";
   function arg(k){
     var m = new RegExp("[#&]" + k + "=([^&]+)").exec(h);
-    return m ? decodeURIComponent(m[1]) : null;
+    if(!m) return null;
+    try { return decodeURIComponent(m[1]); } catch(e){ return null; }
   }
   var tab = arg("tab");
   if(["future","past","guide","mine","more"].indexOf(tab) >= 0){

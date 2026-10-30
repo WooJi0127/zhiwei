@@ -5,7 +5,7 @@
 三个子命令，各跑各的，互不依赖：
     python scripts/fill_gaps.py --types     # 回填缺失的专辑类型（网易云）
     python scripts/fill_gaps.py --tracks    # 补全缺失的曲目（Apple）
-    python scripts/fill_gaps.py --artists   # 补艺人公司 / 粉丝名 / 出道年（kpopping）
+    python scripts/fill_gaps.py --artists   # 补团体公司 / 粉丝名 / 出道年（kpopping 明确字段）
 
 铁律：
 - 拿不到就留空，绝不猜、绝不填默认值（parse_subtype 那种启发式只用于
@@ -18,6 +18,7 @@ import datetime
 import sqlite3
 import sys
 import time
+from html.parser import HTMLParser
 
 sys.path.insert(0, __file__.rsplit("\\", 1)[0].rsplit("/", 1)[0])
 
@@ -158,58 +159,135 @@ def fill_tracks(limit=None):
 
 # ---------------------------------------------------------------- 艺人资料
 def _text(html):
+    import html as html_lib
     import re
-    t = re.sub(r"<script.*?</script>", " ", html, flags=re.S)
-    t = re.sub(r"<[^>]+>", " ", t)
-    return re.sub(r"\s+", " ", t)
+    if isinstance(html, bytes):
+        html = html.decode("utf-8", "replace")
+    t = re.sub(r"<(script|style)\b[^>]*>.*?</\1>", "", html, flags=re.S | re.I)
+    t = html_lib.unescape(re.sub(r"<[^>]+>", "\n", t))
+    return "\n".join(" ".join(line.split()) for line in t.splitlines() if line.strip())
+
+
+class _ProfileHTML(HTMLParser):
+    """Keep sibling elements so empty profile values never consume another label."""
+    def __init__(self, html):
+        super().__init__(convert_charrefs=True)
+        self.root = {"tag": "root", "children": []}
+        self.stack = [self.root]
+        self.nodes = [self.root]
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        node = {"tag": tag, "children": []}
+        self.stack[-1]["children"].append(node)
+        self.nodes.append(node)
+        if tag not in {"area", "base", "br", "col", "embed", "hr", "img", "input",
+                       "link", "meta", "param", "source", "track", "wbr"}:
+            self.stack.append(node)
+
+    def handle_endtag(self, tag):
+        for index in range(len(self.stack) - 1, 0, -1):
+            if self.stack[index]["tag"] == tag:
+                del self.stack[index:]
+                break
+
+    def handle_data(self, data):
+        self.stack[-1]["children"].append(data)
+
+
+def _node_text(node):
+    if isinstance(node, str):
+        return node
+    if node["tag"] in {"script", "style"}:
+        return ""
+    if node["tag"] in {"br", "hr"}:
+        return "\n"
+    text = "".join(_node_text(child) for child in node["children"])
+    if node["tag"] in {"div", "p", "li", "ul", "ol", "section", "article"}:
+        return "\n" + text + "\n"
+    return text
+
+
+def _profile_field(html, labels):
+    """Read explicit definition/table pairs; unsupported layouts stay blank."""
+    import re
+    parser = _ProfileHTML(html)
+    values = set()
+    pairs = {"dt": {"dd"}, "th": {"td"}}
+    for parent in parser.nodes:
+        children = [child for child in parent["children"]
+                    if not isinstance(child, str) or child.strip()]
+        for label, value in zip(children, children[1:]):
+            if isinstance(label, str) or isinstance(value, str):
+                continue
+            if value["tag"] not in pairs.get(label["tag"], set()):
+                continue
+            label_text = " ".join(_node_text(label).split())
+            if re.fullmatch(r"(?:" + labels + r")[ \t]*[:：]?", label_text, re.I):
+                values.add(" ".join(_node_text(value).split()))
+    if len(values) != 1:
+        return None
+    value = values.pop()
+    if value.casefold().rstrip(":：") in {"", "tba", "tbd", "n/a", "none", "unknown", "-", "—",
+                            "debut", "fandom", "fandom name", "fan club", "fan club name",
+                            "company", "agency", "label", "members", "company history", "active years"}:
+        return None
+    return value
 
 
 def fill_artists(limit=None):
-    """补艺人的公司 / 粉丝名 / 出道年（kpopping 团体页）。
+    """补团体的公司 / 粉丝名 / 出道年（kpopping 团体页）。
 
     依赖 kpopping.com：国内网络经常超时，本地跑不动很正常，交给云端跑。
+    只认标题匹配的 Group Info 中明确配对的定义列表/表格字段；未知布局不猜。
+    不覆盖已有字段；个人艺人、公司历史和不确定的页面留待单独核对。
     """
     import re
     import urllib.parse
     c = con()
     cols = [r[1] for r in c.execute("PRAGMA table_info(artists)")]
     rows = c.execute(
-        "SELECT name FROM artists WHERE agency IS NULL OR agency='' "
-        "OR fandom IS NULL OR fandom='' OR debut_year IS NULL OR debut_year='' "
+        "SELECT name,agency,fandom,debut_year FROM artists "
+        "WHERE (kind IS NULL OR kind='' OR kind='group') "
+        "AND (agency IS NULL OR agency='' "
+        "OR fandom IS NULL OR fandom='' OR debut_year IS NULL OR debut_year='') "
         "ORDER BY name").fetchall()
-    names = [r[0] for r in rows]
     if limit:
-        names = names[:limit]
-    log(f"艺人资料：待处理 {len(names)} 位（kpopping，国内可能超时）")
+        rows = rows[:limit]
+    log(f"艺人资料：待处理 {len(rows)} 位团体（kpopping，国内可能超时）")
 
     done = hit = 0
-    for name in names:
+    for name, old_agency, old_fandom, old_debut in rows:
         try:
-            url = "https://kpopping.com/profiles/group/" + urllib.parse.quote(name)
+            slug = re.sub(r"\s+", "-", name.strip())
+            url = "https://kpopping.com/profiles/group/" + urllib.parse.quote(slug, safe="")
             raw = http_get(url)
             if not raw:
                 done += 1
                 continue
-            txt = _text(raw)
-            agency = fandom = debut = None
-            m = re.search(r"(?:Company|Agency|Label)\s*[:：]?\s*([A-Za-z0-9&.\- ]{2,40})", txt)
-            if m:
-                agency = m.group(1).strip()
-            m = re.search(r"(?:Fandom|Fan\s*club)\s*(?:Name)?\s*[:：]?\s*([A-Za-z0-9 ]{2,30})", txt)
-            if m:
-                fandom = m.group(1).strip()
-            m = re.search(r"Debut\s*[:：]?\s*(\d{4})", txt)
-            if m:
-                debut = m.group(1)
+            html = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else raw
+            heading = re.search(r"<h1\b[^>]*>(.*?)</h1>", html, re.S | re.I)
+            section = re.search(r"<h2\b[^>]*>\s*Group Info\s*</h2>(.*?)(?=<h2\b|\Z)",
+                                html, re.S | re.I)
+            if not heading or norm(_text(heading.group(1))) != norm(name) or not section:
+                done += 1
+                continue
+            txt = section.group(1)
+            agency = _profile_field(txt, r"Company|Agency|Label")
+            fandom = _profile_field(txt, r"Fandom(?: Name)?|Fan club(?: Name)?")
+            debut_value = _profile_field(txt, r"Debut")
+            debut = None
+            if debut_value and re.fullmatch(r"(?:19|20)\d{2}(?:-\d{2}-\d{2})?", debut_value):
+                debut = debut_value[:4]
             if not (agency or fandom or debut):
                 done += 1
                 continue
             sets, vals = [], []
-            if agency and "agency" in cols:
+            if agency and old_agency in (None, "") and "agency" in cols:
                 sets.append("agency=?"); vals.append(agency)
-            if fandom and "fandom" in cols:
+            if fandom and old_fandom in (None, "") and "fandom" in cols:
                 sets.append("fandom=?"); vals.append(fandom)
-            if debut and "debut_year" in cols:
+            if debut and old_debut in (None, "") and "debut_year" in cols:
                 sets.append("debut_year=?"); vals.append(int(debut))
             if sets:
                 vals.append(name)
@@ -221,7 +299,7 @@ def fill_artists(limit=None):
         done += 1
         if done % 5 == 0:
             c.commit()
-            log(f"  … {done}/{len(names)}，已补 {hit} 位")
+            log(f"  … {done}/{len(rows)}，已补 {hit} 位")
     c.commit()
     log(f"艺人资料完成：本次补上 {hit} 位")
     c.close()

@@ -85,7 +85,7 @@
 <main>
   <div class="notice" id="notice">
     <span id="noticeTxt"></span>
-    <button id="noticeBtn">如何更新</button>
+    <button id="noticeBtn">刷新数据</button>
   </div>
 
   <!-- 首页：内容型入口（默认页）。日历界面仍是下面那 5 个 tab -->
@@ -124,6 +124,13 @@
       <div class="seg">
         <button data-mine="fav">我的收藏</button>
         <button data-mine="bias">本命动态</button>
+      </div>
+      <div class="backup-actions">
+        <button class="btn" id="exportBackup">导出收藏与本命</button>
+        <button class="btn" id="importBackup">导入备份</button>
+        <input type="file" id="backupFile" accept=".json,application/json" hidden>
+        <span>换设备时，导出文件再导入即可。导入会合并保留现有记录。</span>
+        <span id="backupStatus" role="status" aria-live="polite"></span>
       </div>
     </div>
 

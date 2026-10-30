@@ -1338,7 +1338,8 @@ ICS_PAST, ICS_FUTURE = 60, 180      # 往前 60 天、往后 180 天，控制文
 
 def _ics_escape(s):
     """RFC 5545：反斜杠、分号、逗号要转义，换行变成 \\n。"""
-    return (str(s or "").replace("\\", "\\\\").replace(";", "\\;")
+    return (str(s or "").replace("\r\n", "\n").replace("\r", "\n")
+            .replace("\\", "\\\\").replace(";", "\\;")
             .replace(",", "\\,").replace("\n", "\\n"))
 
 
@@ -1371,8 +1372,6 @@ def export_ics(con):
     rows = list(con.execute(
         "SELECT id,date,artist,title,rtype FROM releases "
         "WHERE date>=? AND date<=? ORDER BY date", (lo, hi)))
-    if not rows:
-        return 0
 
     lines = [
         "BEGIN:VCALENDAR",
@@ -1385,15 +1384,24 @@ def export_ics(con):
         "X-WR-TIMEZONE:Asia/Shanghai",
         "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
     ]
-    stamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    count = 0
     for rid, date, artist, title, rtype in rows:
+        try:
+            release_date = datetime.date.fromisoformat(date)
+            if date != release_date.isoformat():
+                raise ValueError("发行日期必须是 YYYY-MM-DD")
+            end_date = release_date + datetime.timedelta(days=1)
+        except (ValueError, TypeError, OverflowError):
+            log(f"  iCal：跳过无效日期 {date!r}（{rid}）")
+            continue
         lines += [
             "BEGIN:VEVENT",
             f"UID:{rid}@mywooji.cn",
             f"DTSTAMP:{stamp}",
             # 全天事件：发行日是「那一天」，不该带时区偏移
-            f"DTSTART;VALUE=DATE:{date.replace('-', '')}",
-            f"DTEND;VALUE=DATE:{(datetime.date.fromisoformat(date) + datetime.timedelta(days=1)).strftime('%Y%m%d')}",
+            f"DTSTART;VALUE=DATE:{release_date.strftime('%Y%m%d')}",
+            f"DTEND;VALUE=DATE:{end_date.strftime('%Y%m%d')}",
             _ics_fold("SUMMARY:" + _ics_escape(f"{artist} · {title}")),
             _ics_fold("DESCRIPTION:" + _ics_escape(
                 f"{artist} 发行《{title}》"
@@ -1403,15 +1411,17 @@ def export_ics(con):
             "TRANSP:TRANSPARENT",
             "END:VEVENT",
         ]
+        count += 1
     lines.append("END:VCALENDAR")
 
     # RFC 5545 要求 CRLF 行尾
     body = "\r\n".join(lines) + "\r\n"
+    os.makedirs(os.path.dirname(os.path.abspath(ICS_FILE)), exist_ok=True)
     with io.open(ICS_FILE, "w", encoding="utf-8", newline="") as fh:
         fh.write(body)
-    log(f"  iCal：{len(rows)} 个事件 -> {os.path.basename(ICS_FILE)} "
+    log(f"  iCal：{count} 个事件 -> {os.path.basename(ICS_FILE)} "
         f"{os.path.getsize(ICS_FILE)/1024:.0f} KB")
-    return len(rows)
+    return count
 
 
 # ------------------------------------------------------------------ 主流程
