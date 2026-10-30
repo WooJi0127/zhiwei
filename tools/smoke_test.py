@@ -293,6 +293,8 @@ step(function(){
 step(function(){
   var fb = document.querySelector("footer .beian");
   /* iCal 订阅入口：按钮 + 文件都要在 */
+  /* 搜索框默认要展开（以前藏着，新访客不知道有搜索） */
+  LOG.push("搜索框展开=" + ($("searchCover").style.display !== "none"));
   LOG.push("订阅按钮=" + (!!$("subCal"))
     + " ics文件=" + !!document.querySelector('footer .fsub a[href="zhiwei.ics"]'));
   LOG.push("页脚备案=" + (fb ? fb.textContent.trim().slice(0, 20) : "缺失")
@@ -336,6 +338,7 @@ REQUIRED = [
     ("链工信部=true",      "页脚 ICP 备案号或工信部链接不见了（法规要求）"),
     ("订阅按钮=true",       "首页「订阅到手机日历」按钮不见了"),
     ("ics文件=true",        "页脚的 iCal 订阅链接不见了"),
+    ("搜索框展开=true",      "搜索框又藏起来了（新访客会以为没有搜索）"),
 ]
 
 

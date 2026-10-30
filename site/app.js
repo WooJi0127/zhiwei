@@ -172,7 +172,11 @@ var CUTOFF_S = (function(){
 })();
 function ensureYears(){
   var f = S.range.from, need = [];
-  if(!f){
+  if(S.tab === "mine"){
+    /* 「我的」页：收藏和本命可能来自任何年份，只加载主文件（近一年）会让
+       旧专辑刷新后「消失」，用户会以为收藏丢了。这里把所有年份补齐。 */
+    need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y]; });
+  } else if(!f){
     /* 「全部已发布」或在搜索 → 用户想要的就是全部，补齐所有年份 */
     if(S.tab !== "past" && !S.q) return false;
     need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y]; });
@@ -1254,6 +1258,11 @@ function renderHome(){
         todayRel.length ? '<div class="minibar">'+todayRel.map(miniHTML).join("")+'</div>'
                         : '<div class="hempty">今天没有发行安排</div>');
 
+  /* 未来 7 天倒计时 */
+  h += homeSec("未来 7 天回归", soon.length ? "共 "+soon.length+" 张" : "",
+        soon.length ? '<div class="minibar">'+soon.slice(0,12).map(miniHTML).join("")+'</div>'
+                    : '<div class="hempty">未来 7 天没有回归安排</div>');
+
   /* 今日生日：默认 5 位，多了点「展开」 */
   h += homeSec("今日生日", bds.length ? "共 "+bds.length+" 位" : "",
         bds.length ? bdayListHTML(bds) : '<div class="hempty">今天没有收录到艺人生日</div>');
@@ -1267,7 +1276,8 @@ function renderHome(){
           ? '<div class="mvbar">' + mm.map(function(m){
               return '<a class="mvmini" href="'+mvURL(m)+'" target="_blank" rel="noopener nofollow">'
                 + '<span class="mvcov">'
-                +   '<div class="ph">' + ico('note',22) + '</div>'   /* 图没抓到时的占位，别留空白 */
+                +   '<div class="ph">' + ico('note',20)
+                +     '<em>' + esc(m.u || m.a || "") + '</em></div>'  /* 图没抓到时显示 UP 主名，不留空框 */
                 +   mvImgTag(m)
                 +   '<span class="mvplay">▶ '+fmtPlay(m.p)+'</span>'
                 + '</span>'
@@ -1280,11 +1290,6 @@ function renderHome(){
   /* 打歌节目（复用列表页那一套） */
   h += homeSec("打歌节目", "韩国时间 KST",
         '<div class="showsbar" id="homeShows"></div>');
-
-  /* 未来 7 天倒计时 */
-  h += homeSec("即将回归", soon.length ? "未来 7 天 · "+soon.length+" 张" : "",
-        soon.length ? '<div class="minibar">'+soon.slice(0,12).map(miniHTML).join("")+'</div>'
-                    : '<div class="hempty">未来 7 天没有回归安排</div>');
 
   h += '<div class="hfoot">'
     + '<button class="btn pri" id="toCal">查看完整日历</button>'
@@ -1367,7 +1372,7 @@ function renderStats(){
       '<div class="hstat"><div class="v">'+up.length+'</div><div class="k">未来 30 天回归</div></div>'
     + '<div class="hstat'+(bi.length?' hl':'')+'"><div class="v">'+bi.length+'</div><div class="k">本命即将回归</div></div>'
     + '<div class="hstat"><div class="v">'+nw.length+'</div><div class="k">新人待发</div></div>'
-    + '<div class="hstat"><div class="v">'+past.length+'</div><div class="k">已收录发行</div></div>'
+    + '<div class="hstat"><div class="v">'+past.length+'</div><div class="k">近一年已收录</div></div>'
     + '<div class="hstat"><div class="v">'+Object.keys(ART).length+'</div><div class="k">追踪艺人</div></div>';
 }
 function renderBiasBox(){
@@ -1461,6 +1466,12 @@ function renderList(){
   var html = "";
   if(isFuture){
     var R = activeRange();
+    /* 订阅入口放在这里：日历订阅是这个页最该做的事，只在页脚写文件地址太容易被错过。
+       注意存进单独变量 —— 下面 html 会被整体重新赋值，直接 += 会被冲掉。 */
+    var subBar = '<div class="subrow">'
+          +   '<span>' + ico('cal',15) + '把这个日历同步到手机，回归日每天自动更新</span>'
+          +   '<button class="btn" id="subCal2">订阅到手机日历</button>'
+          + '</div>';
     var ul = applyFilters(ALL).filter(function(r){ return r._dd >= -0.5; })
                .sort(function(a,b){ return a._dd - b._dd; });
     if(S.frange === "month" || S.frange === "nmonth"){
@@ -1477,6 +1488,7 @@ function renderList(){
         : '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>未来 7 天没有回归</h3>'
           + '<p>换「本月」看看，或去「过去」翻历史</p></div>';
     }
+    html = subBar + html;
   } else if(isPast){
     ensureYears();
     var sig = listSignature();
@@ -1489,6 +1501,7 @@ function renderList(){
     html = gridHTML(pl.slice(from, from + PAGE_SIZE))
          + (pages > 1 ? pagerHTML(page, pages, pl.length) : "");
   } else if(isMine && S.mine === "fav"){
+    ensureYears();                 /* 旧年份的收藏也要能显示出来 */
     var fl = ALL.filter(function(r){ return isFav(r.id); });
     var fu = fl.filter(function(r){ return r._dd>=0; }).sort(function(a,b){ return a._dd-b._dd; });
     var fp = fl.filter(function(r){ return r._dd<0; });
@@ -1633,7 +1646,33 @@ function render(){
     animIn($("content"));
   }
 }
-function openDetail(id){ S.detailId = id; render(); }
+/* 订阅日历：复制链接 + 各平台怎么用 */
+function subscribeCalendar(){
+  var u = (location.protocol === "file:" ? "https://mywooji.cn/" : location.origin + "/")
+        + "zhiwei.ics";
+  copyText(u);
+  alert("订阅链接已复制：\n" + u + "\n\n怎么用：\n"
+    + "iPhone：设置 → 日历 → 账户 → 添加订阅账户，粘贴链接\n"
+    + "安卓：Google 日历 → 设置 → 添加日历 → 通过网址订阅\n"
+    + "电脑：把链接加进系统日历或 Outlook 的网络日历\n\n"
+    + "订阅后每天自动更新，不用再回来看。");
+}
+
+/* 打开详情时把专辑写进网址（#release=id），这样复制网址就能分享这张专辑；
+   关掉时把地址还原回列表，浏览器前进/后退也能正常走。 */
+function openDetail(id){
+  S.detailId = id;
+  var h = "#release=" + encodeURIComponent(id);
+  if(location.hash !== h) history.pushState(null, "", h);
+  render();
+}
+function closeDetail(){
+  if(!S.detailId) return false;
+  S.detailId = null;
+  var h = S.view === "home" ? "#view=home" : "#tab=" + S.tab;
+  if(location.hash !== h) history.pushState(null, "", h);
+  return true;
+}
 
 /* ============================ 爱心动画 ============================ */
 function burst(el){
@@ -1888,22 +1927,12 @@ document.addEventListener("click", function(e){
     openDetail(el.getAttribute("data-open"));
     return;
   }
-  if(t.id === "backBtn"){ S.detailId = null; render(); return; }
+  if(t.id === "backBtn"){ closeDetail(); syncTabs(); render(); return; }
   if(t.id === "bdMore"){ S.bdMore = !S.bdMore; render(); return; }
   if(t.id === "toCal"){ S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
-  /* 订阅日历：复制订阅链接，各平台怎么用的说明放在提示里 */
-  if(t.id === "subCal"){
-    var u = (location.protocol === "file:" ? "https://mywooji.cn/" : location.origin + "/")
-          + "zhiwei.ics";
-    copyText(u);
-    alert("订阅链接已复制：\n" + u + "\n\n怎么用：\n"
-      + "iPhone：设置 → 日历 → 账户 → 添加订阅账户，粘贴链接\n"
-      + "安卓：Google 日历 → 设置 → 添加日历 → 通过网址订阅\n"
-      + "电脑：把链接加进系统日历或 Outlook 的网络日历\n\n"
-      + "订阅后每天自动更新，不用再回来看。");
-    return;
-  }
-  if(t.id === "brandHome"){ S.detailId = null; S.view = "home"; syncTabs(); render(); return; }
+  /* 订阅日历：首页和「未来」页两个按钮共用 */
+  if(t.id === "subCal" || t.id === "subCal2"){ subscribeCalendar(); return; }
+  if(t.id === "brandHome"){ closeDetail(); S.view = "home"; syncTabs(); render(); return; }
   /* 收藏按钮（详情页） */
   if(t.id === "favDetail"){
     var cur = S.detailId; var k = favs.indexOf(cur);
@@ -2017,6 +2046,11 @@ $("q").addEventListener("input", function(){
     S.q = v.trim();
     /* 在首页输入搜索 → 自动切到日历界面看结果 */
     if(S.q && S.view === "home"){ S.view = "calendar"; if(S.tab!=="past") S.tab="past"; syncTabs(); }
+    /* 搜索时要放开时间范围：否则范围还锁在「未来 30 天」，
+       明明库里有这张历史专辑却搜不到（和直链进 past 时同样处理） */
+    if(S.q && S.range.kind === "f30" && S.range.mode === "quick"){
+      S.range = rangePreset("pall");
+    }
     render();
   }, 170);
 });
@@ -2041,13 +2075,8 @@ $("searchToggle").addEventListener("click", function(){
   c.style.display = c.style.display === "none" ? "" : "none";
   if(c.style.display !== "none") $("q").focus();
 });
-$("qclr").addEventListener("click", function(){
-  if($("q").value){
-    $("q").value = ""; S.q = ""; render(); $("q").focus();
-  } else {
-    $("searchCover").style.display = "none";
-  }
-});
+/* 注意：qclr 只能有一个处理器。以前这里还有第二个，它看到输入已被第一个清空，
+   就顺手把搜索框收起来了 —— 搜索框改成默认展开后，这个副作用会让人以为搜索坏了。 */
 /* 本命管理入口挪进了「我的」页的切换条上方按钮 */
 $("biasAdd").addEventListener("click", function(){ addBias($("biasInput").value.trim()); $("biasInput").value=""; });
 $("biasInput").addEventListener("keydown", function(e){
@@ -2124,8 +2153,9 @@ $("noticeBtn").addEventListener("click", function(){
 
 S.range = rangePreset("f30");
 
-/* 支持 URL 参数：#release=<id> 直达详情；#tab=<名>&from=<日期>&to=<日期> 预设筛选 */
-(function(){
+/* 支持 URL 参数：#release=<id> 直达详情；#tab=<名>&from=<日期>&to=<日期> 预设筛选
+   抽成函数：初始化时读一次，浏览器前进/后退（popstate）时再读一次。 */
+function applyHash(){
   var h = location.hash || "";
   function arg(k){
     var m = new RegExp("[#&]" + k + "=([^&]+)").exec(h);
@@ -2153,8 +2183,16 @@ S.range = rangePreset("f30");
   var rid = arg("release");
   if(rid){ S.detailId = rid; S.view = "calendar"; }
   syncTabs();
-})();
+}
+
 
 initSelects();
+/* 搜索框默认展开：以前要点放大镜才出来，新访客根本不知道有搜索。
+   窄屏位置不够，仍然收起，点图标再展开。 */
+$("searchCover").style.display = (window.innerWidth >= 700) ? "" : "none";
+applyHash();
 render();
+
+/* 浏览器前进 / 后退：按地址还原页面（打开详情写了 #release，退回去就是列表） */
+addEventListener("popstate", function(){ applyHash(); render(); });
 })();

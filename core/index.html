@@ -69,7 +69,9 @@
       </nav>
       <button class="btn stoggle" id="searchToggle" title="搜索" aria-label="搜索"><svg class="ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button>
     </div>
-    <div class="searchcover" id="searchCover" style="display:none">
+    <!-- 搜索框：宽屏默认展开（第一次来就知道能搜），窄屏收起用图标点开，
+         初始状态由 app.js 按视口宽度决定 -->
+    <div class="searchcover" id="searchCover">
       <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
            stroke-linecap="round" aria-hidden="true">
         <circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>

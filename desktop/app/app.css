@@ -91,7 +91,11 @@ header{position:sticky;top:0;z-index:60;background:rgba(255,253,248,.93);
   padding:0;background:transparent;font-size:14px;color:var(--sub);display:grid;place-items:center;
   transition:color .15s,background-color .15s}
 .btn.stoggle:hover,.stoggle:hover{background:#F4F0E6;color:var(--brand);border-color:transparent}
+/* 给它一个输入框的样子：以前只有一条线和放大镜，第一次来的人不会注意到能搜索 */
 .searchcover{position:relative;display:flex;align-items:center;gap:9px;margin-top:8px;
+  padding:0 10px;border:1px solid var(--line);border-radius:10px;
+  background-color:var(--card);background-image:var(--kraft-tex);
+  background-size:200px 200px;
   background:transparent;border:0;border-bottom:1px solid var(--line2);border-radius:0;
   padding:5px 2px;box-shadow:none;animation:rise .25s var(--ease) both;
   font-family:var(--font-title)}
@@ -283,7 +287,9 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .mvmini .mvcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 /* 图没抓到时的占位（音符图标）：垫在图片下面，图片加载成功会盖住它 */
 .mvmini .mvcov .ph{position:absolute;inset:0;display:grid;place-items:center;
-  font-size:22px;opacity:.35}
+  gap:5px;font-size:20px;opacity:.4;line-height:1.4}
+.mvmini .mvcov .ph em{display:block;font-style:normal;font-size:11.5px;font-weight:700;
+  color:var(--text);opacity:.7;letter-spacing:.02em}
 .mvmini .mvplay{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.62);color:#fff;
   font-size:11.5px;font-weight:700;padding:3px 7px;border-radius:6px}
 .mvmini .mvtt{display:block;padding:9px 10px 0;font-size:13.5px;font-weight:700;line-height:1.35;
@@ -641,6 +647,11 @@ a.btn{display:inline-flex;align-items:center}
 .gl li.c3{display:grid;grid-template-columns:minmax(88px,116px) 1fr minmax(120px,.9fr);
   gap:12px;align-items:start}
 .gl li.c3 span:nth-of-type(2){color:var(--brand2);opacity:.9}
+/* 「未来」页顶部的订阅提示行：文字化，和筛选栏一个调子 */
+.subrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:0 0 14px;padding:9px 0;border-bottom:1px solid var(--line)}
+.subrow span{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--sub)}
+.subrow .btn{margin-left:auto}
 .gacts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;
   border-top:1px solid var(--line)}
 .gacts .btn{font-family:var(--font-title);font-size:13px;font-weight:600}
