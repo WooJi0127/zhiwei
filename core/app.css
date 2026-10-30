@@ -636,6 +636,11 @@ a.btn{display:inline-flex;align-items:center}
 .gl b{flex:none;min-width:82px;font-family:var(--font-title);font-size:13.5px;
   font-weight:700;color:var(--text);line-height:1.7}
 .gl span{font-size:13px;color:var(--sub);line-height:1.75}
+/* 三列表格（宝典里那些「名称 / 是什么 / 注意什么」）转成词条表时的版式：
+   词 → 说明 → 提醒，提醒用赭石色和说明区分开 */
+.gl li.c3{display:grid;grid-template-columns:minmax(88px,116px) 1fr minmax(120px,.9fr);
+  gap:12px;align-items:start}
+.gl li.c3 span:nth-of-type(2){color:var(--brand2);opacity:.9}
 .gacts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;
   border-top:1px solid var(--line)}
 .gacts .btn{font-family:var(--font-title);font-size:13px;font-weight:600}
