@@ -1140,6 +1140,38 @@ function typeLabel(r){
 function coverFile(id){
   return "covers/" + String(id || "").replace(/[^a-zA-Z0-9]/g, "_") + ".jpg";
 }
+/* MV 封面文件名：用 BV 号，同样是 fetch_covers.py 里的规则 */
+function mvCoverFile(v){
+  return "covers/mv_" + String(v || "").replace(/[^a-zA-Z0-9]/g, "_") + ".jpg";
+}
+/* MV 封面：B站图床有 Referer 防盗链，站外引用一律被拒，所以先试本地那份；
+   本地没有 → 试外链；再不行 → 用同艺人某张专辑的封面顶上（站长提的兜底）；
+   都没有才隐藏。以前是「加载失败就隐藏」，热门 MV 整排空白就是这个原因。 */
+function mvImgTag(m){
+  var loc = m.v ? mvCoverFile(m.v) : "";
+  var ext = m.i || "";
+  var alt = artistCover(m.a);          /* 同艺人的专辑封面兜底 */
+  var chain = [loc, ext, alt].filter(Boolean);
+  if(!chain.length) return "";
+  var src = chain.shift();
+  var next = chain.length
+    ? "this.onerror=function(){this.onerror=null;this.src='" + esc(chain.shift()) + "';}"
+    : "this.style.display='none'";
+  return '<img loading="lazy" src="' + esc(src) + '" alt="" onerror="' + next + '">';
+}
+/* 每个艺人挑一张有封面的专辑，给 MV 兜底用（只算一次） */
+var _artistCover = null;
+function artistCover(a){
+  if(!a) return "";
+  if(!_artistCover){
+    _artistCover = {};
+    for(var i = 0; i < ALL.length; i++){
+      var r = ALL[i];
+      if(r._img && !_artistCover[r.artist]) _artistCover[r.artist] = r._img;
+    }
+  }
+  return _artistCover[a] || "";
+}
 /* 图片标签：先试本地封面，失败自动换成外链，再失败才隐藏。
    以前是「加载失败就隐藏」，图一挂整块就空了，观感很差。 */
 function imgTag(r, extra){
@@ -1892,7 +1924,7 @@ function renderHome(){
           ? '<div class="mvbar">' + mm.map(function(m){
               return '<a class="mvmini" href="'+mvURL(m)+'" target="_blank" rel="noopener nofollow">'
                 + '<span class="mvcov">'
-                +   (m.i ? '<img loading="lazy" src="'+esc(m.i)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+                +   mvImgTag(m)
                 +   '<span class="mvplay">▶ '+fmtPlay(m.p)+'</span>'
                 + '</span>'
                 + '<span class="mvtt">'+esc(m.t)+'</span>'

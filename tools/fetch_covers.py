@@ -31,6 +31,10 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 
 # 实测 403（防盗链）的图床 —— 这些必须本地化
 BAD_HOSTS = {"cdn.kpopping.com"}
+# B站图床（i0/i1/i2.hdslb.com）有 Referer 防盗链：浏览器从我们域名引用一律被拒，
+# 但服务端直连能下载，所以 MV 封面也一起搬回来
+MV_HOSTS = {"i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"}
+BILI_REF = "https://www.bilibili.com/"
 WIDTH = 400          # 封面统一缩到 400px 宽
 QUALITY = 82
 
@@ -75,14 +79,30 @@ def collect(all_hosts=False):
     return need
 
 
+def collect_mv():
+    """MV 封面：扫 data/ 里的 mvs，按 BV 号命名。"""
+    need = {}
+    for fn in sorted(os.listdir(os.path.join(ROOT, "data"))):
+        if not fn.endswith(".js"):
+            continue
+        s = io.open(os.path.join(ROOT, "data", fn), encoding="utf-8",
+                    errors="ignore").read()
+        for m in re.finditer(r'"v":"([^"]+)".*?"i":"(https?://[^"]+)"', s):
+            v, url = m.group(1), m.group(2)
+            if url.split("/")[2] in MV_HOSTS:
+                need.setdefault(v, url)
+    return need
+
+
 def fetch_one(item):
     rid, url = item
     dst = os.path.join(OUT, cover_name(rid))
     if os.path.exists(dst) and os.path.getsize(dst) > 1000:
         return (rid, "skip")
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": UA,
-                                                   "Referer": "https://kpopping.com/"})
+        host = url.split("/")[2]
+        ref = BILI_REF if host in MV_HOSTS else "https://kpopping.com/"
+        req = urllib.request.Request(url, headers={"User-Agent": UA, "Referer": ref})
         with urllib.request.urlopen(req, timeout=25) as r:
             raw = r.read()
         im = Image.open(io.BytesIO(raw)).convert("RGB")
@@ -96,6 +116,21 @@ def fetch_one(item):
 
 
 def main():
+    if "--mv" in sys.argv:                      # 只抓 MV 封面
+        os.makedirs(OUT, exist_ok=True)
+        need = collect_mv()
+        print(f"MV 封面：{len(need)} 张")
+        ok = skip = fail = 0
+        with cf.ThreadPoolExecutor(max_workers=6) as ex:
+            for rid, res in ex.map(fetch_one, [(f"mv_{k}", v) for k, v in need.items()]):
+                if res == "skip":
+                    skip += 1
+                elif res.startswith("FAIL"):
+                    fail += 1
+                else:
+                    ok += 1
+        print(f"完成：新下载 {ok}，已有 {skip}，失败 {fail}")
+        return
     if "--probe" in sys.argv:
         probe()
         return
