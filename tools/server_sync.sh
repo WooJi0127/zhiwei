@@ -20,26 +20,29 @@ COVERS="$TARGET/covers"
 
 # 仓库根目录的镜像（用于 covers.txt 和 covers/ 这些不在 site/ 里的文件）
 ROOTS="
-https://cdn.jsdelivr.net/gh/WooJi0127/zhiwei@main
-https://fastly.jsdelivr.net/gh/WooJi0127/zhiwei@main
-https://gcore.jsdelivr.net/gh/WooJi0127/zhiwei@main
 https://hub.gitmirror.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main
 https://ghfast.top/https://raw.githubusercontent.com/WooJi0127/zhiwei/main
-https://ghproxy.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main
 https://raw.githubusercontent.com/WooJi0127/zhiwei/main
+https://gcore.jsdelivr.net/gh/WooJi0127/zhiwei@main
+https://cdn.jsdelivr.net/gh/WooJi0127/zhiwei@main
+https://fastly.jsdelivr.net/gh/WooJi0127/zhiwei@main
+https://ghproxy.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main
 "
 
 # 镜像列表：按顺序试，第一个下载成功的就用它。
+# 2026-10-30 实测：cdn.jsdelivr.net 会返回最多 12 小时前的旧缓存 —— 文件看起来
+# 「下载成功」，实际还是旧代码。gitmirror / ghfast / raw 每次都是最新，所以排前面，
+# jsdelivr 只留作兜底（它们偶尔连不通时才用得上）。
 # 2026-10-30 教训：jsdelivr 一度整体不通，而定时任务又是「先从 jsdelivr 拉脚本」，
 # 结果静默失败两天没人发现。所以：① 脚本要常驻服务器 ② 镜像要给足备选。
 MIRRORS="
-https://cdn.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
-https://fastly.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
-https://gcore.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
 https://hub.gitmirror.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 https://ghfast.top/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
-https://ghproxy.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
+https://gcore.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
+https://cdn.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
+https://fastly.jsdelivr.net/gh/WooJi0127/zhiwei@main/site
+https://ghproxy.com/https://raw.githubusercontent.com/WooJi0127/zhiwei/main/site
 "
 
 # 封面图：按 covers.txt 清单逐行下载（服务器没有 git，列不出目录内容）。
