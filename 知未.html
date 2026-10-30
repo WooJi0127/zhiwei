@@ -668,11 +668,32 @@ a.btn{display:inline-flex;align-items:center}
 .gl li.c3{display:grid;grid-template-columns:minmax(88px,116px) 1fr minmax(120px,.9fr);
   gap:12px;align-items:start}
 .gl li.c3 span:nth-of-type(2){color:var(--brand2);opacity:.9}
+/* 手机上三列挤不下（第三列会被裁掉），改成堆叠：词 → 说明 → 注意，各占一行 */
+@media (max-width:640px){
+  .gl li.c3{display:block;padding:10px 0}
+  .gl li.c3 b{display:block;margin-bottom:2px}
+  .gl li.c3 span{display:block}
+  .gl li.c3 span:nth-of-type(1){margin-bottom:3px}
+}
 /* 「未来」页顶部的订阅提示行：文字化，和筛选栏一个调子 */
 .subrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   margin:0 0 14px;padding:9px 0;border-bottom:1px solid var(--line)}
 .subrow span{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--sub)}
 .subrow .btn{margin-left:auto}
+/* 章节导航（从头开始）：26 节太长，顶部给一跳转目录 */
+.gnav{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:0 0 18px;
+  padding:10px 0;border-bottom:1px solid var(--line)}
+.gnav .glabel{font-size:12.5px;color:var(--sub);margin-right:2px}
+.gchip{border:1px solid var(--line2);background-color:var(--card);
+  background-image:var(--kraft-tex);background-size:200px 200px;
+  color:var(--brand);font-family:var(--font-title);font-size:12.5px;font-weight:700;
+  padding:6px 11px;border-radius:9px 7px 10px 8px / 8px 10px 7px 9px;cursor:pointer;
+  transition:background-color .15s,color .15s}
+.gchip:hover{background-color:var(--kraft);color:var(--brand2)}
+/* 小节编号：方便对照导航找位置 */
+.gnum{display:inline-block;min-width:20px;margin-right:7px;font-size:12px;
+  font-weight:700;color:var(--brand2);opacity:.75}
+
 .gacts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;
   border-top:1px solid var(--line)}
 .gacts .btn{font-family:var(--font-title);font-size:13px;font-weight:600}
@@ -2073,13 +2094,35 @@ var GUIDE = [
   }
 ];
 
+/* 章节导航：26 节按主题分成 7 组，点一下滚到那一节。
+   分组起点写在这里 —— 以后增删章节要顺手对一下序号。 */
+var GUIDE_NAV = [
+  [1,  "入门：这是些什么"],
+  [5,  "回归与资讯"],
+  [9,  "成绩与投票"],
+  [12, "买专辑"],
+  [16, "活动与票务"],
+  [22, "应援、社群、黑话"],
+  [25, "第一个月怎么安排"]
+];
+function guideNavHTML(){
+  var h = '<div class="gnav"><span class="glabel">跳到：</span>';
+  for(var i = 0; i < GUIDE_NAV.length; i++){
+    h += '<button class="gchip" data-goto="' + GUIDE_NAV[i][0] + '">'
+       + esc(GUIDE_NAV[i][1]) + '</button>';
+  }
+  return h + '</div>';
+}
+
 function guideHTML(){
   var h = '<div class="guide">'
     + '<div class="ghead"><h2>从头开始</h2><p>没追过 K-POP 也能看懂。看完这一页，你就知道「回归」是什么、该看什么、先点哪里。</p></div>';
+  /* 26 节一次读不完，顶部加章节导航，点了直接跳到那一节 */
+  h += guideNavHTML();
   for(var i = 0; i < GUIDE.length; i++){
     var g = GUIDE[i];
-    h += '<section class="gsec">'
-       +   '<h3>' + esc(g.t) + '</h3>'
+    h += '<section class="gsec" id="gs' + (i + 1) + '">'
+       +   '<h3><span class="gnum">' + (i + 1) + '</span>' + esc(g.t) + '</h3>'
        +   (g.s ? '<div class="gsub">' + esc(g.s) + '</div>' : '');
     for(var j = 0; j < (g.p || []).length; j++){
       h += '<p class="gp">' + esc(g.p[j]) + '</p>';
@@ -3135,6 +3178,12 @@ document.addEventListener("click", function(e){
     S.view = "calendar"; S.tab = el.getAttribute("data-jump");
     if(S.tab === "mine") S.mine = "bias";
     syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
+  }
+  /* 章节导航：滚到「从头开始」的某一节 */
+  if((el = t.closest("[data-goto]"))){
+    var tgt = $("gs" + el.getAttribute("data-goto"));
+    if(tgt) tgt.scrollIntoView({behavior:"smooth", block:"start"});
+    return;
   }
   if((el = t.closest("[data-tellkind]"))){
     S.tellKind = el.getAttribute("data-tellkind"); render(); return;

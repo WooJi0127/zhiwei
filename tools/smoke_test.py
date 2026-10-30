@@ -218,6 +218,8 @@ step(function(){
 /* 新页签：「从头开始」要有内容，「诉说」要有输入框 */
 step(function(){ document.querySelector('[data-tab="guide"]').click(); });
 step(function(){
+  LOG.push("章节导航=" + document.querySelectorAll("#content .gnav .gchip").length
+    + " 小节编号=" + document.querySelectorAll("#content .gsec .gnum").length);
   LOG.push("从头开始有内容=" + (document.querySelectorAll("#content .gsec").length > 0)
     + " 有跳转钮=" + (document.querySelectorAll("#content [data-jump]").length > 0)
     + " 筛选栏隐藏=" + ($("filters").style.display === "none"));
@@ -332,6 +334,7 @@ REQUIRED = [
     ("首页MV有内容=true",  "首页热门 MV 是空的（近一个月的 MV 没抓到）"),
     ("首页MV不超6=true",   "首页热门 MV 超过 6 个（用户定死最多 6 个）"),
     ("从头开始有内容=true", "「从头开始」页内容没渲染出来"),
+    ("章节导航=7",         "「从头开始」的章节导航按钮数量不对"),
     ("诉说输入框=true",    "「诉说」页没有输入框"),
     ("随心歌单=4",         "首页「随心歌单」卡片数不对"),
     ("未发行混入=0",       "「随心歌单」混进了还没发行的专辑"),

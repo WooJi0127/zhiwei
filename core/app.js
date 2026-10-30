@@ -958,13 +958,35 @@ var GUIDE = [
   }
 ];
 
+/* 章节导航：26 节按主题分成 7 组，点一下滚到那一节。
+   分组起点写在这里 —— 以后增删章节要顺手对一下序号。 */
+var GUIDE_NAV = [
+  [1,  "入门：这是些什么"],
+  [5,  "回归与资讯"],
+  [9,  "成绩与投票"],
+  [12, "买专辑"],
+  [16, "活动与票务"],
+  [22, "应援、社群、黑话"],
+  [25, "第一个月怎么安排"]
+];
+function guideNavHTML(){
+  var h = '<div class="gnav"><span class="glabel">跳到：</span>';
+  for(var i = 0; i < GUIDE_NAV.length; i++){
+    h += '<button class="gchip" data-goto="' + GUIDE_NAV[i][0] + '">'
+       + esc(GUIDE_NAV[i][1]) + '</button>';
+  }
+  return h + '</div>';
+}
+
 function guideHTML(){
   var h = '<div class="guide">'
     + '<div class="ghead"><h2>从头开始</h2><p>没追过 K-POP 也能看懂。看完这一页，你就知道「回归」是什么、该看什么、先点哪里。</p></div>';
+  /* 26 节一次读不完，顶部加章节导航，点了直接跳到那一节 */
+  h += guideNavHTML();
   for(var i = 0; i < GUIDE.length; i++){
     var g = GUIDE[i];
-    h += '<section class="gsec">'
-       +   '<h3>' + esc(g.t) + '</h3>'
+    h += '<section class="gsec" id="gs' + (i + 1) + '">'
+       +   '<h3><span class="gnum">' + (i + 1) + '</span>' + esc(g.t) + '</h3>'
        +   (g.s ? '<div class="gsub">' + esc(g.s) + '</div>' : '');
     for(var j = 0; j < (g.p || []).length; j++){
       h += '<p class="gp">' + esc(g.p[j]) + '</p>';
@@ -2020,6 +2042,12 @@ document.addEventListener("click", function(e){
     S.view = "calendar"; S.tab = el.getAttribute("data-jump");
     if(S.tab === "mine") S.mine = "bias";
     syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
+  }
+  /* 章节导航：滚到「从头开始」的某一节 */
+  if((el = t.closest("[data-goto]"))){
+    var tgt = $("gs" + el.getAttribute("data-goto"));
+    if(tgt) tgt.scrollIntoView({behavior:"smooth", block:"start"});
+    return;
   }
   if((el = t.closest("[data-tellkind]"))){
     S.tellKind = el.getAttribute("data-tellkind"); render(); return;
