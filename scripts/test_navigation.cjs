@@ -37,7 +37,7 @@ test('valid encoded release still opens', () => {
 });
 function loaderContext() {
   const scripts = [];
-  const ctx = {LOADED:{}, PENDING:{}, FAILED:{}, ALL:[], DATE_COUNT:{}, window:{},
+  const ctx = {LOADED:{}, PENDING:{}, FAILED:{}, YEAR_RETRY:{}, DATA:{generated:'test version'}, YEARS:{'2020':1}, ALL:[], DATE_COUNT:{}, window:{},
     toast(){}, normOne(){}, document:{createElement(){return {};},
       head:{appendChild(s){scripts.push(s);}}}};
   vm.createContext(ctx);
@@ -51,7 +51,7 @@ test('concurrent requests for same year both complete without duplicate entries'
   ctx.loadYear('2020', () => callbacks++);
   ctx.loadYear('2020', () => callbacks++);
   assert.equal(scripts.length, 1);
-  ctx.window.__KPOP_CHUNK_2020__ = {releases:[{id:'old', date:'2020-01-01'}]};
+  ctx.window.__KPOP_CHUNK_2020__ = {y:'2020',releases:[{id:'old', date:'2020-01-01'}]};
   scripts[0].onload();
   assert.equal(callbacks, 2);
   assert.equal(ctx.ALL.length, 1);
@@ -61,7 +61,7 @@ test('failed year is not immediately retried by render callback', () => {
   ctx.S = {tab:'past', range:{from:null}};
   ctx.YEARS = {'2020':1};
   ctx.CUTOFF_S = '2025-01-01';
-  vm.runInContext(source.slice(source.indexOf('function ensureYears(){'),
+  vm.runInContext(source.slice(source.indexOf('function requiredYears(){'),
     source.indexOf('/* ============================ 工具')), ctx);
   ctx.render = () => ctx.ensureYears();
   ctx.ensureYears();
@@ -74,8 +74,8 @@ test('shared historical release loads its year and stops once found', () => {
   ctx.YEARS = {'2020':1,'2019':1};
   let found;
   ctx.findRelease('historic', r => {found = r;});
-  assert.equal(scripts[0].src, 'data/data-2020.js');
-  ctx.window.__KPOP_CHUNK_2020__ = {releases:[{id:'historic',date:'2020-01-01'}]};
+  assert.equal(scripts[0].src, 'data/data-2020.js?v=test%20version');
+  ctx.window.__KPOP_CHUNK_2020__ = {y:'2020',releases:[{id:'historic',date:'2020-01-01'}]};
   scripts[0].onload();
   assert.equal(found.id, 'historic');
   assert.equal(scripts.length, 1);
@@ -87,6 +87,34 @@ test('missing shared release finishes after failed year without request loop', (
   scripts[0].onerror();
   assert.equal(calls, 1);
   assert.equal(scripts.length, 1);
+});
+
+for (const [label,chunk] of [
+  ['missing',undefined],
+  ['wrong year',{y:'2019',releases:[{id:'old',date:'2019-01-01'}]}],
+  ['incomplete',{y:'2020',releases:[]}],
+  ['malformed',{y:'2020',releases:[null]}]
+]) test(`${label} archive cannot silently become a loaded empty year`, () => {
+  const {ctx,scripts}=loaderContext();let calls=0;
+  ctx.loadYear('2020',()=>calls++);
+  ctx.window.__KPOP_CHUNK_2020__=chunk;
+  assert.doesNotThrow(()=>scripts[0].onload());
+  assert.equal(ctx.LOADED['2020'],undefined);
+  assert.equal(ctx.FAILED['2020'],1);
+  assert.equal(ctx.ALL.length,0);
+  assert.equal(calls,1);
+});
+
+test('explicit retry bypasses a cached failed archive and merges only once',()=>{
+  const {ctx,scripts}=loaderContext();
+  ctx.loadYear('2020');scripts[0].onerror();
+  delete ctx.FAILED['2020'];ctx.YEAR_RETRY['2020']=123;
+  ctx.loadYear('2020');
+  assert.equal(scripts[1].src,'data/data-2020.js?v=test%20version&retry=123');
+  ctx.window.__KPOP_CHUNK_2020__={y:'2020',releases:[{id:'old',date:'2020-01-01'}]};
+  scripts[1].onload();ctx.loadYear('2020');
+  assert.equal(scripts.length,2);
+  assert.equal(ctx.ALL.length,1);
 });
 test('JSON object in saved favorites cannot break page startup', () => {
   const ctx={LS:{get(){return {};}}}; vm.createContext(ctx);

@@ -411,6 +411,17 @@ a.btn{display:inline-flex;align-items:center}
   border-radius:14px;box-shadow:var(--shadow-lg);padding:14px;width:306px;display:none;
   max-height:min(78vh,560px);overflow:auto;overscroll-behavior:contain}
 .calpop.on{display:block}
+.calpresets{display:flex;gap:16px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.calpresets button{border:0;border-radius:0;background:transparent;padding:7px 3px;
+  font-family:var(--font-title);font-size:12.5px;color:var(--sub);min-height:32px}
+.calpresets button:hover{color:var(--brand)}
+.calpresets button.on{color:var(--brand);font-weight:800;box-shadow:inset 0 -2px 0 var(--brand2)}
+.archive-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;
+  padding:10px 12px;background:var(--card);border:1px solid var(--line);color:var(--sub);
+  font-size:12px;line-height:1.6}
+.archive-status button{border:0;border-radius:0;background:transparent;padding:3px 0;
+  color:var(--brand);font-family:var(--font-title);font-weight:700;
+  box-shadow:inset 0 -1px 0 var(--brand2)}
 .calh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .calh .mm{font-weight:800;font-size:14px;flex:1;text-align:center}
 .calh button{border:1px solid var(--line);background:var(--card);border-radius:10px;height:28px;
@@ -1113,12 +1124,13 @@ footer .fsub{margin:0 0 10px;font-size:12.5px}
       </div>
       <div class="fg" style="position:relative">
         <label>时间</label>
-        <button class="datebtn" id="dateBtn"><svg class="ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5.2" width="16.8" height="15.2" rx="3"/><path d="M8.4 3.2v3.6M15.6 3.2v3.6M3.6 10.2h16.8"/></svg> <span id="dateLabel">未来 30 天</span></button>
+        <button class="datebtn" id="dateBtn"><svg class="ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="5.2" width="16.8" height="15.2" rx="3"/><path d="M8.4 3.2v3.6M15.6 3.2v3.6M3.6 10.2h16.8"/></svg> <span id="dateLabel">过去所有</span></button>
       </div>
       <div class="fg">
         <label>排序</label>
         <select id="fSort">
-          <option value="date_asc">日期 近→远</option>
+          <option value="date_desc">日期 由近及远</option>
+          <option value="date_asc">日期 由远及近</option>
           <option value="name">艺人名</option>
         </select>
       </div>
@@ -1130,6 +1142,10 @@ footer .fsub{margin:0 0 10px;font-size:12.5px}
       </div>
 
       <div class="calpop" id="calPop">
+        <div class="calpresets" aria-label="快捷时间范围">
+          <button type="button" data-calpreset="pall" aria-pressed="false">过去所有</button>
+          <button type="button" data-calpreset="p365" aria-pressed="false">过去 1 年</button>
+        </div>
         <div class="calh">
           <button id="calPrev" title="上个月">‹</button>
           <button class="mm" id="calMon" data-calview="1" title="点击选择年份 / 月份">—</button>
@@ -1461,11 +1477,11 @@ ALL.forEach(function(r){ if(r.date) DATE_COUNT[r.date] = (DATE_COUNT[r.date]||0)
 /* 主文件只带最近 RECENT_DAYS 天的发行，更早的按年份切成 data-<年>.js，
    需要时才加载——否则补满 10 年历史后一次性 17MB 会把手机首屏拖死。 */
 var YEARS = DATA.years || {};      /* {"2025": 523, ...} */
-var LOADED = {}, PENDING = {}, FAILED = {};
+var LOADED = {}, PENDING = {}, FAILED = {}, YEAR_RETRY = {};
 
 function loadYear(y, cb){
   if(LOADED[y]){ if(cb) cb(); return; }
-  if(FAILED[y]){ if(cb) cb(); return; }  /* 刷新后重试，避免失败→重绘→失败循环 */
+  if(FAILED[y]){ if(cb) cb(); return; }  /* 由用户主动重试，避免失败→重绘→失败循环 */
   if(PENDING[y]){ if(cb) PENDING[y].push(cb); return; }
   PENDING[y] = cb ? [cb] : [];
   function finish(){
@@ -1473,23 +1489,30 @@ function loadYear(y, cb){
     delete PENDING[y];
     callbacks.forEach(function(done){ done(); });
   }
+  function fail(){
+    FAILED[y] = 1;
+    toast("加载 " + y + " 年数据失败，请重试或刷新页面");
+    finish();
+  }
   toast("正在加载 " + y + " 年数据…");
   var s = document.createElement("script");
-  s.src = "data/data-" + y + ".js";
+  s.src = "data/data-" + y + ".js?v=" + encodeURIComponent(DATA.generated || "");
+  if(YEAR_RETRY[y]) s.src += "&retry=" + YEAR_RETRY[y];
+  delete window["__KPOP_CHUNK_" + y + "__"];
   s.onload = function(){
-    var c = window["__KPOP_CHUNK_" + y + "__"] || {};
-    var arr = c.releases || [];
-    arr.forEach(normOne);
+    var c = window["__KPOP_CHUNK_" + y + "__"];
+    if(!c || String(c.y) !== String(y) || !Array.isArray(c.releases)
+      || (YEARS[y] !== undefined && c.releases.length !== YEARS[y])){ fail(); return; }
+    var arr = c.releases;
+    if(arr.some(function(r){ return !r || !r.id || typeof r.date !== "string"
+      || r.date.slice(0, 4) !== String(y); })){ fail(); return; }
+    try { arr.forEach(normOne); } catch(e){ fail(); return; }
     ALL = ALL.concat(arr);
     arr.forEach(function(r){ if(r.date) DATE_COUNT[r.date] = (DATE_COUNT[r.date]||0)+1; });
     LOADED[y] = 1;
     finish();
   };
-  s.onerror = function(){
-    FAILED[y] = 1;
-    toast("加载 " + y + " 年数据失败，请检查网络后刷新重试");
-    finish();
-  };
+  s.onerror = fail;
   document.head.appendChild(s);
 }
 /* 一次补齐多个年份（按顺序串行加载，避免同时打满请求） */
@@ -1516,26 +1539,41 @@ var CUTOFF_S = (function(){
   var d = new Date(TODAY); d.setDate(d.getDate() - (DATA.recentDays || 365));
   return d2s(d);
 })();
-function ensureYears(){
+function requiredYears(){
   var f = S.range.from, need = [];
   if(S.tab === "mine"){
     /* 「我的」页：收藏和本命可能来自任何年份，只加载主文件（近一年）会让
        旧专辑刷新后「消失」，用户会以为收藏丢了。这里把所有年份补齐。 */
-    need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y] && !FAILED[y]; });
+    need = Object.keys(YEARS);
   } else if(!f){
-    /* 「全部已发布」或在搜索 → 用户想要的就是全部，补齐所有年份 */
-    if(S.tab !== "past" && !S.q) return false;
-    need = Object.keys(YEARS).filter(function(y){ return !LOADED[y] && !PENDING[y] && !FAILED[y]; });
+    /* 「过去所有」或在搜索 → 补齐所有年份 */
+    if(S.tab !== "past" && !S.q) return [];
+    need = Object.keys(YEARS);
   } else if(f < CUTOFF_S){
     var y0 = +f.slice(0, 4), y1 = +((S.range.to || f).slice(0, 4));
     for(var y = y1; y >= y0; y--){
       var k = String(y);
-      if(YEARS[k] && !LOADED[k] && !PENDING[k] && !FAILED[k]) need.push(k);
+      if(YEARS[k]) need.push(k);
     }
   }
+  return need;
+}
+function ensureYears(){
+  var need = requiredYears().filter(function(y){ return !LOADED[y] && !PENDING[y] && !FAILED[y]; });
   if(!need.length) return false;
   loadYears(need, function(){ render(); });
   return true;
+}
+function historyStatusHTML(){
+  var missing = requiredYears().filter(function(y){ return !LOADED[y]; });
+  if(!missing.length) return "";
+  var failed = missing.filter(function(y){ return FAILED[y]; });
+  if(failed.length){
+    return '<div class="archive-status" role="status"><span>'+failed.join("、")
+      +' 年资料未能载入，当前结果尚不完整。若重新加载仍失败，请刷新页面。</span>'
+      +'<button type="button" id="retryHistory">重新加载</button><button type="button" id="refreshHistory">刷新页面</button></div>';
+  }
+  return '<div class="archive-status" role="status">正在加载历史资料，完整排序和总数将在载入后更新。</div>';
 }
 
 
@@ -1583,9 +1621,9 @@ var S = {
   tab:"future",       /* future | past | guide | mine | more */
   frange:"f7",        /* 未来子选项：f7 | month | nmonth */
   mine:"fav",         /* 我的子选项：fav | bias */
-  q:"", type:"", kind:"", agency:"", sort:"date_asc",
+  q:"", type:"", kind:"", agency:"", sort:"date_desc",
   onlyFav:false, onlyBias:false,
-  range:{mode:"quick", from:null, to:null, label:"未来 30 天"},
+  range:{mode:"quick", kind:"pall", from:null, to:null, label:"过去所有"},
   showBiasMgr:false, detailId:null,
   showWeek:false,                      /* 打歌节目「本周时间表」是否展开 */
   bdMore:false,                        /* 首页今日生日是否展开全部 */
@@ -1742,14 +1780,13 @@ function ageOf(b){
   return (a >= 0 && a < 100) ? a : null;
 }
 
-/* 时间范围预设。日历弹层里的快捷胶囊行已删（逛日历本身就能选任意范围，
-   还有整月 / 整年两个工具），这里只留页面自己还在用的几档。 */
+/* 时间范围预设：过去所有为默认，日历仍可选择整月、整年或任意范围。 */
 function rangePreset(kind){
   var t = new Date(TODAY), f, to, lb;
   if(kind==="f7"){ f=d2s(t); var e=new Date(t); e.setDate(e.getDate()+7); to=d2s(e); lb="未来 7 天"; }
   else if(kind==="f30"){ f=d2s(t); var e2=new Date(t); e2.setDate(e2.getDate()+30); to=d2s(e2); lb="未来 30 天"; }
   else if(kind==="p365"){ var s2=new Date(t); s2.setDate(s2.getDate()-365); f=d2s(s2); to=d2s(t); lb="过去 1 年"; }
-  else if(kind==="pall"){ f=null; to=null; lb="全部已发布"; }
+  else if(kind==="pall"){ f=null; to=null; lb="过去所有"; }
   else if(kind==="month"){ var y=t.getFullYear(), m=t.getMonth(); f=d2s(new Date(y,m,1)); to=d2s(new Date(y,m+1,0)); lb=y+" 年 "+(m+1)+" 月"; }
   else { f=d2s(t); var e4=new Date(t); e4.setDate(e4.getDate()+30); to=d2s(e4); lb="未来 30 天"; }
   return {mode:"quick", kind:kind, from:f, to:to, label:lb};
@@ -1757,7 +1794,7 @@ function rangePreset(kind){
 
 /* ============================ 筛选 ============================ */
 /* 各页签实际生效的时间范围：
-   未来 → 7 天 / 本月 / 下月；过去 → 日历自选（默认过去 1 年，「清除」即全部已发布）；
+   未来 → 7 天 / 本月 / 下月；过去 → 默认过去所有，包含今天已发行；
    我的、更多 → 不限。 */
 function nextMonthRange(){
   var t = TODAY, y = t.getFullYear(), m = t.getMonth() + 1;
@@ -1776,7 +1813,7 @@ function activeRange(){
 }
 function inRange(r){
   var R = activeRange();
-  if(R.kind==="pall") return r._dd < 0;
+  if(R.kind==="pall") return r._dd <= 0;
   if(R.from && r.date < R.from) return false;
   if(R.to && r.date > R.to) return false;
   return true;
@@ -1812,10 +1849,14 @@ function applyFilters(list){
     if(S.q && r._hay.indexOf(S.q.toLowerCase()) < 0) return false;
     return true;
   }).sort(function(a,b){
+    var dateOrder = (a.date||"").localeCompare(b.date||"");
+    var nameOrder = plainName(a.artist).localeCompare(plainName(b.artist));
+    var primary = S.sort === "name" ? nameOrder : (S.sort === "date_asc" ? dateOrder : -dateOrder);
+    if(primary) return primary;
+    /* 本命只在主排序键相同时靠前，不能打乱明确选择的日期/艺人顺序。 */
     var ba = isBias(a.artist)?0:1, bb = isBias(b.artist)?0:1;
     if(ba !== bb) return ba - bb;
-    if(S.sort==="name") return plainName(a.artist).localeCompare(plainName(b.artist));
-    return (a.date||"").localeCompare(b.date||"");
+    return nameOrder || -dateOrder || String(a.id||"").localeCompare(String(b.id||""));
   });
 }
 
@@ -2953,7 +2994,7 @@ function renderList(){
     if(page > pages) page = pages;
     if(page < 1) page = 1;
     var from = (page - 1) * PAGE_SIZE;
-    html = gridHTML(pl.slice(from, from + PAGE_SIZE))
+    html = historyStatusHTML() + gridHTML(pl.slice(from, from + PAGE_SIZE))
          + (pages > 1 ? pagerHTML(page, pages, pl.length) : "");
   } else if(isMine && S.mine === "fav"){
     ensureYears();                 /* 旧年份的收藏也要能显示出来 */
@@ -2981,7 +3022,9 @@ function renderList(){
   $("content").innerHTML = html;
   $("cFav").classList.toggle("on", S.onlyFav);
   $("cBias").classList.toggle("on", S.onlyBias);
-  $("cReset").style.display = (S.q||S.type||S.kind||S.agency||S.onlyFav||S.onlyBias) ? "" : "none";
+  $("cReset").style.display = (S.q||S.type||S.kind||S.agency||S.onlyFav||S.onlyBias
+    || S.range.kind !== "pall" || S.sort !== "date_desc") ? "" : "none";
+  document.querySelectorAll("#filters select").forEach(function(sel){ if(sel._syncLabel) sel._syncLabel(); });
   $("qclr").classList.toggle("on", !!S.q);
 }
 
@@ -3053,6 +3096,7 @@ function initSelects(){
       e.stopPropagation();
       var open = pop.classList.contains("on");
       closeAllSels();
+      closeCal();
       if(!open){ fill(); pop.classList.add("on"); }
     });
     pop.addEventListener("click", function(e){
@@ -3063,6 +3107,7 @@ function initSelects(){
       sync();
       pop.classList.remove("on");
     });
+    sel._syncLabel = sync;
     sync();
   });
 }
@@ -3219,6 +3264,15 @@ function calInit(){
   CAL.from = null; CAL.to = null; CAL.picking = false; CAL.view = "day";
 }
 function monLastDay(y,m){ return new Date(y, m+1, 0).getDate(); }
+function calendarCells(y,m){
+  var startWd = new Date(y,m,1).getDay();
+  var days = new Date(y,m+1,0).getDate(), prevDays = new Date(y,m,0).getDate();
+  var cells = [];
+  for(var i=startWd-1;i>=0;i--) cells.push({d:prevDays-i,out:true,date:null});
+  for(var d=1;d<=days;d++) cells.push({d:d,out:false,date:y+"-"+pad(m+1)+"-"+pad(d)});
+  for(var next=1;cells.length%7!==0;next++) cells.push({d:next,out:true,date:null});
+  return cells;
+}
 function calCls(c){
   var cls = "cald";
   if(DATE_COUNT[c.date]) cls += " has";
@@ -3246,6 +3300,11 @@ function calSelRange(kind){
 function renderCal(){
   var y = CAL.y, m = CAL.m;
   $("calMon").textContent = y + " 年 " + (m+1) + " 月";
+  document.querySelectorAll("[data-calpreset]").forEach(function(button){
+    var selected = S.range.mode === "quick" && S.range.kind === button.getAttribute("data-calpreset");
+    button.classList.toggle("on", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
 
   /* ---- 年 / 月快速跳转面板 ---- */
   var mv = (CAL.view === "month");
@@ -3260,18 +3319,7 @@ function renderCal(){
     $("calPick").innerHTML = mh;
   }
 
-  var first = new Date(y, m, 1);
-  var startWd = first.getDay();
-  var days = new Date(y, m+1, 0).getDate();
-  var prevDays = new Date(y, m, 0).getDate();
-
-  var cells = [];
-  for(var i=startWd-1;i>=0;i--) cells.push({d: prevDays-i, out:true, date:null});
-  for(var d=1; d<=days; d++){
-    var ds = y+"-"+pad(m+1)+"-"+pad(d);
-    cells.push({d:d, out:false, date:ds});
-  }
-  while(cells.length % 7 !== 0) cells.push({d: cells.length, out:true, date:null});
+  var cells = calendarCells(y,m);
 
   var wd = ["日","一","二","三","四","五","六"];
   var grid = $("calGrid"), key = y + "-" + pad(m+1);
@@ -3308,8 +3356,11 @@ function daySpan(a,b){
 }
 function openCal(){
   var btn = $("dateBtn"), pop = $("calPop");
+  closeAllSels();
   if(CAL.y === 0) calInit();
-  if(S.range.mode === "custom"){ CAL.from = S.range.from; CAL.to = S.range.to; }
+  CAL.from = S.range.mode === "custom" ? S.range.from : null;
+  CAL.to = S.range.mode === "custom" ? S.range.to : null;
+  CAL.picking = false;
   CAL.view = "day";
   renderCal();
   pop.classList.add("on");
@@ -3321,14 +3372,25 @@ function openCal(){
   pop.style.left = left + "px";
   /* 下方空间不够就翻到按钮上方，避免被视口截断 */
   var ph = pop.offsetHeight || 0;
-  if(rect.bottom + ph + 14 > window.innerHeight && rect.top - ph - 12 > 0){
-    pop.style.top = Math.max(4, rect.top - host.top - ph - 6) + "px";
+  if(host.bottom + ph + 14 > window.innerHeight && host.top - ph - 12 > 0){
+    pop.style.top = (-ph - 6) + "px";
   } else {
-    pop.style.top = (rect.bottom - host.top + 6) + "px";
+    /* 筛选栏在手机上会换行，弹层从整栏下方展开，不能盖住排序和重置。 */
+    pop.style.top = (host.height + 6) + "px";
   }
   pop.scrollTop = 0;
 }
 function closeCal(){ $("calPop").classList.remove("on"); }
+document.addEventListener("keydown", function(e){
+  if(e.key !== "Escape") return;
+  if($("calPop").classList.contains("on")){
+    e.preventDefault(); closeCal(); $("dateBtn").focus();
+  }
+  var popup = document.querySelector(".selpop.on");
+  if(popup){
+    e.preventDefault(); closeAllSels(); popup.parentNode.querySelector(".selbtn").focus();
+  }
+});
 function syncTabs(){
   document.querySelectorAll(".tab").forEach(function(x){
     var v = x.getAttribute("data-view");
@@ -3409,6 +3471,17 @@ document.addEventListener("click", function(e){
   if((el = t.closest("[data-rmbias]"))){ toggleBias(el.getAttribute("data-rmbias")); return; }
   if((el = t.closest("[data-addbias]"))){ addBias(el.getAttribute("data-addbias")); return; }
   /* 日历：点标题切换 年/月 面板 */
+  if((el = t.closest("[data-calpreset]"))){
+    S.range = rangePreset(el.getAttribute("data-calpreset"));
+    calInit(); closeCal(); render(); return;
+  }
+  if(t.closest("#retryHistory")){
+    requiredYears().forEach(function(y){
+      if(FAILED[y]){ delete FAILED[y]; YEAR_RETRY[y] = Date.now(); }
+    });
+    render(); return;
+  }
+  if(t.closest("#refreshHistory")){ location.reload(); return; }
   if((el = t.closest("[data-calview]"))){
     CAL.view = (CAL.view === "month") ? "day" : "month"; renderCal(); return;
   }
@@ -3505,7 +3578,7 @@ document.addEventListener("click", function(e){
     /* 「即将回归」「本月回归」不带筛选，各自用固定范围，
        所以这里的 S.range 只服务于「全部发布」。 */
     if(S.tab==="past" && S.range.kind==="f30" && S.range.mode==="quick"){
-      S.range = rangePreset("p365");
+      S.range = rangePreset("pall");
     }
     syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
   }
@@ -3674,8 +3747,10 @@ $("cBias").addEventListener("click", function(){ S.onlyBias = !S.onlyBias; rende
 $("cReset").addEventListener("click", function(){
   S.q=""; S.type=""; S.kind=""; S.agency=""; S.onlyFav=false; S.onlyBias=false;
   S.range = rangePreset("pall");
+  S.sort = "date_desc";
   CAL.view = "day"; calInit();
   $("q").value=""; $("fType").value=""; $("fKind").value=""; $("fAgency").value="";
+  $("fSort").value = S.sort;
   render(); renderCal();
 });
 $("searchToggle").addEventListener("click", function(){
@@ -3754,7 +3829,7 @@ $("noticeBtn").addEventListener("click", function(){
   location.reload();
 });
 
-S.range = rangePreset("f30");
+S.range = rangePreset("pall");
 
 /* 支持 URL 参数：#release=<id> 直达详情；#tab=<名>&from=<日期>&to=<日期> 预设筛选
    抽成函数：初始化时读一次，浏览器前进/后退（popstate）时再读一次。 */
@@ -3772,11 +3847,14 @@ function applyHash(){
     S.tab = tab; S.view = "calendar";
     /* 直链进过去时和点击标签一样纠正范围，否则默认「未来 30 天」会显示未来的专辑 */
     if(tab === "past" && S.range.kind === "f30" && S.range.mode === "quick"){
-      S.range = rangePreset("p365");
+      S.range = rangePreset("pall");
     }
   } else if(["upcoming","month"].indexOf(tab) >= 0){
     S.tab = "future"; S.frange = tab === "month" ? "month" : "f7"; S.view = "calendar";
-  } else if(tab === "history"){ S.tab = "past"; S.view = "calendar"; }
+  } else if(tab === "history"){
+    S.tab = "past"; S.view = "calendar";
+    if(S.range.kind === "f30" && S.range.mode === "quick") S.range = rangePreset("pall");
+  }
   else if(tab === "fav"){ S.tab = "mine"; S.mine = "fav"; S.view = "calendar"; }
   else if(tab === "bias"){ S.tab = "mine"; S.mine = "bias"; S.view = "calendar"; }
   if(arg("view") === "calendar") S.view = "calendar";
