@@ -90,9 +90,9 @@ async function main(){
             }
             await page.locator('#shareCopy').click();assert.equal(await page.evaluate(()=>__copies.at(-1)),site);
             await page.locator('#shareNative').click();assert.equal(await page.evaluate(()=>__shares.at(-1).url),site);
-            const priorToast=await page.locator('#toast').textContent();
             await page.evaluate(()=>__shareMode='cancel');await page.locator('#shareNative').click();
-            assert.equal(await page.locator('#toast').textContent(),priorToast,'cancel reported a sharing error');
+            // Historical data can finish loading and replace the toast independently.
+            assert.equal((await page.locator('#toast').textContent()).includes('暂时无法打开系统分享'),false,'cancel reported a sharing error');
             await page.evaluate(()=>__shareMode='fail');await page.locator('#shareNative').click();
             await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('复制链接'));
             await page.locator('#shareWechat').click();assert.equal(await page.locator('#shareDialog').isVisible(),true);
