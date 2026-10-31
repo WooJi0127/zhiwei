@@ -21,7 +21,7 @@ jobs:
           import sqlite3
           con = sqlite3.connect('file:kpop.db?mode=ro', uri=True)
           assert con.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
-          allowed = {'artists','releases','tracks','members','events','bili','bili_mid','meta'}
+          allowed = {'artists','releases','tracks','members','events','bili','bili_mid','bili_seen','meta'}
           tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
           assert tables == allowed, 'Unexpected tables; do not upload'
           for table in sorted(tables):
