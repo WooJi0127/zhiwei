@@ -753,7 +753,8 @@ a.btn{display:inline-flex;align-items:center}
 /* 宽屏：侧栏立着（默认） */
 /* 窄屏或竖屏：别再 2×2 立一大块，改成「一行四位」的矮条，才不臃肿 */
 @media (max-width:900px),(orientation:portrait){
-  .hduo{flex-direction:column;gap:0}
+  /* 纵排时让内容区跟随屏幕宽度，否则横滑卡片会把整页撑宽。 */
+  .hduo{flex-direction:column;align-items:stretch;gap:0}
   .dj{width:100%;padding:14px 16px 16px}
   .djgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
   .djt{font-size:12px}
