@@ -8,8 +8,8 @@ function hashContext(hash) {
   const ctx = {location:{hash}, S:{view:'calendar', tab:'past', detailId:'old',
     range:{kind:'p365', mode:'quick'}}, syncTabs(){}, rangePreset(){return {};}};
   vm.createContext(ctx);
-  vm.runInContext(source.slice(source.indexOf('function applyHash(){'),
-    source.indexOf('\n\n\ninitSelects();')), ctx);
+  const start = source.indexOf('function applyHash(){');
+  vm.runInContext(source.slice(start, source.indexOf('\n}\n', start) + 2), ctx);
   return ctx;
 }
 test('malformed shared URL does not prevent initialization', () => {

@@ -644,7 +644,7 @@ a.btn{display:inline-flex;align-items:center}
 /* ================= 从头开始（新人入坑） =================
    和站内其它面板同一套纸感：面板纸 + 纸纹 + 宋体标题；
    正文用黑体保证大段文字好读（长段落宋体会糊）。 */
-.guide{max-width:820px;margin:0 auto}
+.guide{max-width:820px;margin:0 auto;overflow-anchor:none}
 .ghead{margin:6px 0 18px;text-align:center}
 .ghead h2{margin:0 0 6px;font-family:var(--font-title);font-size:22px;font-weight:700;
   color:var(--brand);letter-spacing:.04em;
@@ -653,7 +653,7 @@ a.btn{display:inline-flex;align-items:center}
 .gsec{background-color:var(--card);background-image:var(--kraft-tex);
   background-size:200px 200px;border:1px solid var(--line2);border-radius:var(--radius);
   padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow)}
-.gsec h3{margin:0 0 3px;font-family:var(--font-title);font-size:16.5px;font-weight:700;
+.gsec h4{margin:0 0 3px;font-family:var(--font-title);font-size:16.5px;font-weight:700;
   color:var(--brand);letter-spacing:.02em}
 .gsub{font-size:12px;color:var(--sub);margin-bottom:12px;letter-spacing:.02em}
 .gp{margin:0 0 9px;font-size:13.5px;line-height:1.85;color:var(--text)}
@@ -680,16 +680,42 @@ a.btn{display:inline-flex;align-items:center}
   margin:0 0 14px;padding:9px 0;border-bottom:1px solid var(--line)}
 .subrow span{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--sub)}
 .subrow .btn{margin-left:auto}
-/* 章节导航（从头开始）：26 节太长，顶部给一跳转目录 */
-.gnav{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:0 0 18px;
-  padding:10px 0;border-bottom:1px solid var(--line)}
-.gnav .glabel{font-size:12.5px;color:var(--sub);margin-right:2px}
-.gchip{border:1px solid var(--line2);background-color:var(--card);
-  background-image:var(--kraft-tex);background-size:200px 200px;
-  color:var(--brand);font-family:var(--font-title);font-size:12.5px;font-weight:700;
-  padding:6px 11px;border-radius:9px 7px 10px 8px / 8px 10px 7px 9px;cursor:pointer;
-  transition:background-color .15s,color .15s}
-.gchip:hover{background-color:var(--kraft);color:var(--brand2)}
+/* 主题手册：目录保留在页头下方，手机用两行短标题减少遮挡。 */
+.ghint{margin:0 0 10px;color:var(--sub);font-size:12px;line-height:1.7;text-align:center}
+.gnav{position:sticky;top:var(--guide-header-height,0px);z-index:30;
+  margin:0 0 22px;padding:6px 0 0;border-block:1px solid var(--line2);
+  background-color:var(--bg);background-image:var(--kraft-tex);background-size:200px 200px}
+.gtopics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 18px}
+.gnav .gchip{appearance:none;border:0;border-radius:0;box-shadow:none;background:transparent;
+  min-width:0;min-height:44px;padding:8px 0;text-align:left;cursor:pointer;
+  color:var(--brand);font-family:var(--font-title);font-size:14px;font-weight:400;line-height:1.6}
+.gnav .gchip-title{display:inline-block}
+.gnav .gchip-desc{display:block;font-family:var(--font);font-size:11px;color:var(--sub);line-height:1.6}
+.gnav .gchip[aria-pressed="true"] .gchip-title{font-weight:700;box-shadow:inset 0 -2px 0 var(--brand2)}
+.gnav .gchip:hover{color:var(--brand2)}
+.gnav .gchip[aria-pressed="true"]{color:var(--brand)}
+.gnav .gchip:focus-visible{outline:2px solid var(--brand2);outline-offset:2px}
+.gstatus{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border-top:1px solid var(--line);margin-top:5px;color:var(--sub);font-size:12px}
+.gnav .gall{flex:none;font-size:12px;text-decoration:underline;text-underline-offset:4px}
+.gnav .gall[aria-pressed="true"]{font-weight:700;text-decoration-color:var(--brand2)}
+.gtopic{min-width:0;margin-bottom:30px}
+.gtopic-head{margin-bottom:14px;padding-left:12px;border-left:2px solid var(--brand2)}
+.gtopic-head h3{margin:0 0 3px;font:700 19px/1.6 var(--font-title);color:var(--brand)}
+.gtopic-head p{margin:0;color:var(--sub);font-size:12px;line-height:1.7}
+.gtopic-head p span{margin-left:12px;color:var(--brand2)}
+.gsec{min-width:0;overflow-wrap:anywhere}
+.gsec .gsub{margin:8px 0 14px;font-size:13px;line-height:1.7;color:var(--brand2)}
+@media(max-width:640px){
+  .gtopics{gap:0 8px}
+  .gnav .gchip{font-size:13px}
+  .gnav .gchip-desc{display:none}
+  .gnav .gall{font-size:12px}
+}
+@media(max-height:520px) and (min-width:641px){
+  .gtopics{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+  .gnav .gchip-desc{display:none}
+}
 /* 小节编号：方便对照导航找位置 */
 .gnum{display:inline-block;min-width:20px;margin-right:7px;font-size:12px;
   font-weight:700;color:var(--brand2);opacity:.75}
@@ -1524,6 +1550,7 @@ var S = {
   bdMore:false,                        /* 首页今日生日是否展开全部 */
   calMonth:null, calFrom:null, calTo:null,
   tellKind:"想说的话", tellText:"",   /* 诉说：类别与草稿（重渲染时不丢） */
+  guideTopic:"", guidePosition:null, /* 主题筛选与返回全部时的阅读位置 */
   djList:null                         /* 随心歌单：抽好的 4 张，换一批才重抽 */
 };
 
@@ -1799,11 +1826,11 @@ function gridHTML(list){
    1) 不编造数据（数字、规则只说确定的，拿不准的不写）
    2) 每个概念都能落到本站的一个动作上（看完就知道下一步干嘛） */
 /* 从头开始：内容来自站长的《KPOP宝典》，面向没追过 K-POP 的人。
-   写法：{ t:小节标题, s:副标题, p:[整段文字], l:[词条表], acts:[跳转按钮] }
+   写法：{ id:固定标识, t:小节标题, s:副标题, p:[整段文字], l:[词条表], acts:[跳转按钮] }
    l 的每一项可以是两列（词 → 含义）或三列（名称 → 说明 → 注意）。
    改文案只改中文，别动引号和逗号。 */
 var GUIDE = [
-  { t:"先认识 K-POP 的基本结构", s:"看懂这些主体和单位，大部分信息就不再陌生"
+  { id:"structure", t:"先认识 K-POP 的基本结构", s:"看懂这些主体和单位，大部分信息就不再陌生"
     , p:[
       "K-POP 通常指围绕韩国流行音乐产业形成的音乐与表演文化。它包含不同风格的作品，参与者也不一定都是韩国人。",
       "追星时你会经常看到这些主体，各自负责的事不一样：",
@@ -1824,7 +1851,7 @@ var GUIDE = [
       ["合作曲／Collaboration", "不同艺人合作，不一定组成长期组合"]
     ]
   },
-  { t:"认识一个团，从一张资料卡开始", s:"只记这几项，会轻松很多"
+  { id:"profile", t:"认识一个团，从一张资料卡开始", s:"只记这几项，会轻松很多"
     , p:[
       "建议只整理这些内容：团名及官方写法、成员姓名与艺名（含你常见的中文译名）、出道作品与出道时间、经纪公司、官方账号与公告入口、粉丝名称，以及你喜欢的几首歌和几个舞台。",
       "同一个人可能同时有本名、艺名、韩文名、英文拼写和粉丝昵称。先把官方姓名对应上，再慢慢记昵称，会轻松很多。",
@@ -1839,7 +1866,7 @@ var GUIDE = [
       ["有兴趣再补过去的内容", "不必一次补完"]
     ]
   },
-  { t:"听歌先找自己的偏好", s:"你不需要喜欢所有热门歌"
+  { id:"listening", t:"听歌先找自己的偏好", s:"你不需要喜欢所有热门歌"
     , p:[
       "K-POP 里有流行、舞曲、R&B、嘻哈、摇滚、抒情及各种混合风格。「我喜欢 K-POP」不意味着你需要喜欢所有热门歌。",
       "选择所在地区能够合法使用、拥有相应版权的音乐平台即可，例如国内常用音乐平台，或 Spotify、Apple Music、YouTube Music。同一艺人的不同发行，在不同平台的上架情况可能不同。",
@@ -1854,7 +1881,7 @@ var GUIDE = [
       ["沿着喜欢的声音、节奏或风格继续探索", "找到更多同类"]
     ]
   },
-  { t:"看视频时，先分清看的是哪种内容", s:"MV、直拍、练习室不是一回事"
+  { id:"videos", t:"看视频时，先分清看的是哪种内容", s:"MV、直拍、练习室不是一回事"
     , p:[
       "不同类型的内容，能看出的东西不一样，也各有容易误解的地方：",
       "判断演唱或舞蹈时，尽量看完整内容、比较多个场次。音轨、人声、伴奏、现场收音和后期处理可能同时存在，仅凭几秒剪辑很难准确判断。",
@@ -1872,7 +1899,7 @@ var GUIDE = [
       ["演唱会片段", "现场编排、氛围、互动", "短片段不能代表整场状态"]
     ]
   },
-  { t:"看懂一次「回归」", s:"一轮回归里都有什么"
+  { id:"comeback", t:"看懂一次「回归」", s:"一轮回归里都有什么"
     , p:[
       "回归／Comeback，在 K-POP 语境里通常指艺人推出新作品并展开相关宣传，不一定意味着之前退圈或长期消失。",
       "一轮回归可能包含：宣布新作 → 公布日程 → 概念照、曲目表、试听或预告 → 正式发行 → 音乐节目、采访、综艺、签售等宣传。实际顺序和内容因艺人而异，不是每张作品都有实体专辑、MV、打歌活动或签售。",
@@ -1893,7 +1920,7 @@ var GUIDE = [
       ["日专、韩专等", "常用于区分发行市场或企划，仍需查看实际语言、曲目和版本"]
     ]
   },
-  { t:"追资讯要建立一条回到原始公告的路", s:"四层信息，可信度不同"
+  { id:"news", t:"追资讯要建立一条回到原始公告的路", s:"四层信息，可信度不同"
     , p:[
       "信息可以分为四层：",
       "最实用的资讯组合通常是：一个可靠的官方公告入口、一个你使用方便的官方视频入口、一个更新清楚且保留出处的中文翻译或资讯入口、一个记录发行和活动时间的个人日历。",
@@ -1908,7 +1935,7 @@ var GUIDE = [
       ["匿名爆料、聊天截图、猜测帖", "最多作为待确认信息", "不据此付款、出行或指控他人"]
     ]
   },
-  { t:"会籍、订阅、私信、礼包要分开看", s:"同在一个平台，也是不同的东西"
+  { id:"membership", t:"会籍、订阅、私信、礼包要分开看", s:"同在一个平台，也是不同的东西"
     , p:[
       "这些东西可能出现在同一个平台里，但你需要分别看购买页面：",
       "购买前只按商品明确列出的权益做判断。不要把付费沟通界面理解为艺人承诺与你建立私人关系或逐条回复。",
@@ -1924,7 +1951,7 @@ var GUIDE = [
       ["线上演唱会或直播票", "直播时间、回放期限、设备和观看地区限制"]
     ]
   },
-  { t:"「打榜」是个笼统叫法", s:"先弄清你想支持哪项成绩"
+  { id:"charts-intro", t:"「打榜」是个笼统叫法", s:"先弄清你想支持哪项成绩"
     , p:[
       "粉圈说的「打榜」可能混指听歌、购买、看 MV 和投票。它们对应不同系统：",
       "例如在国内音乐平台听歌，与你在 Melon 上的收听是不同记录，国内平台的播放不能直接当作 Melon 播放。是否被某项评选采用，要看评选方公布的数据口径。",
@@ -1939,7 +1966,7 @@ var GUIDE = [
       ["点赞、评论、转发", "对应平台的互动和传播", "不一定是某个奖项的直接计分项"]
     ]
   },
-  { t:"实体销量、音源榜、一位、年末奖", s:"四种成绩，分开看"
+  { id:"charts", t:"实体销量、音源榜、一位、年末奖", s:"四种成绩，分开看"
     , p:[
       "实体专辑榜。两个常见名字是 Circle 和 Hanteo：Circle Album Chart 根据出库单位的批发数量统计并扣除退货；Circle Retail Album Chart 统计零售店销量；Hanteo 实体榜依据接入其统计渠道的销售数据，不应理解为全球所有商店的完整销售总和。所以「Circle 只有出货量一种数据」并不准确，两家的覆盖和口径不同，数字不能直接相加，也不能仅凭差额断言库存或造假。",
       "音源榜。可能涉及播放、下载、去重听众及其他数字使用数据。实时榜、日榜、周榜与综合榜关注的周期不同，名次和综合指数也不是同一种单位。",
@@ -1948,7 +1975,7 @@ var GUIDE = [
       "看榜单可以增加了解，但排名无法完整代表你个人听到一首歌时的感受。"
     ]
   },
-  { t:"支持播放数据，首先是正常使用平台", s:"别为数据打乱作息"
+  { id:"streams", t:"支持播放数据，首先是正常使用平台", s:"别为数据打乱作息"
     , p:[
       "对新人而言，可以做到：找到正确的艺人、歌曲和官方视频；按平台允许的方式正常收听、观看；收藏自己喜欢的作品，分享真实感受；对异常计数先查看官方说明。",
       "不要把网络流传的「必须某个音量」「必须间隔几首歌」「必须清除某项记录」等，自动当成通用规则。",
@@ -1957,7 +1984,7 @@ var GUIDE = [
       "不用为了数据打乱作息，也不用购买刷量服务。"
     ]
   },
-  { t:"投票前，先确认这张票投给什么", s:"不同投票，主办方和用途都可能不同"
+  { id:"voting", t:"投票前，先确认这张票投给什么", s:"不同投票，主办方和用途都可能不同"
     , p:[
       "你遇到的投票可能是：音乐节目预投票、音乐节目直播投票、年末奖的某个奖项、人气榜或广告奖励活动、媒体与商业平台自办活动、粉丝自发调查。它们的主办方、用途和影响完全可能不同。写着「全球」「人气」或「第一」的投票，也需要先核对活动说明。",
       "第一次参与可以照着做：确认主办方和入口（优先从节目或奖项官方页面进入）→ 确认活动名称、年份和轮次 → 确认投票对象（艺人、组合、歌曲、专辑还是舞台）→ 确认开始结束时间和时区 → 确认资格（地区、年龄、账号类型、验证方式）→ 确认免费票与付费票（是否需要积分、积分如何获得与何时过期）→ 确认次数上限和每日重置时间 → 选择正确候选、完成提交、查看成功提示或记录。",
@@ -1966,7 +1993,7 @@ var GUIDE = [
       "不向陌生人提供密码、验证码或账号控制权。是否付费由你自己决定，免费参与和不参与都很正常。"
     ]
   },
-  { t:"第一次买专辑，先确定你买它的目的", s:"目的不同，适合的商品不同"
+  { id:"buying", t:"第一次买专辑，先确定你买它的目的", s:"目的不同，适合的商品不同"
     , p:[
       "常见目的包括：想拥有并播放 CD；喜欢写真、包装或实体收藏；想支持一次购买；想收藏某张小卡；想参加指定购买活动。",
       "目的不同，适合的商品不同。例如只想收藏一张确定的小卡，反复购买随机专辑未必适合你；想用 CD 播放器听歌，则要先确认里面真的有普通 CD。",
@@ -1984,7 +2011,7 @@ var GUIDE = [
       ["黑胶、卡带等", "对应实体介质", "自己是否有匹配的播放设备"]
     ]
   },
-  { t:"看懂专辑商品页", s:"重点是内容、赠品、发货和计榜"
+  { id:"editions", t:"看懂专辑商品页", s:"重点是内容、赠品、发货和计榜"
     , p:[
       "付款前逐项核对：艺人、专辑名、版本是否正确；是单本、整套、随机发货，还是可以选择版本；是否含普通 CD；固定内容与随机内容分别是什么；随机物是「每本几张」还是「全系列共几款」；是否包含首批限定内容；店铺特典的适用商品、时间和库存条件；发货期、售后、缺件和损坏处理；如关注榜单，商品页是否明确说明计入哪个榜。",
       "几类赠品尤其容易混：",
@@ -2001,7 +2028,7 @@ var GUIDE = [
       ["饭制赠品", "粉丝或商家自行制作，需与官方物品区分"]
     ]
   },
-  { t:"算购专预算，把全部费用算进去", s:"标价不等于到手价"
+  { id:"budget", t:"算购专预算，把全部费用算进去", s:"标价不等于到手价"
     , p:[
       "可以使用这个清单：商品价格＋支付或汇率相关费用＋当地运费＋国际运费＋转运、合箱等服务费＋适用税费。",
       "团购、代购还可能有后续「补款」，例如国际运费或国内寄送费。加入前要问清：标价包含哪些费用？后面预计还有哪几次付款？谁持有原始订单、进度能否查询？缺货、退单、漏发、损坏由谁处理？取消和退款按什么规则执行？特典是随机分配、按登记顺序，还是另有规则？",
@@ -2009,7 +2036,7 @@ var GUIDE = [
       "收到商品时，建议留存订单、外包装和清楚的开箱记录，按售后要求及时反映问题。若晒图，遮住地址、电话、运单号和完整兑换码。"
     ]
   },
-  { t:"买小卡和二手专辑，先约定交付什么", s:"这些叫法并不完全等价"
+  { id:"photocards", t:"买小卡和二手专辑，先约定交付什么", s:"这些叫法并不完全等价"
     , p:[
       "先分清表述：原封／未拆（卖家声称尚未拆封，仍需确认来源和售后）；拆封专（已打开，具体剩余物品逐项确认）；无卡专／裸专（通常缺少部分随机物，不同卖家叫法可能不同）；仅卡（只出售卡片，不含专辑）；空盒（可能只有包装）；平台专辑二手（实物仍在，也可能已经兑换或绑定数字内容）。",
       "买卡、换卡前确认：是官方专内卡、官方活动特典，还是饭制、复刻物；对应哪张专辑、哪家商店、哪次活动；正反面实拍与具体品相；是否有划痕、压痕、折角、污渍；运费、包装和寄送方式；争议如何通过交易平台处理。",
@@ -2017,7 +2044,7 @@ var GUIDE = [
       "不要只凭塑封、卖家口头「保真」或一张对比图判断真伪；签名商品还要分清亲笔、印刷及具体来源。优先保留平台内的描述、沟通和付款记录。"
     ]
   },
-  { t:"签售和视频通话，单独理解报名与抽选", s:"买专辑 ≠ 有资格 ≠ 中签"
+  { id:"fansigns", t:"签售和视频通话，单独理解报名与抽选", s:"买专辑 ≠ 有资格 ≠ 中签"
     , p:[
       "先区分三个东西：买专辑（获得商品）、获得抽选资格（按活动规则进入候选）、中奖并通过核验（获得该次活动的参加资格）。它们不是同一个状态。",
       "常见流程是：官方公布活动 → 在规定时间购买指定商品 → 按要求报名 → 公布结果 → 核验身份 → 参加活动。有的活动需要额外提交申请，不能默认下单就自动报名。",
@@ -2027,7 +2054,7 @@ var GUIDE = [
       "参加时提前准备简短的问题或想表达的话，尊重时长与工作人员指引。避免索要私人联系方式、要求羞辱他人、追问未公开关系，或把对方的营业互动当成私人关系。"
     ]
   },
-  { t:"线下活动内容不同，名称不等于权益", s:"买 VIP 前逐条读完"
+  { id:"events", t:"线下活动内容不同，名称不等于权益", s:"买 VIP 前逐条读完"
     , p:[
       "各种活动的实际内容差别很大，名称不能替代权益清单：",
       "买「VIP」前，把它包含的权益逐条读完。票种名称听起来高级，并不能说明有某项特定福利。"
@@ -2045,7 +2072,7 @@ var GUIDE = [
       ["线上演唱会、付费直播", "通过指定服务观看", "不等于现场门票，也不保证无限回放"]
     ]
   },
-  { t:"买演唱会票，分清资格、申请、付款、出票", s:"四步都不是同一件事"
+  { id:"tickets", t:"买演唱会票，分清资格、申请、付款、出票", s:"四步都不是同一件事"
     , p:[
       "第一步是从艺人、公司或主办方官方公告，找到指定售票渠道。然后分别确认：活动日期、城市和场馆；会员资格要求；是否需要提前登记；采用抢票、抽选还是其他方式；抽选结果、付款和领票的截止时间；购票人、参加人和同行人的姓名规则；票价、手续费、视线限制及退改转让规则。",
       "几个必须分开的概念：预售（公开发售前提供的购票机会）；会员预售登记（满足条件后提交登记）；预售码（获得进入某轮购票的资格或入口）；抽选申请（提交候选申请，等待结果）；中签（得到该轮规定的购票或参加机会）；付款、出票（仍可能需要你继续完成操作）。",
@@ -2054,7 +2081,7 @@ var GUIDE = [
       "付款后查看成功订单、金额、参加人、出票状态和后续操作。进入购物车、排进队列或收到扣款提示，都不宜单独作为完整购票成功的判断。"
     ]
   },
-  { t:"二手票能不能买，先看允不允许转让", s:"官方规则比卖家保证重要"
+  { id:"resale", t:"二手票能不能买，先看允不允许转让", s:"官方规则比卖家保证重要"
     , p:[
       "不同活动可能允许官方转售、限定转让，也可能完全禁止转让和改名。不要先付款，再询问自己能否使用。",
       "特别留意：原购票人与入场人是否必须一致；是否需要实体证件原件；是否核验会籍；票码是否动态更新；截图能否使用；是否必须在指定 App 内出示；是否存在官方转售或退款渠道；同行人是否要跟主购票人一起入场。",
@@ -2062,7 +2089,7 @@ var GUIDE = [
       "对新人来说，能通过官方规则解释清楚自己如何入场，比卖家的保证更重要。"
     ]
   },
-  { t:"看演出前，把出行与现场一起安排好", s:"票不等于入境许可"
+  { id:"travel", t:"看演出前，把出行与现场一起安排好", s:"票不等于入境许可"
     , p:[
       "如果跨城市或跨境参加，先确认：自己是否有符合要求的旅行证件；目的地及中转地的入境、停留要求；未成年人是否需要陪同及相关材料；酒店、交通能否取消或调整；演出结束后如何返回住宿地点；如果延期或取消，自己能承担哪些损失。旅行和入境条件应查对应官方渠道，演出票不等于入境许可。",
       "出发前再检查一遍：",
@@ -2079,7 +2106,7 @@ var GUIDE = [
       ["返回安排", "散场交通、集合点、同行人联络方式"]
     ]
   },
-  { t:"参加音乐节目预录，别照搬演唱会经验", s:"播出时间不等于集合时间"
+  { id:"recordings", t:"参加音乐节目预录，别照搬演唱会经验", s:"播出时间不等于集合时间"
     , p:[
       "打歌节目现场可能包含预录、正式直播和不同艺人的分别录制。你看到电视播出的时间，不一定是实际集合或录制时间。",
       "参与前要读：申请开放和截止时间；报名、入选、候补及签到规则；年龄、会籍和身份证件要求；是否需要指定实体专辑或音源购买证明；是否需要携带官方应援棒；禁止拍摄、录音和剧透的规定；缺席、迟到与资格转让的处理。",
@@ -2087,7 +2114,7 @@ var GUIDE = [
       "不要为尚未确认的参与资格安排无法承受损失的行程，也不要相信陌生人声称能保证带你进入。"
     ]
   },
-  { t:"应援可以从听懂一句歌词开始", s:"是表达支持，不是统一任务"
+  { id:"support", t:"应援可以从听懂一句歌词开始", s:"是表达支持，不是统一任务"
     , p:[
       "常见应援包括：学习官方或明确来源的应援口号；在允许的场合使用应援棒、手幅等；参加生日、周年或回归相关活动；分享作品和自己的真实推荐；参与粉丝组织的广告或其他项目。",
       "应援是表达支持，不是统一任务。不会喊口号、不买应援棒、不参加集体项目，也可以好好看演出。",
@@ -2096,7 +2123,7 @@ var GUIDE = [
       "现场的应援棒配对、座位绑定和灯光控制，按官方说明操作即可，不要从陌生渠道安装所谓必需工具。"
     ]
   },
-  { t:"进入粉丝社群，先学会判断规则和边界", s:"可以参与，也可以安静听歌"
+  { id:"community", t:"进入粉丝社群，先学会判断规则和边界", s:"可以参与，也可以安静听歌"
     , p:[
       "你可以参与群聊、论坛、评论区和线下交流，也可以安静地听歌看舞台。",
       "加入社群前建议观察：是否允许新人提问；转发资讯是否保留出处；是否尊重不同成员和不同艺人；是否频繁要求购买、捐款、晒消费记录；是否用辱骂、公开个人资料或群体攻击处理分歧；管理者是否把个人意见包装成「全体粉丝必须」。",
@@ -2106,7 +2133,7 @@ var GUIDE = [
       "分享内容时标明来源，尊重创作者和版权要求；不要把整套付费内容、盗录或未经许可的资源分发，当成追星必需步骤。"
     ]
   },
-  { t:"黑话可以按场景记", s:"不需要一次背完"
+  { id:"glossary", t:"黑话可以按场景记", s:"不需要一次背完"
     , p:[
       "下面这些词足以帮助你读懂大部分常见讨论。部分词的用法随社群变化，遇到涉及付款、报名或规则的缩写，直接问清完整含义。"
     ]
@@ -2215,7 +2242,7 @@ var GUIDE = [
       ["饼／画饼／溜粉", "关于潜在机会、未兑现承诺等的粉圈说法，不能直接当正式消息"]
     ]
   },
-  { t:"给自己安排一个轻松的第一个月", s:"不必按时交作业"
+  { id:"first-month", t:"给自己安排一个轻松的第一个月", s:"不必按时交作业"
     , p:[
       "下面是一份可调整的入门安排，不需要按时「交作业」：",
       "如果预算是零元，可以一直停留在免费听歌、看官方公开内容、交流作品的方式上。",
@@ -2229,7 +2256,7 @@ var GUIDE = [
       ["第四周", "按兴趣尝试一次免费投票，或研究一件商品、一场演出", "能独立核对规则和总费用"]
     ]
   },
-  { t:"遇到一次新回归，把整套知识用起来", s:"每一项都可以跳过"
+  { id:"first-comeback", t:"遇到一次新回归，把整套知识用起来", s:"每一项都可以跳过"
     , p:[
       "假设你喜欢的组合宣布了一张新专辑，你可以这样走一遍：从官方公告确认发行名、时间和时区；想听歌就选择自己可用的平台，发行后听完整作品；想看舞台就关注官方视频和节目发布；想买一张就先定总预算，再核对版本、CD、赠品和售后；想支持某个榜就查清该榜采用什么数据；想投票就确认具体活动、候选、时间和票的用途；想抽签售就单独检查指定商品、申请和身份要求；想看演出就另外核对会籍、登记、售票、证件和出行。",
       "其中任何一项超出兴趣、精力或预算，都可以跳过。",
@@ -2239,63 +2266,143 @@ var GUIDE = [
   }
 ];
 
-/* 章节导航：26 节按主题分成 7 组，点一下滚到那一节。
-   分组起点写在这里 —— 以后增删章节要顺手对一下序号。 */
-var GUIDE_NAV = [
-  [1,  "入门：这是些什么"],
-  [5,  "回归与资讯"],
-  [9,  "成绩与投票"],
-  [12, "买专辑"],
-  [16, "活动与票务"],
-  [22, "应援、社群、黑话"],
-  [25, "第一个月怎么安排"]
+/* 主题使用固定标识关联章节，调整排列不会把内容分到错误的主题。 */
+var GUIDE_TOPICS = [
+  {id:"basics", title:"认识 K-POP", desc:"艺人、成员、听歌、看舞台",
+    sections:["structure","profile","listening","videos"]},
+  {id:"comeback", title:"追一次回归", desc:"日程、资讯、入坑安排",
+    sections:["comeback","news","first-month","first-comeback"]},
+  {id:"support", title:"榜单与支持", desc:"成绩、投票、播放、应援",
+    sections:["charts-intro","charts","streams","voting","support"]},
+  {id:"collect", title:"专辑与收藏", desc:"版本、预算、小卡、二手",
+    sections:["buying","editions","budget","photocards"]},
+  {id:"live", title:"会籍与现场", desc:"订阅、签售、门票、出行",
+    sections:["membership","fansigns","events","tickets","resale","travel","recordings"]},
+  {id:"community", title:"社群与词典", desc:"交流边界、按场景查黑话",
+    sections:["community","glossary"]}
 ];
-function guideNavHTML(){
-  var h = '<div class="gnav"><span class="glabel">跳到：</span>';
-  for(var i = 0; i < GUIDE_NAV.length; i++){
-    h += '<button class="gchip" data-goto="' + GUIDE_NAV[i][0] + '">'
-       + esc(GUIDE_NAV[i][1]) + '</button>';
+function nextGuideTopic(current, requested){
+  if(requested === "" || requested === current) return "";
+  for(var i = 0; i < GUIDE_TOPICS.length; i++){
+    if(GUIDE_TOPICS[i].id === requested) return requested;
   }
-  return h + '</div>';
+  return current;
 }
-
-function guideHTML(){
-  var h = '<div class="guide">'
-    + '<div class="ghead"><h2>从头开始</h2><p>没追过 K-POP 也能看懂。看完这一页，你就知道「回归」是什么、该看什么、先点哪里。</p></div>';
-  /* 26 节一次读不完，顶部加章节导航，点了直接跳到那一节 */
-  h += guideNavHTML();
-  for(var i = 0; i < GUIDE.length; i++){
-    var g = GUIDE[i];
-    h += '<section class="gsec" id="gs' + (i + 1) + '">'
-       +   '<h3><span class="gnum">' + (i + 1) + '</span>' + esc(g.t) + '</h3>'
-       +   (g.s ? '<div class="gsub">' + esc(g.s) + '</div>' : '');
-    for(var j = 0; j < (g.p || []).length; j++){
-      h += '<p class="gp">' + esc(g.p[j]) + '</p>';
-    }
-    if(g.l && g.l.length){
-      h += '<ul class="gl">';
-      for(var k = 0; k < g.l.length; k++){
-        var row = g.l[k];
-        /* 宝典里两种表格：两列（术语 → 含义）、三列（名称 → 说明 → 注意/误解） */
-        h += '<li' + (row.length > 2 ? ' class="c3"' : '') + '>'
-           + '<b>' + esc(row[0]) + '</b>'
-           + '<span>' + esc(row[1] || "") + '</span>'
-           + (row.length > 2 ? '<span>' + esc(row[2] || "") + '</span>' : '')
-           + '</li>';
-      }
-      h += '</ul>';
-    }
-    if(g.acts){
-      h += '<div class="gacts">';
-      for(var a = 0; a < g.acts.length; a++){
-        h += '<button class="btn gjump" data-jump="' + esc(g.acts[a][0]) + '">' + esc(g.acts[a][1]) + '</button>';
-      }
-      h += '</div>';
-    }
-    h += '</section>';
+function guideStatusText(){
+  for(var i = 0; i < GUIDE_TOPICS.length; i++){
+    var t = GUIDE_TOPICS[i];
+    if(t.id === S.guideTopic) return t.title + " · " + t.sections.length + " 节";
   }
-  h += '</div>';
+  return "全部主题 · " + GUIDE.length + " 节";
+}
+function guideNavHTML(){
+  var h = '<nav class="gnav" aria-label="阅读主题" aria-describedby="guideHint"><div class="gtopics">';
+  for(var i = 0; i < GUIDE_TOPICS.length; i++){
+    var t = GUIDE_TOPICS[i];
+    h += '<button type="button" class="gchip" data-guide-topic="' + t.id
+      + '" aria-pressed="' + (S.guideTopic === t.id) + '" aria-controls="guideSections">'
+      + '<span class="gchip-title">' + esc(t.title) + '</span><span class="gchip-desc">'
+      + esc(t.desc) + '</span></button>';
+  }
+  return h + '</div><div class="gstatus"><span id="guideStatus" role="status">'
+    + guideStatusText() + '</span><button type="button" class="gchip gall" data-guide-topic=""'
+    + ' aria-pressed="' + !S.guideTopic + '" aria-controls="guideSections">查看全部</button></div></nav>';
+}
+function guideSectionsHTML(){
+  var h = "", byId = {}, number = 0;
+  GUIDE.forEach(function(g){ byId[g.id] = g; });
+  GUIDE_TOPICS.forEach(function(topic){
+    var show = !S.guideTopic || S.guideTopic === topic.id;
+    if(show){
+      h += '<section class="gtopic" aria-labelledby="gt-' + topic.id + '">'
+        + '<div class="gtopic-head"><h3 id="gt-' + topic.id + '">' + esc(topic.title)
+        + '</h3><p>' + esc(topic.desc) + '<span>' + topic.sections.length + ' 节</span></p></div>';
+    }
+    topic.sections.forEach(function(id){
+      var g = byId[id]; number++;
+      if(!show) return;
+      h += '<section class="gsec" id="gs-' + id + '" aria-labelledby="gtitle-' + id + '">'
+        + '<h4 id="gtitle-' + id + '"><span class="gnum">' + (number < 10 ? '0' : '') + number
+        + '</span>' + esc(g.t) + '</h4>'
+        + (g.s ? '<div class="gsub">' + esc(g.s) + '</div>' : '');
+      for(var j = 0; j < (g.p || []).length; j++){
+        h += '<p class="gp">' + esc(g.p[j]) + '</p>';
+      }
+      if(g.l && g.l.length){
+        h += '<ul class="gl">';
+        for(var k = 0; k < g.l.length; k++){
+          var row = g.l[k];
+          h += '<li' + (row.length > 2 ? ' class="c3"' : '') + '>'
+            + '<b>' + esc(row[0]) + '</b><span>' + esc(row[1] || "") + '</span>'
+            + (row.length > 2 ? '<span>' + esc(row[2] || "") + '</span>' : '') + '</li>';
+        }
+        h += '</ul>';
+      }
+      if(g.acts){
+        h += '<div class="gacts">';
+        for(var a = 0; a < g.acts.length; a++){
+          h += '<button type="button" class="btn gjump" data-jump="' + esc(g.acts[a][0]) + '">'
+            + esc(g.acts[a][1]) + '</button>';
+        }
+        h += '</div>';
+      }
+      h += '</section>';
+    });
+    if(show) h += '</section>';
+  });
   return h;
+}
+function guideHTML(){
+  return '<div class="guide"><div class="ghead"><h2>从头开始</h2>'
+    + '<p>按主题慢慢读，也可以只挑你现在想了解的。</p></div>'
+    + '<p class="ghint" id="guideHint">点击主题，只看这一部分；再点一次，回到全部。</p>'
+    + guideNavHTML() + '<div id="guideSections">' + guideSectionsHTML() + '</div></div>';
+}
+function updateGuideOffset(){
+  var header = document.querySelector("header");
+  document.documentElement.style.setProperty("--guide-header-height", (header ? header.getBoundingClientRect().height : 0) + "px");
+}
+function guideViewportTop(){
+  var header = document.querySelector("header"), nav = document.querySelector(".gnav");
+  return (header ? header.getBoundingClientRect().height : 0) + (nav ? nav.getBoundingClientRect().height : 0) + 12;
+}
+function rememberGuidePosition(){
+  var top = guideViewportTop(), sections = document.querySelectorAll(".gsec"), anchor = null;
+  for(var i = 0; i < sections.length; i++){
+    var r = sections[i].getBoundingClientRect();
+    if(r.top <= top && r.bottom > top){ anchor = {id:sections[i].id, offset:r.top - top}; break; }
+  }
+  return {y:window.scrollY, anchor:anchor};
+}
+function selectGuideTopic(requested){
+  var next = nextGuideTopic(S.guideTopic, requested);
+  if(next === S.guideTopic) return;
+  if(!S.guideTopic) S.guidePosition = rememberGuidePosition();
+  S.guideTopic = next;
+  /* 只重绘正文，保留按钮焦点、滚动栏位置和读屏状态节点。 */
+  $("guideSections").innerHTML = guideSectionsHTML();
+  document.querySelectorAll("[data-guide-topic]").forEach(function(b){
+    b.setAttribute("aria-pressed", String(b.getAttribute("data-guide-topic") === next));
+  });
+  $("guideStatus").textContent = guideStatusText();
+  updateGuideOffset();
+  var y, saved = S.guidePosition;
+  if(!next && saved){
+    var anchor = saved.anchor && $(saved.anchor.id);
+    y = anchor ? window.scrollY + anchor.getBoundingClientRect().top - guideViewportTop() - saved.anchor.offset : saved.y;
+    S.guidePosition = null;
+  } else {
+    y = window.scrollY + $("guideSections").getBoundingClientRect().top - guideViewportTop();
+  }
+  window.scrollTo({top:Math.max(0, y), behavior:"instant"});
+}
+function openGuideDestination(tab){
+  if(["home","future","past","mine"].indexOf(tab) < 0) return;
+  S.view = tab === "home" ? "home" : "calendar";
+  if(tab !== "home") S.tab = tab;
+  S.detailId = null;
+  if(tab === "mine") S.mine = "bias";
+  syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"});
 }
 
 /* ============================ 诉说（反馈 / 树洞） ============================
@@ -2750,6 +2857,8 @@ function renderList(){
   $("mineBar").classList.toggle("on", isMine);
   $("filters").style.display = isPast ? "" : "none";
   if(isGuide){                       /* 指南页不需要任何筛选控件 */
+    $("biasBox").style.display = "none";
+    updateGuideOffset();
     $("content").innerHTML = guideHTML();
     return;
   }
@@ -3387,15 +3496,11 @@ document.addEventListener("click", function(e){
   }
   /* 指南里的跳转按钮：直接切到对应页签 */
   if((el = t.closest("[data-jump]"))){
-    S.view = "calendar"; S.tab = el.getAttribute("data-jump");
-    if(S.tab === "mine") S.mine = "bias";
-    syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
+    openGuideDestination(el.getAttribute("data-jump")); return;
   }
-  /* 章节导航：滚到「从头开始」的某一节 */
-  if((el = t.closest("[data-goto]"))){
-    var tgt = $("gs" + el.getAttribute("data-goto"));
-    if(tgt) tgt.scrollIntoView({behavior:"smooth", block:"start"});
-    return;
+  /* 主题手册：单击聚焦，再击同一主题恢复全部 */
+  if((el = t.closest("[data-guide-topic]"))){
+    selectGuideTopic(el.getAttribute("data-guide-topic")); return;
   }
   if((el = t.closest("[data-tellkind]"))){
     S.tellKind = el.getAttribute("data-tellkind"); render(); return;
@@ -3578,6 +3683,12 @@ function applyHash(){
 }
 
 
+/* 搜索栏开合、字体加载和横竖屏切换都会改变页头高度。 */
+updateGuideOffset();
+if(window.ResizeObserver){
+  new ResizeObserver(updateGuideOffset).observe(document.querySelector("header"));
+}
+addEventListener("resize", updateGuideOffset);
 initSelects();
 /* 搜索框默认展开：以前要点放大镜才出来，新访客根本不知道有搜索。
    窄屏位置不够，仍然收起，点图标再展开。 */

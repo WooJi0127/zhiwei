@@ -623,7 +623,7 @@ a.btn{display:inline-flex;align-items:center}
 /* ================= 从头开始（新人入坑） =================
    和站内其它面板同一套纸感：面板纸 + 纸纹 + 宋体标题；
    正文用黑体保证大段文字好读（长段落宋体会糊）。 */
-.guide{max-width:820px;margin:0 auto}
+.guide{max-width:820px;margin:0 auto;overflow-anchor:none}
 .ghead{margin:6px 0 18px;text-align:center}
 .ghead h2{margin:0 0 6px;font-family:var(--font-title);font-size:22px;font-weight:700;
   color:var(--brand);letter-spacing:.04em;
@@ -632,7 +632,7 @@ a.btn{display:inline-flex;align-items:center}
 .gsec{background-color:var(--card);background-image:var(--kraft-tex);
   background-size:200px 200px;border:1px solid var(--line2);border-radius:var(--radius);
   padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow)}
-.gsec h3{margin:0 0 3px;font-family:var(--font-title);font-size:16.5px;font-weight:700;
+.gsec h4{margin:0 0 3px;font-family:var(--font-title);font-size:16.5px;font-weight:700;
   color:var(--brand);letter-spacing:.02em}
 .gsub{font-size:12px;color:var(--sub);margin-bottom:12px;letter-spacing:.02em}
 .gp{margin:0 0 9px;font-size:13.5px;line-height:1.85;color:var(--text)}
@@ -659,16 +659,42 @@ a.btn{display:inline-flex;align-items:center}
   margin:0 0 14px;padding:9px 0;border-bottom:1px solid var(--line)}
 .subrow span{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--sub)}
 .subrow .btn{margin-left:auto}
-/* 章节导航（从头开始）：26 节太长，顶部给一跳转目录 */
-.gnav{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:0 0 18px;
-  padding:10px 0;border-bottom:1px solid var(--line)}
-.gnav .glabel{font-size:12.5px;color:var(--sub);margin-right:2px}
-.gchip{border:1px solid var(--line2);background-color:var(--card);
-  background-image:var(--kraft-tex);background-size:200px 200px;
-  color:var(--brand);font-family:var(--font-title);font-size:12.5px;font-weight:700;
-  padding:6px 11px;border-radius:9px 7px 10px 8px / 8px 10px 7px 9px;cursor:pointer;
-  transition:background-color .15s,color .15s}
-.gchip:hover{background-color:var(--kraft);color:var(--brand2)}
+/* 主题手册：目录保留在页头下方，手机用两行短标题减少遮挡。 */
+.ghint{margin:0 0 10px;color:var(--sub);font-size:12px;line-height:1.7;text-align:center}
+.gnav{position:sticky;top:var(--guide-header-height,0px);z-index:30;
+  margin:0 0 22px;padding:6px 0 0;border-block:1px solid var(--line2);
+  background-color:var(--bg);background-image:var(--kraft-tex);background-size:200px 200px}
+.gtopics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 18px}
+.gnav .gchip{appearance:none;border:0;border-radius:0;box-shadow:none;background:transparent;
+  min-width:0;min-height:44px;padding:8px 0;text-align:left;cursor:pointer;
+  color:var(--brand);font-family:var(--font-title);font-size:14px;font-weight:400;line-height:1.6}
+.gnav .gchip-title{display:inline-block}
+.gnav .gchip-desc{display:block;font-family:var(--font);font-size:11px;color:var(--sub);line-height:1.6}
+.gnav .gchip[aria-pressed="true"] .gchip-title{font-weight:700;box-shadow:inset 0 -2px 0 var(--brand2)}
+.gnav .gchip:hover{color:var(--brand2)}
+.gnav .gchip[aria-pressed="true"]{color:var(--brand)}
+.gnav .gchip:focus-visible{outline:2px solid var(--brand2);outline-offset:2px}
+.gstatus{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border-top:1px solid var(--line);margin-top:5px;color:var(--sub);font-size:12px}
+.gnav .gall{flex:none;font-size:12px;text-decoration:underline;text-underline-offset:4px}
+.gnav .gall[aria-pressed="true"]{font-weight:700;text-decoration-color:var(--brand2)}
+.gtopic{min-width:0;margin-bottom:30px}
+.gtopic-head{margin-bottom:14px;padding-left:12px;border-left:2px solid var(--brand2)}
+.gtopic-head h3{margin:0 0 3px;font:700 19px/1.6 var(--font-title);color:var(--brand)}
+.gtopic-head p{margin:0;color:var(--sub);font-size:12px;line-height:1.7}
+.gtopic-head p span{margin-left:12px;color:var(--brand2)}
+.gsec{min-width:0;overflow-wrap:anywhere}
+.gsec .gsub{margin:8px 0 14px;font-size:13px;line-height:1.7;color:var(--brand2)}
+@media(max-width:640px){
+  .gtopics{gap:0 8px}
+  .gnav .gchip{font-size:13px}
+  .gnav .gchip-desc{display:none}
+  .gnav .gall{font-size:12px}
+}
+@media(max-height:520px) and (min-width:641px){
+  .gtopics{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+  .gnav .gchip-desc{display:none}
+}
 /* 小节编号：方便对照导航找位置 */
 .gnum{display:inline-block;min-width:20px;margin-right:7px;font-size:12px;
   font-weight:700;color:var(--brand2);opacity:.75}
