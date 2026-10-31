@@ -408,6 +408,9 @@ var MEMBERS = DATA.members || [];
    emoji 各平台长得不一样，也是「AI 感」的主要来源。 */
 var ICON = {
   search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+  share :'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.7l7.6-4.4M8.2 13.3l7.6 4.4"/>',
+  copy :'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M15 8V4H4v11h4"/>',
+  chevron :'<path d="M6 9l6 6 6-6"/>',
   close :'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
   heart :'<path d="M12 20.2s-7.2-4.6-7.2-9.7A4.2 4.2 0 0 1 12 8.2a4.2 4.2 0 0 1 7.2 2.3c0 5.1-7.2 9.7-7.2 9.7z"/>',
   star  :'<path d="M12 3.9l2.6 5.3 5.8.85-4.2 4.1 1 5.75L12 17.1l-5.2 2.8 1-5.75L3.6 10.05l5.8-.85z"/>',
@@ -1300,7 +1303,7 @@ function detailHTML(r){
                   .sort(function(p,q){ return (q.date||"").localeCompare(p.date||""); })
                   .slice(0, 12);
 
-  var h = '<div class="backbar"><button id="backBtn">‹ 返回</button>'
+  var h = '<div class="backbar"><button class="btn" id="backBtn">'+ico('arrow',15)+' 返回</button>'
         + '<span style="font-size:12.5px;color:var(--sub)">专辑详情</span></div>';
 
   h += '<div class="dhero">'
@@ -1335,10 +1338,9 @@ function detailHTML(r){
      以前这里按「同艺人 + 标题带专辑名」猜一个，命中率低还常常张冠李戴，删掉。 */
 
   h += '<div class="dact">'
-    +  '<button class="btn" id="favDetail" style="padding:10px 18px;border-radius:11px;font-size:13px">'
+    +  '<button class="btn" id="favDetail" aria-pressed="'+isFav(r.id)+'">'
     +    (isFav(r.id) ? ico('star',14,true)+' 已收藏' : ico('star',14)+' 收藏') + '</button>'
-    +  '<button class="btn" id="reportBtn"'
-    +    ' style="padding:10px 16px;border-radius:11px;font-size:13px">信息有误？告诉我们</button>'
+    +  '<button class="btn" id="reportBtn">信息有误？告诉我们</button>'
     +  '<span class="dsrc">数据来源：' + esc(srcLabel(r)) + '</span>'
     + '</div>';
 
@@ -1351,12 +1353,12 @@ function detailHTML(r){
        + '点击歌曲查看详情</span></div>';
     r._tracks.forEach(function(t, i){
       var no = (t.no || (i+1));
-      h += '<div class="trk" data-trk="'+i+'">'
+      h += '<button type="button" class="trk" data-trk="'+i+'" aria-expanded="false" aria-controls="ext'+i+'">'
         +  '<span class="no">'+no+'</span>'
         +  '<span class="nm">'+esc(t.n || "—")+'</span>'
         +  '<span class="du">'+esc(fmtDurShort(t.ms))+'</span>'
-        +  '<span class="cv">▾</span>'
-        + '</div>'
+        +  '<span class="cv">'+ico('chevron',13)+'</span>'
+        + '</button>'
         + '<div class="trkext" id="ext'+i+'">'
         +  '<div class="extgrid">'
         +   '<div class="exi"><span class="k">时长</span><span class="v">'+esc(fmtDurShort(t.ms)||"—")+'</span></div>'
@@ -2223,6 +2225,7 @@ document.addEventListener("click", function(e){
       var open = ext.classList.contains("on");
       ext.classList.toggle("on", !open);
       el.classList.toggle("open", !open);
+      el.setAttribute("aria-expanded", String(!open));
     }
     return;
   }
@@ -2231,7 +2234,7 @@ document.addEventListener("click", function(e){
     openDetail(el.getAttribute("data-open"));
     return;
   }
-  if(t.id === "backBtn"){ closeDetail(); syncTabs(); render(); return; }
+  if(t.closest("#backBtn")){ closeDetail(); syncTabs(); render(); return; }
   if(t.id === "bdMore"){ S.bdMore = !S.bdMore; render(); return; }
   if(t.id === "toCal"){ S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
   /* 订阅日历：首页和「未来」页两个按钮共用 */
@@ -2252,7 +2255,7 @@ document.addEventListener("click", function(e){
   }
   if(t.id === "brandHome"){ closeDetail(); S.view = "home"; syncTabs(); render(); return; }
   /* 收藏按钮（详情页） */
-  if(t.id === "favDetail"){
+  if(t.closest("#favDetail")){
     var cur = S.detailId; var k = favs.indexOf(cur);
     if(k>=0){ favs.splice(k,1); toast("已取消收藏"); } else { favs.push(cur); toast("已收藏"); }
     LS.set("favs", favs); render(); return;
@@ -2302,12 +2305,63 @@ function copyText(s, message){
     navigator.clipboard.writeText(s).then(done, fallback);
   } else { fallback(); }
   function fallback(){
+    var previousFocus = document.activeElement;
     var ta = document.createElement("textarea");
     ta.value = s; ta.style.position = "fixed"; ta.style.opacity = "0";
-    document.body.appendChild(ta); ta.select();
+    /* 模态弹窗外的 body 区域是 inert，复制选区必须留在当前弹窗内。 */
+    var copyHost = document.querySelector("dialog[open]") || document.body;
+    copyHost.appendChild(ta); ta.select();
     try { if(!document.execCommand("copy")) throw new Error("copy failed"); done(); }
     catch(e){ toast("复制失败，请手动选中文本复制"); }
-    document.body.removeChild(ta);
+    copyHost.removeChild(ta);
+    if(previousFocus && previousFocus.isConnected) previousFocus.focus({preventScroll:true});
+  }
+}
+
+/* 网站分享：只分享公开主页；所有发送均由访客在平台中确认。
+   Native share: https://www.w3.org/TR/web-share/
+   X intent: https://docs.x.com/x-for-websites/web-intents/overview */
+var SITE_URL = "https://mywooji.cn/";
+var SITE_SHARE_TITLE = "知未 · K-POP 回归日历";
+var SITE_SHARE_TEXT = "一起看 K-POP 回归日程，发现喜欢的音乐。";
+function siteShareLinks(){
+  var url = encodeURIComponent(SITE_URL), title = encodeURIComponent(SITE_SHARE_TITLE);
+  return [
+    {id:"weibo", label:"微博", url:"https://service.weibo.com/share/share.php?url=" + url + "&title=" + title},
+    {id:"qq", label:"QQ", url:"https://connect.qq.com/widget/shareqq/index.html?url=" + url + "&title=" + title + "&summary=" + encodeURIComponent(SITE_SHARE_TEXT)},
+    {id:"x", label:"X", url:"https://x.com/intent/tweet?url=" + url + "&text=" + title}
+  ];
+}
+function initShareBoard(){
+  var box = $("shareBoard");
+  /* 兼容发布期间仍缓存旧 HTML 的访客。 */
+  if(!box) return;
+  var h = '<div class="share-heading"><h2 id="shareHeading">把知未分享给朋友</h2>'
+    + '<p>一起听歌，也一起期待下一次回归。</p></div><div class="share-actions">'
+    + '<button type="button" class="btn" id="shareCopy">' + ico('copy',15) + ' 复制链接</button>'
+    + '<button type="button" class="btn" id="shareWechat" aria-haspopup="dialog">微信</button>';
+  siteShareLinks().forEach(function(link){
+    h += '<a class="btn" data-share-platform="' + link.id + '" href="' + esc(link.url)
+      + '" target="_blank" rel="noopener noreferrer" aria-label="分享到' + link.label + '（新窗口）">' + link.label + '</a>';
+  });
+  h += '<button type="button" class="btn" id="shareNative"' + (typeof navigator.share === "function" ? '' : ' hidden')
+    + '>' + ico('share',15) + ' 更多分享</button></div>';
+  box.innerHTML = h;
+  $("shareUrl").value = SITE_URL;
+  function copySite(){ copyText(SITE_URL, "网站链接已复制，可以发给朋友了"); }
+  $("shareCopy").addEventListener("click", copySite);
+  $("shareDialogCopy").addEventListener("click", copySite);
+  $("shareWechat").addEventListener("click", function(){ $("shareDialog").showModal(); });
+  $("shareClose").addEventListener("click", function(){ $("shareDialog").close(); });
+  $("shareDialog").addEventListener("close", function(){ $("shareWechat").focus({preventScroll:true}); });
+  $("shareUrl").addEventListener("click", function(){ this.select(); });
+  $("shareNative").addEventListener("click", function(){
+    try {
+      navigator.share({title:SITE_SHARE_TITLE, text:SITE_SHARE_TEXT, url:SITE_URL}).catch(shareFailed);
+    } catch(e){ shareFailed(e); }
+  });
+  function shareFailed(e){
+    if(!e || e.name !== "AbortError") toast("暂时无法打开系统分享，请使用复制链接");
   }
 }
 
@@ -2374,7 +2428,25 @@ $("q").addEventListener("input", function(){
     render();
   }, 170);
 });
-$("qclr").addEventListener("click", function(){ $("q").value = ""; S.q = ""; render(); });
+function setSearchOpen(open, focus){
+  $("searchCover").hidden = !open;
+  $("searchCover").style.removeProperty("display");
+  $("searchToggle").setAttribute("aria-expanded", String(open));
+  if(open){
+    if(focus) $("q").focus();
+  } else {
+    clearTimeout(qt);
+    var filtered = !!S.q;
+    $("q").value = ""; S.q = "";
+    if(filtered) render();
+    if(focus) $("searchToggle").focus();
+  }
+  updateGuideOffset();
+}
+$("qclr").addEventListener("click", function(){ setSearchOpen(false, true); });
+$("q").addEventListener("keydown", function(e){
+  if(e.key === "Escape"){ e.preventDefault(); setSearchOpen(false, true); }
+});
 
 /* 筛选控件 */
 $("fType").addEventListener("change", function(){ S.type = this.value; render(); });
@@ -2391,12 +2463,8 @@ $("cReset").addEventListener("click", function(){
   render(); renderCal();
 });
 $("searchToggle").addEventListener("click", function(){
-  var c = $("searchCover");
-  c.style.display = c.style.display === "none" ? "" : "none";
-  if(c.style.display !== "none") $("q").focus();
+  setSearchOpen($("searchCover").hidden, true);
 });
-/* 注意：qclr 只能有一个处理器。以前这里还有第二个，它看到输入已被第一个清空，
-   就顺手把搜索框收起来了 —— 搜索框改成默认展开后，这个副作用会让人以为搜索坏了。 */
 /* 本命管理入口挪进了「我的」页的切换条上方按钮 */
 $("biasAdd").addEventListener("click", function(){ addBias($("biasInput").value.trim()); $("biasInput").value=""; });
 $("biasInput").addEventListener("keydown", function(e){
@@ -2515,9 +2583,9 @@ if(window.ResizeObserver){
 }
 addEventListener("resize", updateGuideOffset);
 initSelects();
-/* 搜索框默认展开：以前要点放大镜才出来，新访客根本不知道有搜索。
-   窄屏位置不够，仍然收起，点图标再展开。 */
-$("searchCover").style.display = (window.innerWidth >= 700) ? "" : "none";
+/* 所有屏幕默认收起，由访客点击搜索按钮展开。 */
+setSearchOpen(false, false);
+initShareBoard();
 applyHash();
 render();
 
