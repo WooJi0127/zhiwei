@@ -1,101 +1,83 @@
 name: 每日更新数据
-
-# 每天北京时间 09:00 自动跑一次（GitHub 用的是 UTC，09:00 北京 = 01:00 UTC）
 on:
   schedule:
-    - cron: '0 1 * * *'
-  workflow_dispatch:      # 也可以在 GitHub 网页上手动点一次
-
+    - cron: '0 1 * * *'  # 北京时间 09:00；排队可能延后
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 更新采集数据，或只验证正式快照
+        type: choice
+        default: update
+        options: [update, verify]
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/daily-data.yml'
+      - 'scripts/catalog_state.py'
+      - 'scripts/test_catalog_state.py'
 permissions:
-  contents: write         # 允许把更新后的 data.js 提交回仓库
-
+  contents: write
+concurrency:
+  group: zhiwei-public-catalog
+  cancel-in-progress: false
 jobs:
-  update-data:
+  update:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
+    timeout-minutes: 35
     env:
       PYTHONIOENCODING: utf-8
       TZ: Asia/Shanghai
-
     steps:
-      - name: 检出代码
+      - name: 检出锁内最新正式版本
         uses: actions/checkout@v4
-
-      - name: 配置 Python
-        uses: actions/setup-python@v5
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      # 把上一次的 kpop.db 取回来。有它就能增量抓取（约 3 分钟），
-      # 没有就得全量重抓（约 25 分钟）。缓存不用提交进仓库，避免仓库膨胀。
-      - name: 取出上次的数据库
-        uses: actions/cache@v4
-        with:
-          path: kpop.db
-          key: kpop-db-${{ github.run_id }}
-          restore-keys: |
-            kpop-db-
-
-      # 缓存丢失时的兜底：用仓库里的数据库定稿快照（本地整理好再上传的）。
-      # 历史数据在本地定稿后基本不变，云端只做每日增量——
-      # 这样缓存失效也不用 25 分钟全量重抓，网页数据和本地永远同源。
-      # 更新快照的方法（本地做完数据修正后跑一次）：
-      #   gzip -9 kpop.db > data/kpop.db.gz  然后提交推送
-      - name: 缓存丢失时解压仓库快照
-        run: |
-          if [ ! -f kpop.db ] && [ -f data/kpop.db.gz ]; then
-            echo "缓存里没有数据库 → 解压定稿快照（含十年历史）"
-            gunzip -c data/kpop.db.gz > kpop.db
-          fi
-
-      # B 站官方 MV：放在这里跑是因为 Actions 在境外，不会触发 B 站风控
-      # （本机连续请求会被 412）。
-      # 首页「热门 MV」只放近一个月、最多 6 个，所以每天只补「昨天到今天
-      # 发行的专辑」的 MV（--releases 3，再往后看 7 天：MV 常比专辑先发）。
-      # 按「艺人 + 主打曲 / 专辑名」搜——只搜艺人名会被老 MV 和饭拍挤掉。
-      # 播放量变化与迟传的 MV 由 weekly-mv-check.yml 每周整刷近 30 天解决。
-      - name: 补抓 B 站官方 MV（昨天到今天）
-        continue-on-error: true      # B 站挂了或被限流都不能影响主流程
+      - name: 运行离线数据回归测试
+        run: python -m unittest discover -s scripts -p 'test_*.py'
+      - name: 从正式快照恢复（缺失或损坏即停止）
+        run: python scripts/catalog_state.py restore
+      - name: 采集最新发行
+        if: github.event_name != 'push' && inputs.mode != 'verify'
+        run: python scripts/build.py
+      - name: 补抓 B 站官方 MV（包含刚发现的发行）
+        if: github.event_name != 'push' && inputs.mode != 'verify'
+        continue-on-error: true
         run: python scripts/bilibili.py --releases 3 --ahead 7
-
-      # 有上次的数据库 → 增量抓取（约 3 分钟）
-      # 没有（首次运行，或缓存被清理）→ 自动改全量抓取（约 25 分钟），保证历史完整
-      - name: 抓取数据入库并导出 data.js
+      - name: 校验覆盖范围并导出、保存正式快照
         run: |
-          if [ -f kpop.db ]; then
-            echo "检测到已有数据库 → 增量抓取"
-            python scripts/build.py
-          else
-            echo "没有数据库（首次或缓存已失效）→ 全量抓取"
-            python scripts/build.py --full
-          fi
-
-      # 封面图本地化：kpopping（防盗链 403）和 B 站图床（Referer 检查）
-      # 在国内 / 站外都显示不出来，所以这两批图必须搬回仓库。
-      # 每天只补新增的那几张（已存在的会跳过），几秒就跑完。
-      # 放在 sync 之前：这样新下载的图会被一起复制进 site/。
-      # 用 continue-on-error：图床抽风只丢几张图，不该影响数据更新。
-      - name: 下载新增封面（专辑 + MV）
+          python scripts/build.py --export-only
+          python scripts/catalog_state.py check
+      - name: 下载新增封面
+        if: github.event_name != 'push' && inputs.mode != 'verify'
         continue-on-error: true
         run: |
           pip install --quiet Pillow
           python tools/fetch_covers.py
           python tools/fetch_covers.py --mv
-
-      # 把界面源码与数据复制到 知未.html / desktop/app / site/app
       - name: 分发到各端
         run: python tools/sync.py
-
-      # 提交后 Cloudflare 会检测到 push，自动重新部署网站
-      - name: 提交更新
+      - name: 提交同一版本的数据与快照
+        if: github.event_name != 'push' && inputs.mode != 'verify'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -n "$(git status --porcelain)" ]; then
-            git add -A
-            git commit -m "chore(data): 自动更新数据 $(date +'%Y-%m-%d %H:%M')"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
-            git push origin HEAD:"${GITHUB_REF_NAME}"
-          else
-            echo "数据无变化，跳过提交"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo '正式版本已变化，本次停止发布；下次从新版本重跑，不合并过期产物。'
+            exit 1
           fi
+          git add -A -- scripts/catalog data core/data core/zhiwei.ics site desktop/app '知未.html' covers covers.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): 自动更新数据 $(date +'%Y-%m-%d %H:%M')"
+            git push origin HEAD:main
+          fi
+      - name: 留存本次正式数据清单
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-manifest-${{ github.run_id }}
+          path: scripts/catalog/manifest.json
+          retention-days: 30

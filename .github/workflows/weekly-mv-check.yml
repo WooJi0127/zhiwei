@@ -1,74 +1,68 @@
 name: 每周校验 B 站链接
-
-# 每周一北京时间 10:00 跑一次（UTC 02:00）。
-# B 站视频常因版权下架，链接会失效。这里每周把已收录的 MV 逐个问一遍，
-# 失效的标成 dead，导出时自动跳过——页面上就不会出现点开是「视频不存在」的按钮。
 on:
   schedule:
     - cron: '0 2 * * 1'
   workflow_dispatch:
-
 permissions:
   contents: write
-
+concurrency:
+  group: zhiwei-public-catalog
+  cancel-in-progress: false
 jobs:
-  check-mv:
+  update:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
+    timeout-minutes: 35
     env:
       PYTHONIOENCODING: utf-8
       TZ: Asia/Shanghai
-
     steps:
-      - name: 检出代码
+      - name: 检出锁内最新正式版本
         uses: actions/checkout@v4
-
-      - name: 配置 Python
-        uses: actions/setup-python@v5
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: 取出上次的数据库
-        uses: actions/cache@v4
-        with:
-          path: kpop.db
-          key: kpop-db-${{ github.run_id }}
-          restore-keys: |
-            kpop-db-
-
-      # 每周把「近一个月有发行」的专辑整刷一遍：一是 MV 常常晚几天才传，
-      # 二是播放量一直在涨——首页按播放量排序，不刷新就永远是老数字。
-      - name: 刷新近一个月的 MV（播放量 / 迟传补漏）
+      - name: 运行离线数据回归测试
+        run: python -m unittest discover -s scripts -p 'test_*.py'
+      - name: 从正式快照恢复（缺失或损坏即停止）
+        run: python scripts/catalog_state.py restore
+      - name: 刷新近一个月的 MV
         continue-on-error: true
         run: python scripts/bilibili.py --releases 30 --ahead 7
-
-      - name: 校验失效链接
+      - name: 校验明确下架的视频
         continue-on-error: true
         run: python scripts/bilibili.py --check
-
-      - name: 重新导出 data.js
-        run: python scripts/build.py --export-only
-
-      # 整刷会补进迟传的新 MV，它们的封面也得搬回来，否则首页又是一排空白
+      - name: 校验覆盖范围并导出、保存正式快照
+        run: |
+          python scripts/build.py --export-only
+          python scripts/catalog_state.py check
       - name: 下载新增封面
         continue-on-error: true
         run: |
           pip install --quiet Pillow
           python tools/fetch_covers.py
           python tools/fetch_covers.py --mv
-
       - name: 分发到各端
         run: python tools/sync.py
-
-      - name: 提交更新
+      - name: 提交同一版本的数据与快照
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -n "$(git status --porcelain)" ]; then
-            git add -A
-            git commit -m "chore(mv): 每周校验 B 站链接 $(date +'%Y-%m-%d')"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
-            git push origin HEAD:"${GITHUB_REF_NAME}"
-          else
-            echo "链接全部有效，跳过提交"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo '正式版本已变化，本次停止发布；下次从新版本重跑，不合并过期产物。'
+            exit 1
           fi
+          git add -A -- scripts/catalog data core/data core/zhiwei.ics site desktop/app '知未.html' covers covers.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): 自动更新数据 $(date +'%Y-%m-%d %H:%M')"
+            git push origin HEAD:main
+          fi
+      - name: 留存本次正式数据清单
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-manifest-${{ github.run_id }}
+          path: scripts/catalog/manifest.json
+          retention-days: 30

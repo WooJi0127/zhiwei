@@ -1,0 +1,113 @@
+[
+  {
+    "table": "artists",
+    "key": {
+      "name": "Minzy"
+    },
+    "set": {
+      "am_id": 1224513190,
+      "am_url": "https://music.apple.com/kr/artist/1224513190"
+    },
+    "reason": "2026-10-30 已核实：2NE1 Minzy；1858269042 为误绑艺人。自动更新不得恢复旧绑定。",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1858597888"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：겨울멜로디 - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1859696095"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：Haha - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1859409653"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：Midnight Trace - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1860106164"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：Hip hop short beat - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1860101164"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：Hihi - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1859697156"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：Shiny loof - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1858330750"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：내리는 비처럼 - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1859670311"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：Winter Night Memory - EP",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1859704575"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：Ping-pong - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "am:1858330420"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：밤하늘에 너를 담아 - Single",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  },
+  {
+    "table": "releases",
+    "key": {
+      "id": "ne:351255188"
+    },
+    "delete": true,
+    "reason": "2026-10-30 人工确认属于误绑艺人，保留删除：青岛市民孙先生_",
+    "source": "https://github.com/WooJi0127/zhiwei/commit/5ab48439c5af9a6ad51290d7ef00a9df2236a115"
+  }
+]

@@ -21,6 +21,7 @@ import traceback
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import sources  # noqa: E402
 import names    # noqa: E402
+import catalog_state  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(ROOT, "kpop.db")
@@ -1073,8 +1074,21 @@ def step_retype(con):
 
 
 # -------------------------------------------------------------- 导出 data.js
+def normalize_release_title(t):
+    """Same album identity for deduplication and publication-loss validation."""
+    t = (t or "").lower().strip()
+    t = re.sub(r"[\(（]\s*(?:feat\.?|ft\.?|with)\s+[^)）]*[)）]", " ", t)
+    t = re.sub(r"\s*[-–—]\s*(?:the\s+)?\d+(?:st|nd|rd|th)\s+"
+               r"(?:mini\s+album|single\s+album|studio\s+album|full\s+album|"
+               r"album|ep|single)\s*$", " ", t)
+    t = re.sub(r"\s*[-–—]\s*(?:digital\s+single|single\s+album|mini\s+album|"
+               r"studio\s+album|album|single|ep)\s*$", " ", t)
+    return re.sub(r"[^0-9a-z\uac00-\ud7a3]+", "", t)
+
+
 def export_data(con):
     log("· 导出 data.js")
+    corrections = catalog_state.prepare_export(con)
 
     # --- 艺人名归一：清掉韩文，界面上不出现韩文 ---
     fixes = {}
@@ -1162,22 +1176,11 @@ def export_data(con):
     #   合作标注不同  "B.B.B"                    vs "B.B.B (feat. A2O LTG)"
     #   日期差几天    Apple 2026-07-17           vs 网易云 2026-07-16
     # 所以不能拿 (艺人, 标题, 日期) 直接当键，要先归一再按日期就近合并。
-    def norm_title(t):
-        t = (t or "").lower().strip()
-        # 合作标注：(feat. X) / (ft. X) / (with X)
-        t = re.sub(r"[\(（]\s*(?:feat\.?|ft\.?|with)\s+[^)）]*[)）]", " ", t)
-        # 序数后缀："- The 1st EP" / "- 2nd Mini Album"
-        t = re.sub(r"\s*[-–—]\s*(?:the\s+)?\d+(?:st|nd|rd|th)\s+"
-                   r"(?:mini\s+album|single\s+album|studio\s+album|full\s+album|"
-                   r"album|ep|single)\s*$", " ", t)
-        # 普通后缀："- Single" / "- EP" / "- Mini Album"
-        t = re.sub(r"\s*[-–—]\s*(?:digital\s+single|single\s+album|mini\s+album|"
-                   r"studio\s+album|album|single|ep)\s*$", " ", t)
-        return re.sub(r"[^0-9a-z\uac00-\ud7a3]+", "", t)
+    norm_title = normalize_release_title
 
     def _score(r):
-        """同一张专辑有多份时留哪份：有曲目 > 有曲目数 > Apple Music。"""
-        return (1 if r.get("tracks") else 0,
+        """同一张专辑优先保留更完整的曲目，再看曲目数标注和来源。"""
+        return (len(r.get("tracks", [])),
                 1 if (r.get("trackCount") or 0) else 0,
                 1 if r["source"] == "apple" else 0)
 
@@ -1295,6 +1298,9 @@ def export_data(con):
         "recentDays": RECENT_DAYS,
         "olderCount": n_old,
     }
+    # Validate the complete archive before writing ANY output file.
+    previous = catalog_state.read_published(DATA_DIR)
+    catalog_state.validate_export(con, previous, dict(payload, releases=releases), corrections)
     blob = ("window.__KPOP_DATA__ = "
             + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
             + ";\n")
@@ -1433,17 +1439,17 @@ def step_birthdays(con):
 
 def main():
     full = "--full" in sys.argv
+    if not os.path.exists(DB_PATH):
+        catalog_state.restore_snapshot(catalog_state.CATALOG_DIR, catalog_state.Path(DB_PATH))
     con = get_db()
+    catalog_state.apply_corrections(con, catalog_state.load_corrections())
     log("=" * 56)
     log("开始更新 K-Pop 数据" + (" （全量）" if full else ""))
 
     # --export-only：跳过所有网络抓取，只用现有数据库重新生成 data.js
     if "--export-only" in sys.argv:
         log("· 仅导出模式，跳过网络抓取")
-        try:
-            step_normalize_artists(con)
-        except Exception:                           # noqa: BLE001
-            pass
+        catalog_state.prepare_export(con)
         try:
             step_purge_scope(con)
         except Exception:                           # noqa: BLE001
@@ -1453,10 +1459,8 @@ def main():
         except Exception:                           # noqa: BLE001
             log("  ! 重新归类失败: " + traceback.format_exc(limit=1).strip())
         export_data(con)
-        try:
-            export_ics(con)
-        except Exception:                           # noqa: BLE001
-            log("  ! iCal 生成失败: " + traceback.format_exc(limit=1).strip())
+        export_ics(con)
+        catalog_state.save_snapshot(con, catalog_state.CATALOG_DIR)
         con.close()
         log("更新完成")
         return 0
@@ -1544,6 +1548,7 @@ def main():
         log("  ! 清理越界条目失败: " + traceback.format_exc(limit=1).strip())
 
     try:
+        catalog_state.prepare_export(con)
         step_retype(con)
     except Exception:                               # noqa: BLE001
         log("  ! 重新归类失败: " + traceback.format_exc(limit=1).strip())
@@ -1555,10 +1560,8 @@ def main():
         return 2
 
     export_data(con)
-    try:
-        export_ics(con)
-    except Exception:                               # noqa: BLE001
-        log("  ! iCal 生成失败: " + traceback.format_exc(limit=1).strip())
+    export_ics(con)
+    catalog_state.save_snapshot(con, catalog_state.CATALOG_DIR)
     con.close()
     log("更新完成")
     return 0
