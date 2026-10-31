@@ -59,8 +59,11 @@ def upgrade_sync(raw):
     replacement='FILES="\n'+'\n'.join(files)+'\n"'
     source=source[:match.start()]+replacement+source[match.end():]
     if MARKER not in source:
-        move='        mv -f "$TARGET/$f.tmp" "$TARGET/$f"'
-        if source.count(move)!=1:raise ValueError('Resident publish step changed; refusing to replace it')
+        candidates=['        mv -f "$TARGET/$f.tmp" "$TARGET/$f"',
+                    '        mv "$TARGET/$f.tmp" "$TARGET/$f"']
+        if sum(source.count(line) for line in candidates)!=1:
+            raise ValueError('Resident publish step changed; refusing to replace it')
+        move=next(line for line in candidates if line in source)
         source=source.replace(move,PUBLISH)
         source=source.replace('FILES="\n',GUARD+'\nFILES="\n',1)
         loop='ok=0; fail=0; USED=""'

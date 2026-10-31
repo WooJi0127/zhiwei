@@ -23,6 +23,14 @@ class SyncGuardTests(unittest.TestCase):
     def test_unknown_layout_is_not_overwritten(self):
         with self.assertRaises(ValueError):upgrade_sync(b'#!/bin/bash\necho custom\n')
 
+    def test_resident_move_without_force_flag_is_supported(self):
+        # Actual resident script uses mv without -f; keep that harmless variation supported.
+        legacy=b'#!/bin/bash\nTARGET="/custom/site"\nFILES="\nindex.html\napp.css\napp.js\n"\nok=0; fail=0; USED=""\nfor f in $FILES; do\n        mv "$TARGET/$f.tmp" "$TARGET/$f"\ndone\n'
+        revised=upgrade_sync(legacy)
+        self.assertIn(b'zw_publish_assets "$ZW_STAGE"',revised)
+        self.assertNotIn(b'        mv "$TARGET/$f.tmp" "$TARGET/$f"',revised)
+        self.assertEqual(upgrade_sync(revised),revised)
+
     def test_shell_gate_accepts_only_matching_js_and_css(self):
         git_bash=Path(r'C:\Program Files\Git\bin\bash.exe')
         bash=str(git_bash) if git_bash.exists() else shutil.which('bash')
