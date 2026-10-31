@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 import paramiko
+from sync_guard import upgrade_sync
 
 ROOT = Path(__file__).resolve().parents[1]
 REMOTE = '/www/wwwroot/mywooji.cn'
@@ -42,8 +43,10 @@ def main():
             backup = '/root/zhiwei-backups/' + stamp
             files = [p for p in (ROOT / 'site').rglob('*') if p.is_file()
                      and 'downloads' not in p.relative_to(ROOT / 'site').parts]
-            # New HTML works with old JS. Publish it before JS that binds its new controls.
-            files.sort(key=lambda p: (p.name in ('index.html','app.js'), p.name == 'app.js', str(p)))
+            # HTML carries content-versioned JS/CSS URLs. Publish those assets first,
+            # otherwise a visitor can cache old bytes under the new version URL.
+            # UI changes must tolerate the previous HTML during this short rollout.
+            files.sort(key=lambda p: (p.name == 'index.html', str(p)))
             changed = 0
             for local in files:
                 rel = local.relative_to(ROOT / 'site').as_posix()
@@ -67,20 +70,21 @@ def main():
                 sftp.posix_rename(temporary, target)
                 changed += 1
                 print('Published: ' + rel, flush=True)
-            # Keep the existing resident sync script and add the missing iCal file.
-            # Do not replace server-specific settings with a local template.
+            # Preserve server-specific mirrors and settings, but publish HTML only
+            # after its content-versioned assets match. Keep iCal in the file list.
             with sftp.open('/root/server_sync.sh', 'rb') as f:
                 sync_script = f.read()
-            if b'\nzhiwei.ics\n' not in sync_script.replace(b'\r\n', b'\n'):
-                updated = sync_script.replace(b'sitemap.xml\n', b'sitemap.xml\nzhiwei.ics\n')
-                if updated == sync_script:
-                    raise RuntimeError('Resident sync script layout changed; manual inspection required')
+            updated = upgrade_sync(sync_script)
+            if updated != sync_script:
                 mkdirs(sftp, backup)
                 with sftp.open(backup + '/server_sync.sh', 'wb') as f: f.write(sync_script)
                 with sftp.open('/root/server_sync.sh.upload', 'wb') as f: f.write(updated)
                 sftp.chmod('/root/server_sync.sh.upload', 0o700)
+                _, _, errors = ssh.exec_command('bash -n /root/server_sync.sh.upload')
+                if errors.channel.recv_exit_status() != 0:
+                    raise RuntimeError('Resident sync syntax validation failed; original kept')
                 sftp.posix_rename('/root/server_sync.sh.upload', '/root/server_sync.sh')
-                print('Resident sync includes zhiwei.ics', flush=True)
+                print('Resident sync verifies assets before HTML and includes zhiwei.ics', flush=True)
             print(f'Published {changed} changed files. Backups: {backup}', flush=True)
     finally:
         ssh.close()

@@ -161,6 +161,11 @@ function typeLabel(r){
 function coverFile(id){
   return "covers/" + String(id || "").replace(/[^a-zA-Z0-9]/g, "_") + ".jpg";
 }
+function localCover(r){
+  /* fetch_covers.py 只把 kpopping 专辑图下载到本站；其他图直接请求原图源，
+     不再先等一个必定不存在的本地文件返回 404。 */
+  return /^https?:\/\/cdn\.kpopping\.com\//i.test(r.image || "") ? coverFile(r.id) : "";
+}
 /* MV 封面文件名：用 BV 号，同样是 fetch_covers.py 里的规则 */
 function mvCoverFile(v){
   return "covers/mv_" + String(v || "").replace(/[^a-zA-Z0-9]/g, "_") + ".jpg";
@@ -225,7 +230,7 @@ function normOne(r){
   /* 本地封面：cdn.kpopping.com 有防盗链（站外引用一律 403），那批图已经
      下载到 site/covers/。优先用本地的，加载不到再回退外链 —— 这样
      Cloudflare 版（没有 covers 目录）也能自动用回外链，两边都不空白。 */
-  r._cover = coverFile(r.id);
+  r._cover = localCover(r);
   r._tracks = r.tracks || [];
   r._tn = r._tracks.length || 0;
   r._dur = r.durationMs || 0;
@@ -1614,7 +1619,7 @@ function djHTML(){
     var r = S.djList[i], dn = dispName(r.artist);
     h += '<button class="djc" data-open="'+esc(r.id)+'">'
       +  '<span class="djcov">'
-      +    (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+      +    imgTag(r, 'loading="lazy" decoding="async"')
       +  '</span>'
       +  '<span class="djt">'+esc(r.title)+'</span>'
       +  '<span class="dja">'+esc(dn.zh || r.artist)+'</span>'
@@ -2026,10 +2031,17 @@ function burst(el){
 }
 
 /* ============================ 日历 ============================ */
-var CAL = { y:0, m:0, from:null, to:null, picking:false, view:"day" };
+var CAL = { y:0, m:0, quick:null, from:null, to:null, picking:false, view:"day" };
 function calInit(){
   CAL.y = TODAY.getFullYear(); CAL.m = TODAY.getMonth();
-  CAL.from = null; CAL.to = null; CAL.picking = false; CAL.view = "day";
+  CAL.quick = null; CAL.from = null; CAL.to = null; CAL.picking = false; CAL.view = "day";
+}
+function calendarDraft(){
+  if(CAL.quick === "pall" || CAL.quick === "p365") return rangePreset(CAL.quick);
+  if(!CAL.from) return null;
+  var from = CAL.from, to = CAL.to || CAL.from;
+  return {mode:"custom", kind:"custom", from:from, to:to,
+    label:from === to ? from : from + " ~ " + to};
 }
 function monLastDay(y,m){ return new Date(y, m+1, 0).getDate(); }
 function calendarCells(y,m){
@@ -2054,6 +2066,7 @@ function calCls(c){
 }
 function calSelRange(kind){
   var y = CAL.y, m = CAL.m;
+  CAL.quick = null;
   if(kind === "month"){
     CAL.from = y+"-"+pad(m+1)+"-01";
     CAL.to   = y+"-"+pad(m+1)+"-"+pad(monLastDay(y,m));
@@ -2069,7 +2082,7 @@ function renderCal(){
   var y = CAL.y, m = CAL.m;
   $("calMon").textContent = y + " 年 " + (m+1) + " 月";
   document.querySelectorAll("[data-calpreset]").forEach(function(button){
-    var selected = S.range.mode === "quick" && S.range.kind === button.getAttribute("data-calpreset");
+    var selected = CAL.quick === button.getAttribute("data-calpreset");
     button.classList.toggle("on", selected);
     button.setAttribute("aria-pressed", String(selected));
   });
@@ -2111,12 +2124,12 @@ function renderCal(){
 
   /* ---- 已选范围提示 + 确定按钮可用性 ---- */
   var F = CAL.from, T = CAL.to;
-  if(F && T && F !== T)   $("calRng").innerHTML = '已选 <b>'+F+'</b> → <b>'+T+'</b>　共 '+daySpan(F,T)+' 天';
+  if(CAL.quick)          $("calRng").innerHTML = '已选 <b>'+rangePreset(CAL.quick).label+'</b> · 点击确定应用';
+  else if(F && T && F !== T) $("calRng").innerHTML = '已选 <b>'+F+'</b> → <b>'+T+'</b>　共 '+daySpan(F,T)+' 天';
   else if(F)              $("calRng").innerHTML = '已选 <b>'+F+'</b>（单日）';
   else                    $("calRng").innerHTML = '点日期选范围，可跨月；点标题跳年/月';
   var ap = $("calApply");
-  ap.style.opacity = F ? "" : ".4";
-  ap.style.cursor  = F ? "" : "default";
+  ap.disabled = !calendarDraft();
 }
 function daySpan(a,b){
   var da = new Date(a+"T00:00:00"), db = new Date(b+"T00:00:00");
@@ -2126,6 +2139,7 @@ function openCal(){
   var btn = $("dateBtn"), pop = $("calPop");
   closeAllSels();
   if(CAL.y === 0) calInit();
+  CAL.quick = S.range.mode === "quick" ? S.range.kind : null;
   CAL.from = S.range.mode === "custom" ? S.range.from : null;
   CAL.to = S.range.mode === "custom" ? S.range.to : null;
   CAL.picking = false;
@@ -2240,8 +2254,9 @@ document.addEventListener("click", function(e){
   if((el = t.closest("[data-addbias]"))){ addBias(el.getAttribute("data-addbias")); return; }
   /* 日历：点标题切换 年/月 面板 */
   if((el = t.closest("[data-calpreset]"))){
-    S.range = rangePreset(el.getAttribute("data-calpreset"));
-    calInit(); closeCal(); render(); return;
+    CAL.quick = el.getAttribute("data-calpreset");
+    CAL.from = null; CAL.to = null; CAL.picking = false;
+    renderCal(); return;
   }
   if(t.closest("#retryHistory")){
     requiredYears().forEach(function(y){
@@ -2266,6 +2281,7 @@ document.addEventListener("click", function(e){
   if((el = t.closest("[data-calsel]"))){ calSelRange(el.getAttribute("data-calsel")); return; }
   if((el = t.closest("[data-day]"))){
     var ds = el.getAttribute("data-day");
+    CAL.quick = null;
     if(!CAL.picking || !CAL.from || (CAL.from && CAL.to)){
       CAL.from = ds; CAL.to = null; CAL.picking = true;
     } else {
@@ -2544,14 +2560,12 @@ $("calNext").addEventListener("click", function(){
   renderCal();
 });
 $("calClear").addEventListener("click", function(){
-  S.range = rangePreset(S.tab === "past" ? "pall" : "f30");
-  CAL.view = "day"; calInit(); renderCal(); render();
+  calInit(); CAL.quick = "pall"; renderCal();
 });
 $("calApply").addEventListener("click", function(){
-  if(!CAL.from){ toast("先在日历里点一个日期"); return; }
-  var from = CAL.from, to = CAL.to || CAL.from;
-  S.range = {mode:"custom", kind:"custom", from:from, to:to,
-             label:(from === to) ? from : (from + " ~ " + to)};
+  var selected = calendarDraft();
+  if(!selected) return;
+  S.range = selected;
   /* 日历只在「全部发布」里，自定义区间一律留在本页（该页本来就前后都能看） */
   if(S.tab !== "past"){ S.tab = "past"; syncTabs(); }
   closeCal(); render();

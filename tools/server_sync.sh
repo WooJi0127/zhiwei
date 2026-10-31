@@ -76,9 +76,28 @@ sync_covers(){
   echo "· 封面：新增 $got，已有 $skip，失败 $miss"
 }
 
+# ZHIWEI_ASSET_GUARD_V2
+zw_assets_match(){
+  local html="$1" assets="${2:-$TARGET}" asset expected actual pattern
+  for asset in app.js app.css; do
+    pattern=${asset/./[.]}
+    expected=$(grep -oE "$pattern\?v=[a-f0-9]{16}" "$html" | head -n 1)
+    expected=${expected##*=}
+    [ ${#expected} -eq 16 ] && [ -s "$assets/$asset" ] || return 1
+    actual=$(tr -d '\r' < "$assets/$asset" | sha256sum)
+    [ "${actual:0:16}" = "$expected" ] || return 1
+  done
+}
+zw_publish_assets(){
+  local staged="$1" asset
+  zw_assets_match "$staged/index.html" "$staged" || return 1
+  for asset in app.css app.js index.html; do
+    mv -f "$staged/$asset" "$TARGET/$asset" || return 1
+  done
+}
+
 FILES="
 version.txt
-index.html
 app.css
 app.js
 robots.txt
@@ -99,7 +118,12 @@ data/data-2025.js
 fonts/inter-inter-latin-400-normal.woff2
 fonts/inter-inter-latin-600-normal.woff2
 fonts/serif-noto-serif-sc-chinese-simplified-700-normal.woff2
+zhiwei.ics
+index.html
 "
+
+ZW_STAGE=$(mktemp -d "$TARGET/.zhiwei-assets.XXXXXX") || exit 1
+trap 'rm -f "$ZW_STAGE/app.js" "$ZW_STAGE/app.css" "$ZW_STAGE/index.html"; rmdir "$ZW_STAGE" 2>/dev/null' EXIT
 
 ok=0; fail=0; USED=""
 for f in $FILES; do
@@ -109,7 +133,17 @@ for f in $FILES; do
   for base in $MIRRORS; do
     if curl -fsSL --connect-timeout 8 --max-time 60 "$base/$f$BUST" -o "$TARGET/$f.tmp"; then
       if [ -s "$TARGET/$f.tmp" ]; then
-        mv -f "$TARGET/$f.tmp" "$TARGET/$f"
+        case "$f" in
+          app.js|app.css) mv -f "$TARGET/$f.tmp" "$ZW_STAGE/$f" || exit 1 ;;
+          index.html)
+            mv -f "$TARGET/$f.tmp" "$ZW_STAGE/index.html" || exit 1
+            if ! zw_assets_match "$ZW_STAGE/index.html" "$ZW_STAGE"; then
+              echo "  ! 页面与暂存脚本版本不一致，保留整组线上文件并尝试下一镜像"
+              continue
+            fi
+            zw_publish_assets "$ZW_STAGE" || exit 1 ;;
+          *) mv -f "$TARGET/$f.tmp" "$TARGET/$f" || exit 1 ;;
+        esac
         ok=$((ok+1)); got=1
         [ -z "$USED" ] && USED="$base"
         break

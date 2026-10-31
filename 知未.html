@@ -407,15 +407,18 @@ a.btn{display:inline-flex;align-items:center}
   text-shadow:0 1px 0 rgba(255,255,255,.65)}
 
 /* ================= calendar popup ================= */
-.calpop{position:absolute;z-index:90;background:var(--card);border:1px solid var(--line);
-  border-radius:14px;box-shadow:var(--shadow-lg);padding:14px;width:306px;display:none;
-  max-height:min(78vh,560px);overflow:auto;overscroll-behavior:contain}
+/* 与主题手册一致的文字控件，所有范围都先选择、再确认。 */
+.calpop{position:absolute;z-index:90;background-color:var(--card);background-image:var(--kraft-tex);
+  border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow-lg);
+  padding:14px;width:306px;display:none;max-height:min(78vh,560px);overflow:auto;overscroll-behavior:contain}
 .calpop.on{display:block}
-.calpresets{display:flex;gap:16px;margin-bottom:12px;border-bottom:1px solid var(--line)}
-.calpresets button{border:0;border-radius:0;background:transparent;padding:7px 3px;
-  font-family:var(--font-title);font-size:12.5px;color:var(--sub);min-height:32px}
-.calpresets button:hover{color:var(--brand)}
-.calpresets button.on{color:var(--brand);font-weight:800;box-shadow:inset 0 -2px 0 var(--brand2)}
+.calpop button{font-family:var(--font-title);font-size:13px;border:0;border-radius:0;
+  background:transparent;color:var(--sub);box-shadow:none;text-shadow:none;min-height:38px}
+.calpop button:hover:not(:disabled):not(.on):not(.sel):not(.pri){color:var(--brand2)}
+.calpop button:focus-visible{outline:2px solid var(--brand2);outline-offset:2px}
+.calpop button:disabled{opacity:.4;cursor:default}
+.calpresets{display:flex;gap:20px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.calpresets button{padding:8px 0;min-height:40px}
 .archive-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;
   padding:10px 12px;background:var(--card);border:1px solid var(--line);color:var(--sub);
   font-size:12px;line-height:1.6}
@@ -424,53 +427,33 @@ a.btn{display:inline-flex;align-items:center}
   box-shadow:inset 0 -1px 0 var(--brand2)}
 .calh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .calh .mm{font-weight:800;font-size:14px;flex:1;text-align:center}
-.calh button{border:1px solid var(--line);background:var(--card);border-radius:10px;height:28px;
-  font-size:14px;color:var(--sub);line-height:1}
-.calh button#calPrev,.calh button#calNext{width:28px}
-.calh button.mm{font-size:13.5px;color:var(--text);font-weight:800}
-.calh button:hover{background-color:#F0E7D2}
-.calh button.mm:hover{background-color:#EDF0EA;border-color:var(--brand2);color:var(--brand)}
-/* 月 / 年选择面板 */
+.calh button{height:38px;line-height:1}
+.calh button#calPrev,.calh button#calNext{width:38px}
+.calh button.mm{font-size:14px;color:var(--text);font-weight:800}
 .calpick{display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .calpick.on{display:grid}
 .calpick .pyh{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .calpick .pyh span{flex:1;text-align:center;font-weight:800;font-size:13.5px}
-.calpick .pyh button{width:26px;height:26px;border:1px solid var(--line);background:var(--card);border-radius:8px;
-  border-radius:7px;font-size:13px;color:var(--sub);line-height:1}
-.calpick .pyh button:hover{background-color:#F0E7D2}
-.calpick .mc{padding:7px 0;border:1px solid var(--line);background:var(--card);border-radius:10px;
-  font-size:12.5px;font-weight:700;color:var(--text)}
-.calpick .mc:hover{background-color:#F0E7D2}
-.calpick .mc.on{background:var(--grad);border-color:transparent;color:#fff;
-  box-shadow:0 2px 8px rgba(51,71,58,.30)}
-/* 已选范围提示 */
-.calrng{margin-top:10px;font-size:12px;color:var(--sub);text-align:center;font-weight:600;
-  line-height:1.5}
+.calpick .pyh button{width:38px;height:38px}
+.calpick .mc{padding:7px 0;font-weight:700}
+.calrng{margin-top:10px;font-size:12px;color:var(--sub);text-align:center;font-weight:600;line-height:1.5}
 .calrng b{color:var(--brand)}
-/* 整月 / 整年 快捷 */
-.caltools{display:flex;gap:6px;margin-top:8px}
-.caltools button{flex:1;padding:6px 0;border:1px solid var(--line);background:var(--card);
-  border-radius:10px;font-size:12px;font-weight:700;color:var(--sub)}
-.caltools button:hover{background-color:#EDF0EA;border-color:var(--brand2);color:var(--brand)}
+.caltools{display:flex;gap:18px;margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.caltools button{flex:1;padding:6px 0;font-size:12.5px;font-weight:700}
 .calw{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calw .wd{text-align:center;font-size:11px;color:var(--sub);font-weight:700;padding:3px 0}
-.cald{aspect-ratio:1;border:0;background:transparent;border-radius:9px;font-size:12.5px;
-  color:var(--text);position:relative;display:grid;place-items:center;font-weight:600}
-.cald:hover{background:#F2EFE8}
-.cald.out{color:#D8D3C7}
+.cald{aspect-ratio:1;position:relative;display:grid;place-items:center;font-weight:600}
 .cald.has{font-weight:800;color:var(--brand)}
 .cald.has::after{content:"";position:absolute;bottom:4px;width:3.5px;height:3.5px;
   border-radius:50%;background:var(--brand2)}
-.cald.inr{background:#EDF0EA;border-radius:0}
-.cald.sel{background:var(--grad);color:#fff;border-radius:9px;
-  box-shadow:0 2px 8px rgba(51,71,58,.30)}
-.cald.sel::after{background:#fff}
-.cald.today{box-shadow:inset 0 0 0 1.5px var(--brand2)}
-.calfoot{display:flex;gap:7px;margin-top:11px}
-.calfoot button{flex:1;padding:7px;border-radius:10px;border:1px solid var(--line);background:var(--card);
-  font-size:12.5px;font-weight:700;color:var(--sub)}
-.calfoot button.pri{background:var(--grad);border-color:transparent;color:#fff;
-  box-shadow:0 2px 8px rgba(51,71,58,.30)}
+.cald.inr{background-color:var(--kraft)}
+.cald.today{color:var(--brand2);font-weight:800}
+.calpresets button.on,.calpick .mc.on,.cald.sel{
+  color:var(--brand);font-weight:800;box-shadow:inset 0 -2px 0 var(--brand2)}
+.calfoot{display:flex;margin-top:11px;border-top:1px solid var(--line);padding-top:8px;justify-content:space-between;gap:24px}
+.calfoot button{padding:6px 0;min-width:70px;min-height:44px;font-weight:700}
+.calfoot button.pri{color:var(--brand);font-weight:800;box-shadow:inset 0 -2px 0 var(--brand2)}
+.calfoot button.pri:disabled{box-shadow:none}
 
 /* ================= sections & cards ================= */
 .sec-h{display:flex;align-items:center;gap:10px;margin:30px 0 15px}
@@ -1162,7 +1145,7 @@ footer .fsub{margin:0 0 10px;font-size:12.5px}
         </div>
         <div class="calrng" id="calRng">点击日期选择范围，可跨月</div>
         <div class="calfoot">
-          <button id="calClear">清除</button>
+          <button id="calClear">恢复默认</button>
           <button class="pri" id="calApply">确定</button>
         </div>
       </div>
@@ -1393,6 +1376,11 @@ function typeLabel(r){
 function coverFile(id){
   return "covers/" + String(id || "").replace(/[^a-zA-Z0-9]/g, "_") + ".jpg";
 }
+function localCover(r){
+  /* fetch_covers.py 只把 kpopping 专辑图下载到本站；其他图直接请求原图源，
+     不再先等一个必定不存在的本地文件返回 404。 */
+  return /^https?:\/\/cdn\.kpopping\.com\//i.test(r.image || "") ? coverFile(r.id) : "";
+}
 /* MV 封面文件名：用 BV 号，同样是 fetch_covers.py 里的规则 */
 function mvCoverFile(v){
   return "covers/mv_" + String(v || "").replace(/[^a-zA-Z0-9]/g, "_") + ".jpg";
@@ -1457,7 +1445,7 @@ function normOne(r){
   /* 本地封面：cdn.kpopping.com 有防盗链（站外引用一律 403），那批图已经
      下载到 site/covers/。优先用本地的，加载不到再回退外链 —— 这样
      Cloudflare 版（没有 covers 目录）也能自动用回外链，两边都不空白。 */
-  r._cover = coverFile(r.id);
+  r._cover = localCover(r);
   r._tracks = r.tracks || [];
   r._tn = r._tracks.length || 0;
   r._dur = r.durationMs || 0;
@@ -2846,7 +2834,7 @@ function djHTML(){
     var r = S.djList[i], dn = dispName(r.artist);
     h += '<button class="djc" data-open="'+esc(r.id)+'">'
       +  '<span class="djcov">'
-      +    (r._img ? '<img loading="lazy" src="'+esc(r._img)+'" alt="" onerror="this.style.display=\'none\'">' : '')
+      +    imgTag(r, 'loading="lazy" decoding="async"')
       +  '</span>'
       +  '<span class="djt">'+esc(r.title)+'</span>'
       +  '<span class="dja">'+esc(dn.zh || r.artist)+'</span>'
@@ -3258,10 +3246,17 @@ function burst(el){
 }
 
 /* ============================ 日历 ============================ */
-var CAL = { y:0, m:0, from:null, to:null, picking:false, view:"day" };
+var CAL = { y:0, m:0, quick:null, from:null, to:null, picking:false, view:"day" };
 function calInit(){
   CAL.y = TODAY.getFullYear(); CAL.m = TODAY.getMonth();
-  CAL.from = null; CAL.to = null; CAL.picking = false; CAL.view = "day";
+  CAL.quick = null; CAL.from = null; CAL.to = null; CAL.picking = false; CAL.view = "day";
+}
+function calendarDraft(){
+  if(CAL.quick === "pall" || CAL.quick === "p365") return rangePreset(CAL.quick);
+  if(!CAL.from) return null;
+  var from = CAL.from, to = CAL.to || CAL.from;
+  return {mode:"custom", kind:"custom", from:from, to:to,
+    label:from === to ? from : from + " ~ " + to};
 }
 function monLastDay(y,m){ return new Date(y, m+1, 0).getDate(); }
 function calendarCells(y,m){
@@ -3286,6 +3281,7 @@ function calCls(c){
 }
 function calSelRange(kind){
   var y = CAL.y, m = CAL.m;
+  CAL.quick = null;
   if(kind === "month"){
     CAL.from = y+"-"+pad(m+1)+"-01";
     CAL.to   = y+"-"+pad(m+1)+"-"+pad(monLastDay(y,m));
@@ -3301,7 +3297,7 @@ function renderCal(){
   var y = CAL.y, m = CAL.m;
   $("calMon").textContent = y + " 年 " + (m+1) + " 月";
   document.querySelectorAll("[data-calpreset]").forEach(function(button){
-    var selected = S.range.mode === "quick" && S.range.kind === button.getAttribute("data-calpreset");
+    var selected = CAL.quick === button.getAttribute("data-calpreset");
     button.classList.toggle("on", selected);
     button.setAttribute("aria-pressed", String(selected));
   });
@@ -3343,12 +3339,12 @@ function renderCal(){
 
   /* ---- 已选范围提示 + 确定按钮可用性 ---- */
   var F = CAL.from, T = CAL.to;
-  if(F && T && F !== T)   $("calRng").innerHTML = '已选 <b>'+F+'</b> → <b>'+T+'</b>　共 '+daySpan(F,T)+' 天';
+  if(CAL.quick)          $("calRng").innerHTML = '已选 <b>'+rangePreset(CAL.quick).label+'</b> · 点击确定应用';
+  else if(F && T && F !== T) $("calRng").innerHTML = '已选 <b>'+F+'</b> → <b>'+T+'</b>　共 '+daySpan(F,T)+' 天';
   else if(F)              $("calRng").innerHTML = '已选 <b>'+F+'</b>（单日）';
   else                    $("calRng").innerHTML = '点日期选范围，可跨月；点标题跳年/月';
   var ap = $("calApply");
-  ap.style.opacity = F ? "" : ".4";
-  ap.style.cursor  = F ? "" : "default";
+  ap.disabled = !calendarDraft();
 }
 function daySpan(a,b){
   var da = new Date(a+"T00:00:00"), db = new Date(b+"T00:00:00");
@@ -3358,6 +3354,7 @@ function openCal(){
   var btn = $("dateBtn"), pop = $("calPop");
   closeAllSels();
   if(CAL.y === 0) calInit();
+  CAL.quick = S.range.mode === "quick" ? S.range.kind : null;
   CAL.from = S.range.mode === "custom" ? S.range.from : null;
   CAL.to = S.range.mode === "custom" ? S.range.to : null;
   CAL.picking = false;
@@ -3472,8 +3469,9 @@ document.addEventListener("click", function(e){
   if((el = t.closest("[data-addbias]"))){ addBias(el.getAttribute("data-addbias")); return; }
   /* 日历：点标题切换 年/月 面板 */
   if((el = t.closest("[data-calpreset]"))){
-    S.range = rangePreset(el.getAttribute("data-calpreset"));
-    calInit(); closeCal(); render(); return;
+    CAL.quick = el.getAttribute("data-calpreset");
+    CAL.from = null; CAL.to = null; CAL.picking = false;
+    renderCal(); return;
   }
   if(t.closest("#retryHistory")){
     requiredYears().forEach(function(y){
@@ -3498,6 +3496,7 @@ document.addEventListener("click", function(e){
   if((el = t.closest("[data-calsel]"))){ calSelRange(el.getAttribute("data-calsel")); return; }
   if((el = t.closest("[data-day]"))){
     var ds = el.getAttribute("data-day");
+    CAL.quick = null;
     if(!CAL.picking || !CAL.from || (CAL.from && CAL.to)){
       CAL.from = ds; CAL.to = null; CAL.picking = true;
     } else {
@@ -3776,14 +3775,12 @@ $("calNext").addEventListener("click", function(){
   renderCal();
 });
 $("calClear").addEventListener("click", function(){
-  S.range = rangePreset(S.tab === "past" ? "pall" : "f30");
-  CAL.view = "day"; calInit(); renderCal(); render();
+  calInit(); CAL.quick = "pall"; renderCal();
 });
 $("calApply").addEventListener("click", function(){
-  if(!CAL.from){ toast("先在日历里点一个日期"); return; }
-  var from = CAL.from, to = CAL.to || CAL.from;
-  S.range = {mode:"custom", kind:"custom", from:from, to:to,
-             label:(from === to) ? from : (from + " ~ " + to)};
+  var selected = calendarDraft();
+  if(!selected) return;
+  S.range = selected;
   /* 日历只在「全部发布」里，自定义区间一律留在本页（该页本来就前后都能看） */
   if(S.tab !== "past"){ S.tab = "past"; syncTabs(); }
   closeCal(); render();

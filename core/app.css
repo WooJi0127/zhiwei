@@ -386,15 +386,18 @@ a.btn{display:inline-flex;align-items:center}
   text-shadow:0 1px 0 rgba(255,255,255,.65)}
 
 /* ================= calendar popup ================= */
-.calpop{position:absolute;z-index:90;background:var(--card);border:1px solid var(--line);
-  border-radius:14px;box-shadow:var(--shadow-lg);padding:14px;width:306px;display:none;
-  max-height:min(78vh,560px);overflow:auto;overscroll-behavior:contain}
+/* 与主题手册一致的文字控件，所有范围都先选择、再确认。 */
+.calpop{position:absolute;z-index:90;background-color:var(--card);background-image:var(--kraft-tex);
+  border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow-lg);
+  padding:14px;width:306px;display:none;max-height:min(78vh,560px);overflow:auto;overscroll-behavior:contain}
 .calpop.on{display:block}
-.calpresets{display:flex;gap:16px;margin-bottom:12px;border-bottom:1px solid var(--line)}
-.calpresets button{border:0;border-radius:0;background:transparent;padding:7px 3px;
-  font-family:var(--font-title);font-size:12.5px;color:var(--sub);min-height:32px}
-.calpresets button:hover{color:var(--brand)}
-.calpresets button.on{color:var(--brand);font-weight:800;box-shadow:inset 0 -2px 0 var(--brand2)}
+.calpop button{font-family:var(--font-title);font-size:13px;border:0;border-radius:0;
+  background:transparent;color:var(--sub);box-shadow:none;text-shadow:none;min-height:38px}
+.calpop button:hover:not(:disabled):not(.on):not(.sel):not(.pri){color:var(--brand2)}
+.calpop button:focus-visible{outline:2px solid var(--brand2);outline-offset:2px}
+.calpop button:disabled{opacity:.4;cursor:default}
+.calpresets{display:flex;gap:20px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.calpresets button{padding:8px 0;min-height:40px}
 .archive-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;
   padding:10px 12px;background:var(--card);border:1px solid var(--line);color:var(--sub);
   font-size:12px;line-height:1.6}
@@ -403,53 +406,33 @@ a.btn{display:inline-flex;align-items:center}
   box-shadow:inset 0 -1px 0 var(--brand2)}
 .calh{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .calh .mm{font-weight:800;font-size:14px;flex:1;text-align:center}
-.calh button{border:1px solid var(--line);background:var(--card);border-radius:10px;height:28px;
-  font-size:14px;color:var(--sub);line-height:1}
-.calh button#calPrev,.calh button#calNext{width:28px}
-.calh button.mm{font-size:13.5px;color:var(--text);font-weight:800}
-.calh button:hover{background-color:#F0E7D2}
-.calh button.mm:hover{background-color:#EDF0EA;border-color:var(--brand2);color:var(--brand)}
-/* 月 / 年选择面板 */
+.calh button{height:38px;line-height:1}
+.calh button#calPrev,.calh button#calNext{width:38px}
+.calh button.mm{font-size:14px;color:var(--text);font-weight:800}
 .calpick{display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .calpick.on{display:grid}
 .calpick .pyh{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .calpick .pyh span{flex:1;text-align:center;font-weight:800;font-size:13.5px}
-.calpick .pyh button{width:26px;height:26px;border:1px solid var(--line);background:var(--card);border-radius:8px;
-  border-radius:7px;font-size:13px;color:var(--sub);line-height:1}
-.calpick .pyh button:hover{background-color:#F0E7D2}
-.calpick .mc{padding:7px 0;border:1px solid var(--line);background:var(--card);border-radius:10px;
-  font-size:12.5px;font-weight:700;color:var(--text)}
-.calpick .mc:hover{background-color:#F0E7D2}
-.calpick .mc.on{background:var(--grad);border-color:transparent;color:#fff;
-  box-shadow:0 2px 8px rgba(51,71,58,.30)}
-/* 已选范围提示 */
-.calrng{margin-top:10px;font-size:12px;color:var(--sub);text-align:center;font-weight:600;
-  line-height:1.5}
+.calpick .pyh button{width:38px;height:38px}
+.calpick .mc{padding:7px 0;font-weight:700}
+.calrng{margin-top:10px;font-size:12px;color:var(--sub);text-align:center;font-weight:600;line-height:1.5}
 .calrng b{color:var(--brand)}
-/* 整月 / 整年 快捷 */
-.caltools{display:flex;gap:6px;margin-top:8px}
-.caltools button{flex:1;padding:6px 0;border:1px solid var(--line);background:var(--card);
-  border-radius:10px;font-size:12px;font-weight:700;color:var(--sub)}
-.caltools button:hover{background-color:#EDF0EA;border-color:var(--brand2);color:var(--brand)}
+.caltools{display:flex;gap:18px;margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.caltools button{flex:1;padding:6px 0;font-size:12.5px;font-weight:700}
 .calw{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calw .wd{text-align:center;font-size:11px;color:var(--sub);font-weight:700;padding:3px 0}
-.cald{aspect-ratio:1;border:0;background:transparent;border-radius:9px;font-size:12.5px;
-  color:var(--text);position:relative;display:grid;place-items:center;font-weight:600}
-.cald:hover{background:#F2EFE8}
-.cald.out{color:#D8D3C7}
+.cald{aspect-ratio:1;position:relative;display:grid;place-items:center;font-weight:600}
 .cald.has{font-weight:800;color:var(--brand)}
 .cald.has::after{content:"";position:absolute;bottom:4px;width:3.5px;height:3.5px;
   border-radius:50%;background:var(--brand2)}
-.cald.inr{background:#EDF0EA;border-radius:0}
-.cald.sel{background:var(--grad);color:#fff;border-radius:9px;
-  box-shadow:0 2px 8px rgba(51,71,58,.30)}
-.cald.sel::after{background:#fff}
-.cald.today{box-shadow:inset 0 0 0 1.5px var(--brand2)}
-.calfoot{display:flex;gap:7px;margin-top:11px}
-.calfoot button{flex:1;padding:7px;border-radius:10px;border:1px solid var(--line);background:var(--card);
-  font-size:12.5px;font-weight:700;color:var(--sub)}
-.calfoot button.pri{background:var(--grad);border-color:transparent;color:#fff;
-  box-shadow:0 2px 8px rgba(51,71,58,.30)}
+.cald.inr{background-color:var(--kraft)}
+.cald.today{color:var(--brand2);font-weight:800}
+.calpresets button.on,.calpick .mc.on,.cald.sel{
+  color:var(--brand);font-weight:800;box-shadow:inset 0 -2px 0 var(--brand2)}
+.calfoot{display:flex;margin-top:11px;border-top:1px solid var(--line);padding-top:8px;justify-content:space-between;gap:24px}
+.calfoot button{padding:6px 0;min-width:70px;min-height:44px;font-weight:700}
+.calfoot button.pri{color:var(--brand);font-weight:800;box-shadow:inset 0 -2px 0 var(--brand2)}
+.calfoot button.pri:disabled{box-shadow:none}
 
 /* ================= sections & cards ================= */
 .sec-h{display:flex;align-items:center;gap:10px;margin:30px 0 15px}

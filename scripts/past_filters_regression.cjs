@@ -68,6 +68,7 @@ async function main(){
           await page.locator('#dateBtn').click();
           assert.equal(await page.locator('[data-calpreset="pall"]').getAttribute('aria-pressed'),'true');
           await page.locator('[data-calpreset="p365"]').click();
+          await page.locator('#calApply').click();
           assert.equal(await page.locator('#dateLabel').textContent(),'过去 1 年');
           assert.equal(await page.locator('#calPop').evaluate(e=>e.classList.contains('on')),false);
           s=await snapshot(page);
@@ -75,7 +76,7 @@ async function main(){
           const lowerDate=new Date(lower.getTime()+8*3600000).toISOString().slice(0,10);
           const recent=past.filter(r=>r.date>=lowerDate);
           assert.match(s.count,new RegExp('共 '+recent.length+' 张'));
-          await page.locator('#dateBtn').click();await page.locator('[data-calpreset="pall"]').click();
+          await page.locator('#dateBtn').click();await page.locator('[data-calpreset="pall"]').click();await page.locator('#calApply').click();
           await page.locator('#dateBtn').click();await month(page,2026,11);
           assert.deepEqual(await page.locator('#calGrid .out').allTextContents(),['1','2','3','4','5']);
           assert.ok(await page.evaluate(w=>document.documentElement.scrollWidth<=w+1,width),'page exceeds viewport');

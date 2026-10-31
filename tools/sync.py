@@ -50,12 +50,12 @@ def build_single_file():
     js = read(os.path.join(CORE, "app.js"))
 
     n = 0
-    page, n = re.subn(r'<link rel="stylesheet" href="app\.css">',
+    page, n = re.subn(r'<link rel="stylesheet" href="app\.css(?:\?[^"<>]*)?">',
                       lambda m: "<style>\n" + css + "\n</style>", page)
     if not n:
         sys.exit("index.html 里没找到 app.css 的外链")
 
-    page, n = re.subn(r'<script src="app\.js"></script>',
+    page, n = re.subn(r'<script src="app\.js(?:\?[^"<>]*)?"></script>',
                       lambda m: "<script>\n" + js + "\n</script>", page)
     if not n:
         sys.exit("index.html 里没找到 app.js 的外链")
@@ -158,6 +158,10 @@ def main():
     if not os.path.isfile(os.path.join(CORE, "index.html")):
         sys.exit("core/index.html 不存在")
 
+    # Keep the existing daily/manual entry point; version all generated web pages.
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    from web_assets import stamp_assets
+    stamp_assets(ROOT)
     out, size = build_single_file()
     print(f"· 离线单文件版  {os.path.relpath(out, ROOT)}  {size/1024:.0f} KB")
 
