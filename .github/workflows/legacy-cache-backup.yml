@@ -1,0 +1,36 @@
+name: 迁移前备份旧数据缓存
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/legacy-cache-backup.yml'
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/cache/restore@v4
+        with:
+          path: kpop.db
+          key: kpop-db-41156800567
+          fail-on-cache-miss: true
+      - name: 校验旧采集数据库
+        run: |
+          python - <<'PY'
+          import sqlite3
+          con = sqlite3.connect('file:kpop.db?mode=ro', uri=True)
+          assert con.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+          allowed = {'artists','releases','tracks','members','events','bili','bili_mid','meta'}
+          tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+          assert tables == allowed, 'Unexpected tables; do not upload'
+          for table in sorted(tables):
+              print(table, con.execute('SELECT count(*) FROM ' + table).fetchone()[0])
+          con.close()
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: legacy-public-catalog
+          path: kpop.db
+          retention-days: 7
+          if-no-files-found: error
