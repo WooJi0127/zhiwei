@@ -769,7 +769,7 @@ a.btn{display:inline-flex;align-items:center}
    hover 变赭石 + 暖光（「查看完整日历」同款定式）。
    必须写双类压过通栏 .btn / .chip.on，参考 .hfoot .btn.pri 的教训。 */
 .tellchips .chip{font-family:var(--font-title);font-size:13.5px;font-weight:600;
-  color:var(--sub)}
+  color:var(--sub);border-radius:0;min-height:44px}
 .tellchips .chip:hover{color:var(--brand);background-color:#F4F0E6}
 .tellchips .chip.on{background:transparent;color:var(--brand);font-weight:700;
   box-shadow:inset 0 -2px 0 var(--brand2);
@@ -783,6 +783,23 @@ a.btn{display:inline-flex;align-items:center}
   box-shadow:none;text-shadow:0 1px 0 rgba(255,255,255,.65)}
 .tell .btn.pri:hover,.gacts .btn.pri:hover{color:var(--brand2);background:transparent;
   text-shadow:0 1px 0 rgba(255,255,255,.65),0 2px 12px rgba(181,118,79,.30)}
+.tell .btn{border-radius:0;min-height:44px;padding:8px 0;text-decoration:none}
+.tell .tellfoot,.tell-copy-actions{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center}
+.tell .btn.pri{font-weight:700;box-shadow:inset 0 -2px 0 var(--brand2)}
+.tell .btn:focus-visible,.tell-webmail a:focus-visible,.tell-preview summary:focus-visible{
+  outline:2px solid var(--brand2);outline-offset:3px}
+.tell-draft-status,.tell .tell-delivery-inner p{font-size:12px;color:var(--sub);line-height:1.8}
+.tell-delivery-inner{border-top:1px solid var(--line2);margin-top:16px;padding-top:8px;min-width:0}
+.tell-delivery-inner h4{margin:16px 0 6px;font:700 14px/1.6 var(--font-title);color:var(--brand)}
+.tell-delivery-inner [hidden]{display:none!important}
+.tell-webmail{display:flex;flex-wrap:wrap;gap:8px 24px;margin:10px 0}
+.tell-webmail a{display:inline-flex;align-items:center;min-height:44px;color:var(--brand);font-family:var(--font-title)}
+.tell-preview{margin:12px 0;color:var(--sub);font-size:12px}
+.tell-preview summary{font-family:var(--font-title);cursor:pointer;padding:10px 0;color:var(--brand)}
+.tell-preview label{display:block;margin:8px 0}
+.tell-preview textarea{display:block;width:100%;min-width:0;border:1px solid var(--line2);border-radius:0;
+  background-color:var(--paper);color:var(--text);font:13px/1.8 var(--font);padding:10px;resize:vertical}
+.tell .tell-status{padding-top:10px;border-top:1px solid var(--line);color:var(--brand)}
 footer{max-width:1280px;margin:26px auto 0;padding:20px 18px 40px;color:var(--sub);
   font-size:11.5px;border-top:1px solid var(--line)}
 footer a{color:var(--brand)}
