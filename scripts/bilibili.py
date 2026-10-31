@@ -136,13 +136,21 @@ def is_official(con, mid):
     if mid in _MIDCACHE:
         return _MIDCACHE[mid]
     row = con.execute("SELECT name,official FROM bili_mid WHERE mid=?", (mid,)).fetchone()
-    if row:
+    # 旧版本会把请求失败写成「空名字 + 非官方」，它不是有效的认证结果。
+    if row and row[0]:
         _MIDCACHE[mid] = (row[1] == 1, row[0], row[0])
         return _MIDCACHE[mid]
 
     d = api(f"https://api.bilibili.com/x/web-interface/card?mid={mid}&photo=false")
+    # 请求失败也要保持间隔，不能在风控时连续重试同一账号。
+    time.sleep(SLEEP * 0.5)
+    if not isinstance(d, dict) or d.get("code") != 0:
+        return False, "", ""
     c = ((d or {}).get("data") or {}).get("card") or {}
     ov = c.get("official_verify") or {}
+    # 缺字段代表未查明，不能永久缓存成非官方，否则后续都会跳过该账号。
+    if not c.get("name") or ov.get("type") not in (0, 1, -1, 127):
+        return False, "", ""
     ok = ov.get("type") in (0, 1)
     name = c.get("name") or ""
     desc = ov.get("desc") or c.get("description") or ""
@@ -152,7 +160,6 @@ def is_official(con, mid):
     except Exception:  # noqa: BLE001
         pass
     _MIDCACHE[mid] = (ok, name, desc)
-    time.sleep(SLEEP * 0.5)
     return _MIDCACHE[mid]
 
 
@@ -339,16 +346,21 @@ def check_dead(con):
     """校验已收录的链接有没有失效（视频下架 B 站会返回 -404）。"""
     rows = con.execute("SELECT bvid FROM bili WHERE dead=0").fetchall()
     log(f"· B 站链接校验：{len(rows)} 条")
-    n = 0
+    n = unknown = 0
     for (bvid,) in rows:
         d = api(f"https://api.bilibili.com/x/web-interface/view?bvid={bvid}")
         code = (d or {}).get("code")
-        if code is not None and code != 0:
+        if code == -404:
             con.execute("UPDATE bili SET dead=1 WHERE bvid=?", (bvid,))
             n += 1
+        elif code != 0:
+            # 风控、限流、登录状态或网络失败都不能证明视频已下架。
+            unknown += 1
         time.sleep(SLEEP * 0.6)
     con.commit()
     log(f"· 失效 {n} 条，已标记（不会导出）")
+    if unknown:
+        log(f"· {unknown} 条暂时无法确认，保留原状态，等待下次校验")
 
 
 def main():
