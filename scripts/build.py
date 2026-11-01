@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import sources  # noqa: E402
 import names    # noqa: E402
 import catalog_state  # noqa: E402
+from member_names import member_name_zh  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(ROOT, "kpop.db")
@@ -560,12 +561,15 @@ def step_netease_tracks(con, cap=600):
     ).fetchall()
     todo = []
     for rid, extra, rsrc in rows:
+        # 旧库可能使用日期+标题作本地键；它不是可请求的网易云专辑 ID。
+        if not rid.startswith("ne:") or not sources.valid_netease_album_id(rid[3:]):
+            continue
         if "ne_detail" in (extra or "") and (rsrc or "").strip():
             continue                     # 曲目和类型都有了，不必再请求
         todo.append((rid, extra))
     todo = todo[:cap]
     if not todo:
-        log("  均已补齐，跳过")
+        log("  没有待补抓的有效专辑，跳过")
         return 0
 
     n_tr = n_type = done = 0
@@ -600,6 +604,9 @@ def step_netease_tracks(con, cap=600):
                     "UPDATE releases SET rtype_src=? WHERE id=?", (ne_raw, rid))
                 if map_src_type(ne_raw):
                     n_type += 1
+        else:
+            time.sleep(0.12)
+            continue                       # 失败保留原记录，下轮重试；不计为补齐
         extra["ne_detail"] = 1
         con.execute("UPDATE releases SET extra=? WHERE id=?",
                     (json.dumps(extra, ensure_ascii=False), rid))
@@ -879,10 +886,13 @@ def step_apple_music(con, limit_artists=None, force=False):
                     "copyright": (a.get("copyright") or "").strip(),
                     "trackCount": a.get("trackCount") or 0,
                 }
+                # 同一 collection 会出现在别名/合作艺人的查询里。已有归属只
+                # 通过明确更正修改，避免遍历顺序改绑后被去重当成旧发行丢失。
                 con.execute("""INSERT INTO releases(id,source,date,artist,title,rtype,image,url,extra)
                                VALUES(?,?,?,?,?,?,?,?,?)
                                ON CONFLICT(id) DO UPDATE SET
-                                 date=excluded.date, artist=excluded.artist,
+                                 date=excluded.date,
+                                 artist=COALESCE(NULLIF(releases.artist,''),excluded.artist),
                                  title=excluded.title,
                                  image=excluded.image, url=excluded.url,
                                  extra=excluded.extra""",
@@ -1261,7 +1271,11 @@ def export_data(con):
     try:
         for r in con.execute("SELECT g,n,b FROM members ORDER BY g,n"):
             if r[1] and r[2]:
-                members.append({"g": r[0], "n": r[1], "b": r[2]})
+                member = {"g": r[0], "n": r[1], "b": r[2]}
+                zh = member_name_zh(r[0], r[1], r[2])
+                if zh:
+                    member["zh"] = zh
+                members.append(member)
     except Exception:                               # noqa: BLE001
         members = []
 

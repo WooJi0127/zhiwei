@@ -425,6 +425,11 @@ function kst2cst(t){
   return (h<10 ? "0" : "") + h + ":" + p[1];
 }
 function showsOn(w){ return SHOWS.filter(function(s){ return s.w === w; }); }
+function showNameHTML(show){
+  var en = show.en || show.zh || "", zh = show.zh || "";
+  return '<span class="show-en" lang="en">'+esc(en)+'</span>'
+    + (/[\u3400-\u9fff]/.test(zh) && zh !== en ? ' <span class="show-zh">'+esc(zh)+'</span>' : '');
+}
 
 /* 成员生日：来自 kpopping 档案页（scripts/birthdays.py 抓取） */
 var MEMBERS = DATA.members || [];
@@ -528,16 +533,22 @@ function birthdaysToday(){
   for(var i=0;i<MEMBERS.length;i++){
     var m = MEMBERS[i];
     if(!m || !m.b || m.b.slice(5) !== md) continue;
-    var key = (m.n || "") + "@" + m.b;
+    /* 有中文名的身份必须独立于未核验的同名记录，不能在合并时串名。 */
+    var key = (m.n || "") + "@" + m.b + "@" + (m.zh || "");
     var hit = seen[key];
     if(hit){
       if(hit.g2 === undefined && hit.g !== m.g) hit.g2 = m.g;
       continue;
     }
-    var o = { n:m.n, b:m.b, g:m.g, g2:undefined };
+    var o = { n:m.n, b:m.b, g:m.g, g2:undefined, zh:m.zh || "" };
     seen[key] = o; out.push(o);
   }
   return out;
+}
+function birthdayNameHTML(member){
+  return member.zh && member.zh !== member.n
+    ? '<span class="bzh">'+esc(member.zh)+'</span><span class="boriginal" lang="en">'+esc(member.n)+'</span>'
+    : esc(member.n || "");
 }
 /* 展示用的团名：'ARTMS · LOONA 1/3' */
 function groupLabel(m){
@@ -1505,18 +1516,18 @@ function renderShows(boxId){
 
   if(t.length){
     head = t.map(function(s){
-      return '<b>'+esc(s.zh)+'</b> <span>'+s.kst+' KST</span> <i>北京 '+kst2cst(s.kst)+'</i>';
+      return '<b>'+showNameHTML(s)+'</b> <span>'+s.kst+' KST</span> <i>北京 '+kst2cst(s.kst)+'</i>';
     }).join(" · ");
   } else {
     var nx = showsOn((today+1) % 7);
     head = '<span class="shnone">今天没有打歌节目</span>'
-         + (nx.length ? ' · 明天有 <b>'+esc(nx[0].zh)+'</b>' : '');
+         + (nx.length ? ' · 明天有 <b>'+showNameHTML(nx[0])+'</b>' : '');
   }
 
   var rows = [1,2,3,4,5,6,0].map(function(w){
     var ss = showsOn(w);
     var nm = ss.length
-      ? ss.map(function(s){ return esc(s.zh)+' <em>'+s.kst+'</em>'; }).join("、")
+      ? ss.map(function(s){ return showNameHTML(s)+' <em>'+s.kst+'</em>'; }).join("、")
       : '<span class="shnone">—</span>';
     return '<div class="shrow'+(w===today ? ' today' : '')+'">'
          +   '<span class="shw">'+WK[w]+'</span>'
@@ -1574,7 +1585,7 @@ function renderHome(){
   var bits = [];
   if(todayRel.length) bits.push('<b>'+todayRel.length+'</b> 张新发行');
   if(bds.length)      bits.push('<b>'+bds.length+'</b> 位艺人过生日');
-  if(tt.length)       bits.push('今晚有 <b>'+esc(tt[0].zh)+'</b>');
+  if(tt.length)       bits.push('今晚有 <b>'+showNameHTML(tt[0])+'</b>');
   var h = '<div class="hero">'
     + '<div class="heroL">'
     +   '<div class="wel">欢迎来到</div>'
@@ -1643,7 +1654,7 @@ function bdayListHTML(bds){
       var ag = ageOf(m.b);
       return '<div class="bday'+(isBias(m.g)||isBias(m.g2)?' bias':'')+'">'
         + '<span class="bav">'+ico('cake',15)+'</span>'
-        + '<span class="bname">'+esc(m.n)+'</span>'
+        + '<span class="bname">'+birthdayNameHTML(m)+'</span>'
         + '<span class="bgrp">'+heartHTML(m.g)+esc(plainName(m.g))
         +   (m.g2 ? ' · '+esc(plainName(m.g2)) : '')+'</span>'
         + (ag !== null ? '<span class="bage">'+ag+' 岁</span>' : '')
@@ -1709,6 +1720,33 @@ function renderStats(){
     + '<div class="hstat"><div class="v">'+past.length+'</div><div class="k">近一年已收录</div></div>'
     + '<div class="hstat"><div class="v">'+Object.keys(ART).length+'</div><div class="k">追踪艺人</div></div>';
 }
+/* 入门常见艺人按编辑顺序展示，不把收录专辑数当作知名度。
+   只建议目录中存在的艺人；别名仅用于去重，添加时仍使用目录原键。 */
+var COMMON_ARTISTS = [
+  "BTS", "BLACKPINK", "TWICE", "SEVENTEEN", "EXO", "aespa", "IVE", "Stray Kids",
+  "TOMORROW X TOGETHER", "ENHYPEN", "NCT DREAM", "NCT 127", "LE SSERAFIM", "i-dle",
+  "Red Velvet", "ITZY", "NMIXX", "BABYMONSTER", "RIIZE", "NewJeans", "IU", "SHINee",
+  "ATEEZ", "TREASURE", "ZEROBASEONE", "BOYNEXTDOOR", "TWS", "ILLIT", "MAMAMOO", "KISS OF LIFE"
+];
+function artistSuggestionKey(name){
+  var key = String(name || "").trim().toLowerCase();
+  if(key === "txt") return "tomorrow x together";
+  if(key === "(g)i-dle" || key === "(g)idle") return "i-dle";
+  return key;
+}
+function commonArtistSuggestions(){
+  var catalog = Object.create(null), chosen = Object.create(null), result = [];
+  Object.keys(ART).sort().forEach(function(name){
+    var key = artistSuggestionKey(name);
+    if(!catalog[key]) catalog[key] = name;
+  });
+  bias.forEach(function(name){ chosen[artistSuggestionKey(name)] = true; });
+  COMMON_ARTISTS.forEach(function(name){
+    var key = artistSuggestionKey(name), actual = Object.prototype.hasOwnProperty.call(ART, name) ? name : catalog[key];
+    if(actual && !chosen[key] && result.length < 16){ result.push(actual); chosen[key] = true; }
+  });
+  return result;
+}
 function renderBiasBox(){
   $("biasList").innerHTML = bias.length
     ? bias.map(function(n){
@@ -1719,10 +1757,7 @@ function renderBiasBox(){
       }).join("")
     : '<span style="font-size:12.5px;color:var(--sub)">还没有添加本命。</span>';
 
-  var cnt = {};
-  ALL.forEach(function(r){ if(r.artist) cnt[r.artist] = (cnt[r.artist]||0)+1; });
-  var top = Object.keys(cnt).filter(function(n){ return bias.indexOf(n)<0; })
-    .sort(function(a,b){ return cnt[b]-cnt[a]; }).slice(0, 16);
+  var top = commonArtistSuggestions();
   $("biasSugg").innerHTML = top.length
     ? '<div style="width:100%;font-size:11.5px;color:var(--sub);font-weight:700">常见艺人，点击添加：</div>'
       + top.map(function(n){ return '<button class="chip" data-addbias="'+esc(n)+'">+ '+esc(plainName(n))+'</button>'; }).join("")

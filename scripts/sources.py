@@ -113,7 +113,7 @@ def fetch_kpopping_month(year, month):
     url = f"https://kpopping.com/calendar?month={year:04d}-{month:02d}"
     raw = http_get(url)
     if raw is None:
-        return [], {}
+        return [], {}, set(), set()
     html = raw.decode("utf-8", "replace")
     s = _unescape_rsc(html)
 
@@ -377,6 +377,11 @@ def netease_artist_albums(artist_id, limit=60):
     return out
 
 
+def valid_netease_album_id(nid):
+    """Only positive ASCII numeric IDs are eligible for album API requests."""
+    return re.fullmatch(r"[1-9][0-9]*", str(nid or "")) is not None
+
+
 def netease_album_detail(nid):
     """
     专辑详情：曲目、时长、唱片公司、曲目数。
@@ -389,10 +394,10 @@ def netease_album_detail(nid):
     所以它是唯一能救网易云 90% 无类型条目的办法，已在 build.py 里接上 `rtype_src`。
     除类型外，这里的 value 主要在 size（曲目数）和 songs（曲目列表）。
     """
-    if not nid:
+    if not valid_netease_album_id(nid):
         return None
     d = netease_json(f"https://music.163.com/api/v1/album/{nid}")
-    if not d:
+    if not d or not d.get("album"):
         return None
     alb = d.get("album") or {}
     songs = []
