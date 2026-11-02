@@ -6,12 +6,12 @@
       "sha256": "a59d35d69273c5ab8473663ff3f953168d29f833433583a1a4683e3e0ebc386a"
     },
     "bili": {
-      "rows": 219,
-      "sha256": "d559ded0f7fa3cea2c844788c23a45f16ea54af78985e61887202390cb418413"
+      "rows": 223,
+      "sha256": "2e1f241cf30f1e8972a84b349c19c51e72a592a768c805da9e64e89f015e5d51"
     },
     "bili_mid": {
-      "rows": 1179,
-      "sha256": "907efe30e547506b6486185926d49ef4c8976ccfe5089cff1daa30ff74a61468"
+      "rows": 1182,
+      "sha256": "342f2bb18394a724d56ef38199f905350100e718e35289bb3b51d41bd2f91278"
     },
     "bili_seen": {
       "rows": 242,
