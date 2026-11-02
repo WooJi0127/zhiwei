@@ -3,23 +3,23 @@
   "tables": {
     "artists": {
       "rows": 264,
-      "sha256": "5948d04a8004458ad614b41eee799b2b83d79d0772146357417ff84eae292b0f"
+      "sha256": "a59d35d69273c5ab8473663ff3f953168d29f833433583a1a4683e3e0ebc386a"
     },
     "bili": {
-      "rows": 218,
-      "sha256": "f30eb3219b30354801c069e4e492401b1a2d7ec29343e8c99f4f238713ba50ca"
+      "rows": 219,
+      "sha256": "d559ded0f7fa3cea2c844788c23a45f16ea54af78985e61887202390cb418413"
     },
     "bili_mid": {
-      "rows": 1178,
-      "sha256": "1ecf0b24dafe9a7e35570027bb97a4e189f965a20cf7d9c8e7ed15220f1fc08b"
+      "rows": 1179,
+      "sha256": "907efe30e547506b6486185926d49ef4c8976ccfe5089cff1daa30ff74a61468"
     },
     "bili_seen": {
       "rows": 242,
       "sha256": "b8195d4cb74b8aef4bc0d3a2c6560c6e909639b513961a95d359acefb478ce21"
     },
     "events": {
-      "rows": 380,
-      "sha256": "099663d3bbc02387dbdb3c02cce3af8c8db3adefa6346078586536d7d5c32858"
+      "rows": 414,
+      "sha256": "2a8d67e073d70b3d63b0ac0d19091f44fed455fa762093ddd6ba70b27dcdf4c3"
     },
     "members": {
       "rows": 6669,
