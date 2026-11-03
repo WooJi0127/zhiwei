@@ -3,11 +3,11 @@
   "tables": {
     "artists": {
       "rows": 264,
-      "sha256": "a59d35d69273c5ab8473663ff3f953168d29f833433583a1a4683e3e0ebc386a"
+      "sha256": "68957a09afa2f4e7b8cdb4e56d77301348f64108a05b7b08710ea350d4a9b254"
     },
     "bili": {
-      "rows": 223,
-      "sha256": "2e1f241cf30f1e8972a84b349c19c51e72a592a768c805da9e64e89f015e5d51"
+      "rows": 226,
+      "sha256": "ece02524f3205b08b8271bb72e557ea42edda45326807c859c8a869ee7cdbe57"
     },
     "bili_mid": {
       "rows": 1182,
