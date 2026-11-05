@@ -1285,85 +1285,133 @@ function openGuideDestination(tab){
 }
 
 /* ============================ 诉说（反馈 / 树洞） ============================
-   邮件链接只负责交接给访客的邮箱，网页无法确认客户端是否打开或邮件是否寄出。
-   始终保留网页邮箱、复制和下载出口，草稿只在当前标签页暂存。 */
+   匿名投递到 Hole 私人收件箱；草稿和重试编号只在当前标签页暂存。
+   只有接口确认送达，且正文仍与发送时相同，才清空草稿。 */
 var TELL_KINDS = ["想说的话", "网站报错", "内容纠错", "功能建议"];
+var TELL_ENDPOINT = "https://hole.mywooji.cn/api/treehole/messages";
+var TELL_ONLINE_URL = "https://hole.mywooji.cn/treehole";
+var TELL_MAX = 2000;
+var TELL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function loadTellDraft(){
-  var empty = {kind:"想说的话", text:"", saved:false};
+  var empty = {kind:"想说的话", text:"", request:null, saved:false};
   try {
     var raw = sessionStorage.getItem("zw_tell_draft");
-    if(!raw || raw.length > 1200100) return empty;
+    if(!raw || raw.length > 1220000) return empty;
     var draft = JSON.parse(raw);
-    if(!draft || draft.v !== 1 || TELL_KINDS.indexOf(draft.kind) < 0
+    if(!draft || (draft.v !== 1 && draft.v !== 2) || TELL_KINDS.indexOf(draft.kind) < 0
       || typeof draft.text !== "string" || draft.text.length > 200000) return empty;
-    return {kind:draft.kind, text:draft.text, saved:true};
+    var req = draft.v === 2 && draft.request;
+    if(!req || TELL_KINDS.indexOf(req.kind) < 0 || typeof req.message !== "string"
+      || !req.message.trim() || req.message.length > TELL_MAX
+      || typeof req.requestId !== "string" || !TELL_UUID.test(req.requestId)) req = null;
+    if(req) req = {kind:req.kind, message:req.message, requestId:req.requestId};
+    return {kind:draft.kind, text:draft.text, request:req, saved:true};
   } catch(e){ return empty; }
 }
 function saveTellDraft(){
   try {
     if(!S.tellText){ sessionStorage.removeItem("zw_tell_draft"); return true; }
+    /* 旧邮件草稿可能很长：保留原文供编辑或复制，不按发送上限截断。 */
     if(S.tellText.length > 200000) return false;
-    sessionStorage.setItem("zw_tell_draft", JSON.stringify({v:1, kind:S.tellKind, text:S.tellText}));
+    sessionStorage.setItem("zw_tell_draft", JSON.stringify({v:2, kind:S.tellKind,
+      text:S.tellText, request:S.tellRequest || null}));
     return true;
   } catch(e){ return false; }
 }
 var tellDraft = loadTellDraft();
 S.tellKind = tellDraft.kind; S.tellText = tellDraft.text; S.tellSaved = tellDraft.saved;
+S.tellRequest = tellDraft.request; S.tellSending = false; S.tellNotice = "";
+if(tellDraft.saved) S.tellSaved = saveTellDraft();
 
-function wellFormedText(text){
-  return String(text || "").replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g,
-    function(part){ return part.length === 2 ? part : "\uFFFD"; });
+function tellUnavailable(){
+  if(location.origin !== "https://mywooji.cn")
+    return "当前版本无法直接发送。请复制内容，再打开在线树洞粘贴发送。";
+  if(typeof fetch !== "function" || typeof AbortController !== "function"
+    || typeof crypto === "undefined" || !crypto
+    || (typeof crypto.randomUUID !== "function" && typeof crypto.getRandomValues !== "function"))
+    return "当前浏览器无法直接发送。请复制内容，再打开在线树洞粘贴发送。";
+  return "";
 }
-function tellMessage(){
-  var subject = "【知未】" + S.tellKind;
-  /* 不附带浏览器查询参数、个人信息或本机文件路径。专辑纠错链接写在草稿中。 */
-  var body = wellFormedText(S.tellText).replace(/\r\n?|\n/g, "\r\n")
-    + "\r\n\r\n———\r\n页面：https://mywooji.cn/#tab=more"
-    + "\r\n时间：" + new Date().toLocaleString("zh-CN");
-  var base = "mailto:" + REPORT_MAIL + "?subject=" + encodeURIComponent(subject);
-  var full = base + "&body=" + encodeURIComponent(body);
-  /* 不同邮件客户端限制不同，长正文改用完整复制，绝不静默截断。 */
-  return {subject:subject, body:body, text:"主题："+subject+"\r\n\r\n"+body,
-    href:full.length <= 1800 ? full : base, long:full.length > 1800};
+function tellRequestId(){
+  if(typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  var bytes = new Uint8Array(16); crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+  var hex = Array.prototype.map.call(bytes, function(b){ return ("0" + b.toString(16)).slice(-2); }).join("");
+  return hex.slice(0,8) + "-" + hex.slice(8,12) + "-" + hex.slice(12,16) + "-" + hex.slice(16,20) + "-" + hex.slice(20);
 }
-function tellDeliveryHTML(){
-  return '<div class="tell-delivery-inner">'
-    + '<h4>选择发送方式</h4><p>请在邮箱里确认发送。网页不会直接寄出邮件。</p>'
-    + '<a class="btn pri" id="tellMailApp" href="' + esc(tellMessage().href) + '">打开邮件应用</a>'
-    + '<p id="tellLongNote" hidden>内容较长，为避免截断，请复制完整正文，再粘贴到邮件应用中。</p>'
-    + '<h4>没有配置邮件应用？使用网页邮箱</h4>'
-    + '<p>复制下面三项，粘贴到常用邮箱的写信页面。</p>'
-    + '<div class="tell-copy-actions">'
-    + '<a class="btn" id="tellCopyRecipient" data-tellcopy="recipient" href="mailto:'+REPORT_MAIL+'">复制收件人</a>'
-    + '<button type="button" class="btn" data-tellcopy="subject">复制主题</button>'
-    + '<button type="button" class="btn" data-tellcopy="body">复制正文</button></div>'
-    + '<div class="tell-webmail"><a href="https://mail.qq.com/" target="_blank" rel="noopener noreferrer">打开 QQ 邮箱</a>'
-    + '<a href="https://mail.163.com/" target="_blank" rel="noopener noreferrer">打开 163 邮箱</a></div>'
-    + '<details class="tell-preview"><summary>查看完整邮件内容</summary>'
-    + '<p id="tellSubject"></p><label for="tellPreview">正文（可选中复制）</label>'
-    + '<textarea id="tellPreview" rows="7" readonly></textarea></details>'
-    + '<button type="button" class="btn" id="tellDownload">保存为文本</button>'
-    + '<p class="tell-status" id="tellStatus" role="status">尚未发送，请在邮箱中确认发送。</p></div>';
+function tellStatus(text){
+  S.tellNotice = text;
+  var status = $("tellStatus"); if(status) status.textContent = text;
 }
 function updateTellDelivery(){
-  if(!S.tellText.trim()){
-    S.tellReady = false;
-    if($("tellDelivery")) $("tellDelivery").innerHTML = "";
-    if($("tellSend")) $("tellSend").setAttribute("aria-expanded", "false");
+  var unavailable = tellUnavailable(), send = $("tellSend"), count = $("tellCount");
+  if(send){
+    send.disabled = !!S.tellSending || !!unavailable;
+    send.textContent = S.tellSending ? "发送中…" : "匿名发送";
+    send.setAttribute("aria-busy", String(!!S.tellSending));
   }
+  if(count) count.textContent = S.tellText.length + " / " + TELL_MAX
+    + (S.tellText.length > TELL_MAX ? "，内容较长，请缩短后再发送；原文仍可完整复制。" : "（部分表情占两字）");
   var draftStatus = $("tellDraftStatus");
-  if(draftStatus) draftStatus.textContent = !S.tellText ? "选择发送方式后，仍需在邮箱中确认发送。"
-    : S.tellSaved ? "草稿已暂存在当前标签页，尚未发送。"
-    : "当前浏览器无法暂存草稿，离开页面前请复制或保存文本。";
-  var link = $("tellMailApp"); if(!link) return;
-  var message = tellMessage();
-  link.href = message.href;
-  $("tellLongNote").hidden = !message.long;
-  $("tellSubject").textContent = "主题：" + message.subject;
-  $("tellPreview").value = message.body;
-  $("tellStatus").textContent = "尚未发送，请在邮箱中确认发送。";
+  if(draftStatus) draftStatus.textContent = !S.tellText ? "无需注册或留下联系方式，留言只会送到站主的私人收件箱。"
+    : S.tellSaved ? "草稿已暂存在当前标签页，确认送达后才会清空。"
+    : "当前浏览器无法暂存草稿，离开页面前请先复制内容。";
+  if($("tellFallback")) $("tellFallback").hidden = !unavailable && !S.tellShowFallback;
+  if($("tellStatus")) $("tellStatus").textContent = S.tellNotice || unavailable;
 }
-function tellStatus(text){ var status = $("tellStatus"); if(status) status.textContent = text; }
+async function sendTell(){
+  if(S.tellSending) return;
+  var input = $("tellText");
+  if(input) S.tellText = input.value;
+  S.tellSaved = saveTellDraft();
+  var unavailable = tellUnavailable();
+  if(unavailable){ tellStatus(unavailable); updateTellDelivery(); return; }
+  if(!S.tellText.trim()){ tellStatus("先写点什么吧。"); updateTellDelivery(); return; }
+  if(TELL_KINDS.indexOf(S.tellKind) < 0){ tellStatus("请先选择留言类别，内容已保留。"); return; }
+  if(S.tellText.length > TELL_MAX){
+    tellStatus("每次最多发送 2000 字，请缩短后再试。原文已保留，可先完整复制。");
+    updateTellDelivery(); return;
+  }
+  var snapshot = {kind:S.tellKind, text:S.tellText}, message = S.tellText.trim();
+  var controller, timer;
+  try {
+    /* 丢失响应后仍使用同一编号；编辑成不同内容时才建立新请求。 */
+    if(!S.tellRequest || S.tellRequest.kind !== snapshot.kind || S.tellRequest.message !== message)
+      S.tellRequest = {kind:snapshot.kind, message:message, requestId:tellRequestId()};
+    var request = S.tellRequest;
+    S.tellSaved = saveTellDraft();
+    controller = new AbortController();
+    S.tellSending = true; S.tellShowFallback = false;
+    tellStatus("正在发送，请稍候…"); updateTellDelivery();
+    timer = setTimeout(function(){ controller.abort(); }, 15000);
+    var result = await fetch(TELL_ENDPOINT, {method:"POST", credentials:"omit", referrerPolicy:"no-referrer",
+      headers:{"Content-Type":"application/json"}, body:JSON.stringify(request), signal:controller.signal});
+    if(result.status === 429) throw new Error("RATE_LIMIT");
+    if(result.status === 409) throw new Error("CONFLICT");
+    if(result.status !== 200 && result.status !== 201) throw new Error("UNAVAILABLE");
+    var acknowledgment = await result.json();
+    if(!acknowledgment || acknowledgment.ok !== true) throw new Error("UNCONFIRMED");
+    S.tellRequest = null;
+    if(S.tellKind === snapshot.kind && S.tellText === snapshot.text){
+      S.tellText = "";
+      if($("tellText")) $("tellText").value = "";
+      tellStatus("已送达，谢谢你愿意说给我听。");
+    } else {
+      tellStatus("刚才的留言已送达；新写的内容已保留，尚未发送。");
+    }
+    S.tellSaved = saveTellDraft();
+  } catch(error){
+    S.tellShowFallback = true;
+    var reason = error.name === "AbortError" ? "发送超时，暂时无法确认是否送达，请重试。"
+      : error.message === "RATE_LIMIT" ? "发送有点频繁，请稍后再试。"
+      : error.message === "CONFLICT" ? "这次发送编号未能确认，请复制内容后到在线树洞发送。"
+      : "暂时无法确认是否送达，请稍后重试，或复制内容到在线树洞发送。";
+    tellStatus(reason + "内容已保留。");
+  } finally {
+    if(timer) clearTimeout(timer);
+    S.tellSending = false; updateTellDelivery();
+  }
+}
 function tellHTML(){
   var h = '<div class="tell">'
     + '<h3>诉说</h3>'
@@ -1375,17 +1423,19 @@ function tellHTML(){
        + ' data-tellkind="' + esc(TELL_KINDS[i]) + '">' + esc(TELL_KINDS[i]) + '</button>';
   }
   h += '</div>'
-    + '<textarea id="tellText" class="tellta" placeholder="'
+    + '<textarea id="tellText" class="tellta" aria-label="诉说内容" aria-describedby="tellCount tellDraftStatus tellStatus" placeholder="'
     + (S.tellKind === "网站报错" ? '哪个页面、点了什么、看到了什么异常情况…'
        : S.tellKind === "内容纠错" ? '哪个团体 / 专辑、哪里不对、正确的是什么…'
        : S.tellKind === "功能建议" ? '你希望这个站能多做一件什么事…'
        : '想说什么都行，我会当成树洞听完。不用署名。')
     + '">' + esc(S.tellText || "") + '</textarea>'
+    + '<p class="tell-draft-status" id="tellCount"></p>'
     + '<div class="tellfoot">'
-    +   '<button class="btn pri" id="tellSend" aria-controls="tellDelivery" aria-expanded="'+!!S.tellReady+'">选择发送方式</button>'
-    +   '<button class="btn" id="tellCopy">复制内容</button>'
+    +   '<button type="button" class="btn pri" id="tellSend">匿名发送</button>'
+    +   '<button type="button" class="btn" id="tellCopy">复制内容</button>'
+    +   '<a class="btn" id="tellFallback" href="'+TELL_ONLINE_URL+'" target="_blank" rel="noopener noreferrer" hidden>打开在线树洞</a>'
     + '</div><p class="tell-draft-status" id="tellDraftStatus"></p>'
-    + '<div id="tellDelivery">'+(S.tellReady ? tellDeliveryHTML() : '')+'</div></div>';
+    + '<p class="tell-status" id="tellStatus" role="status" aria-live="polite" aria-atomic="true"></p></div>';
   return h;
 }
 function secHTML(title, list){
@@ -1395,17 +1445,6 @@ function secHTML(title, list){
 }
 
 /* ============================ 详情页 ============================ */
-/* 反馈邮箱：换邮箱只改这一行。社区功能先拿这个入口试水，
-   看看有没有人真的愿意反馈，有人再考虑上 Giscus / Twikoo。 */
-var REPORT_MAIL = "139567293@qq.com";
-function reportMail(r){
-  var subj = "【知未】信息有误：" + (r.artist || "") + " - " + (r.title || "");
-  var body = "页面：" + location.href + "\n专辑：" + (r.artist||"") + " - " + (r.title||"")
-           + "（" + (r.date||"") + "）\n哪里不对：\n正确信息应该是：\n";
-  return "mailto:" + REPORT_MAIL
-       + "?subject=" + encodeURIComponent(subj)
-       + "&body=" + encodeURIComponent(body);
-}
 function srcLabel(r){
   var s = r.source || "";
   if(s==="apple")   return "Apple Music";
@@ -2514,6 +2553,8 @@ document.addEventListener("click", function(e){
         + "（" + ((rr && rr.date) || "") + "）\n"
         + (rr ? "专辑链接：" + SITE_URL + releaseHash(rr.id) + "\n" : "")
         + "哪里不对：\n正确信息应该是：\n";
+      if(!S.tellSending) S.tellNotice = "";
+      S.tellShowFallback = false;
       S.tellSaved = saveTellDraft();
     } else { toast("已保留未发送的草稿，请先处理草稿再反馈这张专辑"); }
     syncTabs(); render();
@@ -2663,54 +2704,30 @@ document.addEventListener("click", function(e){
     selectGuideTopic(el.getAttribute("data-guide-topic")); return;
   }
   if((el = t.closest("[data-tellkind]"))){
-    S.tellKind = el.getAttribute("data-tellkind"); S.tellSaved = saveTellDraft(); render(); return;
+    S.tellKind = el.getAttribute("data-tellkind");
+    if(!S.tellSending) S.tellNotice = "";
+    S.tellSaved = saveTellDraft(); render(); return;
   }
   if(t.id === "tellSend" || t.closest("#tellSend")){
-    var txt = ($("tellText") || {}).value || "";
-    if(!txt.trim()){ toast("先写点什么吧"); return; }
-    S.tellText = txt;
-    S.tellSaved = saveTellDraft(); S.tellReady = true;
-    $("tellDelivery").innerHTML = tellDeliveryHTML();
-    $("tellSend").setAttribute("aria-expanded", "true");
-    updateTellDelivery();
-    $("tellMailApp").focus({preventScroll:true});
-    $("tellDelivery").scrollIntoView({behavior:"smooth", block:"nearest"});
-    return;
-  }
-  if(t.closest("#tellMailApp")){
-    tellStatus("请在邮件应用中确认发送。没有打开时，可使用下方的网页邮箱方式。当前页面仍保留内容。");
-    return;
-  }
-  if((el = t.closest("[data-tellcopy]"))){
-    e.preventDefault();
-    var message = tellMessage(), part = el.getAttribute("data-tellcopy");
-    var value = part === "recipient" ? REPORT_MAIL : part === "subject" ? message.subject : message.body;
-    var label = part === "recipient" ? "收件人" : part === "subject" ? "主题" : "正文";
-    copyText(value, label+"已复制").then(function(ok){
-      tellStatus(ok ? label+"已复制。粘贴到邮箱后，再确认发送。"
-        : "未能自动复制。收件人可长按或右键“复制收件人”链接复制地址；主题和正文可展开预览手动复制。");
-    });
-    return;
-  }
-  if(t.closest("#tellDownload")){
-    var blob = new Blob(["\uFEFF" + tellMessage().text], {type:"text/plain;charset=utf-8"});
-    var url = URL.createObjectURL(blob), a = document.createElement("a");
-    a.href = url; a.download = "知未-诉说草稿.txt"; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-    tellStatus("文本已准备下载，邮件尚未发送。"); return;
+    return sendTell();
   }
   if(t.id === "tellCopy" || t.closest("#tellCopy")){
     var v = ($("tellText") || {}).value || "";
     if(!v.trim()){ toast("先写点什么吧"); return; }
     S.tellText = v; S.tellSaved = saveTellDraft();
-    copyText(tellMessage().text, "完整邮件内容已复制，尚未发送");
-    return;
+    return copyText(v, "内容已复制").then(function(ok){
+      /* 复制不会改变发送中的状态，也不会声称副本已投递。 */
+      if(!S.tellSending) tellStatus(ok ? "内容已复制，可自行保存或粘贴到在线树洞。"
+        : "未能自动复制，请在留言框中选中文字手动复制。");
+      if(!ok && $("tellText")){ $("tellText").focus(); $("tellText").select(); }
+    });
   }
 });
 /* textarea 直接绑不上（每次 render 都会重建），用事件委托 */
 document.addEventListener("input", function(e){
   if(e.target && e.target.id === "tellText"){
     S.tellText = e.target.value;
+    if(!S.tellSending) S.tellNotice = "";
     S.tellSaved = saveTellDraft();
     updateTellDelivery();
   }
