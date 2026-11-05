@@ -116,6 +116,11 @@
 
 /* ============================ 数据 ============================ */
 var DATA = window.__KPOP_DATA__ || {artists:[],releases:[],events:[],generated:""};
+/* 数据构建时间以北京时间写入。旧格式没有时区，不能按访客的时区解释。 */
+var generatedAt = typeof DATA.generated === "string" ? DATA.generated : "";
+var generatedISO = generatedAt.replace(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$/, "$1T$2+08:00");
+var dataAgeHours = (Date.now() - Date.parse(generatedISO)) / 3600000;
+var dataMayBeStale = !Number.isFinite(dataAgeHours) || dataAgeHours > 30;
 var ALL = (DATA.releases || []).slice();
 var TODAY = new Date(); TODAY.setHours(0,0,0,0);
 var THIS_YEAR = TODAY.getFullYear();
@@ -313,14 +318,17 @@ var CUTOFF_S = (function(){
   return d2s(d);
 })();
 function requiredYears(){
+  if(S.view === "search"){
+    return S.searchScope === "upcoming" ? [] : Object.keys(YEARS).sort().reverse();
+  }
   var f = S.range.from, need = [];
   if(S.tab === "mine"){
     /* 「我的」页：收藏和本命可能来自任何年份，只加载主文件（近一年）会让
        旧专辑刷新后「消失」，用户会以为收藏丢了。这里把所有年份补齐。 */
     need = Object.keys(YEARS);
   } else if(!f){
-    /* 「过去所有」或在搜索 → 补齐所有年份 */
-    if(S.tab !== "past" && !S.q) return [];
+    /* 「过去所有」→ 补齐所有年份 */
+    if(S.tab !== "past") return [];
     need = Object.keys(YEARS);
   } else if(f < CUTOFF_S){
     var y0 = +f.slice(0, 4), y1 = +((S.range.to || f).slice(0, 4));
@@ -369,9 +377,11 @@ function fmtDurShort(ms){
   if(m>=60){ var h=Math.floor(m/60); return h+":"+pad(m%60)+":"+pad(ss); }
   return m+":"+pad(ss);
 }
-function fmtDate(s){
+function fmtDate(s, omitCurrentYear){
   var d = parseD(s); if(!d) return s||"";
-  return d.getFullYear()+" 年 "+(d.getMonth()+1)+" 月 "+d.getDate()+" 日";
+  var year = d.getFullYear();
+  var prefix = omitCurrentYear && year === THIS_YEAR ? "" : year+" 年 ";
+  return prefix+(d.getMonth()+1)+" 月 "+d.getDate()+" 日";
 }
 function searchURL(r){
   return "https://music.apple.com/kr/search?term=" + encodeURIComponent(r.artist+" "+r.title);
@@ -390,11 +400,12 @@ function isFav(id){ return favs.indexOf(id) >= 0; }
 function isBias(n){ return bias.indexOf(n) >= 0; }
 
 var S = {
-  view:"home",        /* home | calendar：首页是默认页 */
+  view:"home",        /* home | calendar | search：首页是默认页 */
   tab:"future",       /* future | past | guide | mine | more */
   frange:"f7",        /* 未来子选项：f7 | month | nmonth */
   mine:"fav",         /* 我的子选项：fav | bias */
-  q:"", type:"", kind:"", agency:"", sort:"date_desc",
+  q:"", searchScope:"all",
+  type:"", kind:"", agency:"", sort:"date_desc",
   onlyFav:false, onlyBias:false,
   range:{mode:"quick", kind:"pall", from:null, to:null, label:"过去所有"},
   showBiasMgr:false, detailId:null,
@@ -630,7 +641,6 @@ function applyFilters(list){
     if(!kindOK(r)) return false;
     if(S.agency && r._agency !== S.agency) return false;
     if(!inRange(r)) return false;
-    if(S.q && r._hay.indexOf(S.q.toLowerCase()) < 0) return false;
     return true;
   }).sort(function(a,b){
     var dateOrder = (a.date||"").localeCompare(b.date||"");
@@ -1448,6 +1458,7 @@ function detailHTML(r){
   h += '<div class="dact">'
     +  '<button class="btn" id="favDetail" aria-pressed="'+isFav(r.id)+'">'
     +    (isFav(r.id) ? ico('star',14,true)+' 已收藏' : ico('star',14)+' 收藏') + '</button>'
+    +  '<button type="button" class="btn" id="copyRelease">'+ico('copy',14)+' 复制专辑链接</button>'
     +  '<button class="btn" id="reportBtn">信息有误？告诉我们</button>'
     +  '<span class="dsrc">数据来源：' + esc(srcLabel(r)) + '</span>'
     + '</div>';
@@ -1569,6 +1580,7 @@ function miniHTML(r){
     + '</div>'
     + '<div class="mt">'+esc(dn.zh)+'</div>'
     + '<div class="ms">'+esc(r.title)+'</div>'
+    + (r.date ? '<time class="mdate" datetime="'+esc(r.date)+'">'+esc(fmtDate(r.date, true))+'</time>' : '')
     + '</div>';
 }
 function renderHome(){
@@ -1586,13 +1598,15 @@ function renderHome(){
   if(todayRel.length) bits.push('<b>'+todayRel.length+'</b> 张新发行');
   if(bds.length)      bits.push('<b>'+bds.length+'</b> 位艺人过生日');
   if(tt.length)       bits.push('今晚有 <b>'+showNameHTML(tt[0])+'</b>');
+  var noReleaseToday = dataMayBeStale ? "目前暂未收录今天的发行" : "今天没有发行安排";
+  var noUpcoming = dataMayBeStale ? "目前暂未收录未来 7 天的回归" : "未来 7 天没有回归安排";
   var h = '<div class="hero">'
     + '<div class="heroL">'
     +   '<div class="wel">欢迎来到</div>'
     +   '<div class="bigname">知未</div>'
     +   '<div class="hhd"><span class="hmd">'+(TODAY.getMonth()+1)+' 月 '+TODAY.getDate()+' 日</span>'
     +     '<span class="hwk">'+WK[TODAY.getDay()]+'</span></div>'
-    +   '<div class="hsum">' + (bits.length ? bits.join(" · ") : '今天没有新发行，看看下面的回归倒计时') + '</div>'
+    +   '<div class="hsum">' + (bits.length ? bits.join(" · ") : noReleaseToday+'，看看下面的回归日程') + '</div>'
     + '</div>'
     + '<div class="heroR" id="hstats"></div>'
     + '</div>';
@@ -1601,12 +1615,12 @@ function renderHome(){
   h += '<div class="hduo"><div class="hduoL">';
   h += homeSec("今天发行", todayRel.length ? "共 "+todayRel.length+" 张" : "",
         todayRel.length ? '<div class="minibar">'+todayRel.map(miniHTML).join("")+'</div>'
-                        : '<div class="hempty">今天没有发行安排</div>');
+                        : '<div class="hempty">'+noReleaseToday+'</div>');
 
   /* 未来 7 天倒计时 */
   h += homeSec("未来 7 天回归", soon.length ? "共 "+soon.length+" 张" : "",
         soon.length ? '<div class="minibar">'+soon.slice(0,12).map(miniHTML).join("")+'</div>'
-                    : '<div class="hempty">未来 7 天没有回归安排</div>');
+                    : '<div class="hempty">'+noUpcoming+'</div>');
 
   /* 今日生日：默认 5 位，多了点「展开」 */
   h += homeSec("今日生日", bds.length ? "共 "+bds.length+" 位" : "",
@@ -1766,9 +1780,9 @@ function renderBiasBox(){
 /* 过去模块分页：历史回填后全库 4700+ 张，一次全塞 DOM 手机直接卡死。
    改成每页 PAGE_SIZE 张 + 页码，要哪页渲染哪页。
    筛选条件一变就回第 1 页（用条件签名判断，不用挨个改事件处理器）。 */
-var PAGE_SIZE = 30, page = 1, listSig = null;
+var PAGE_SIZE = 30, page = 1, searchPage = 1, listSig = null;
 function listSignature(){
-  return [S.tab, S.q, S.type, S.kind, S.agency, S.onlyFav, S.onlyBias,
+  return [S.tab, S.type, S.kind, S.agency, S.onlyFav, S.onlyBias,
           S.sort, S.range && S.range.label].join("|");
 }
 
@@ -1801,20 +1815,60 @@ function pagerHTML(cur, total, n){
   return h;
 }
 
+function searchHTML(){
+  ensureYears();
+  var query = S.q.toLowerCase();
+  var matches = ALL.filter(function(r){
+    if(r._hay.indexOf(query) < 0) return false;
+    if(S.searchScope === "upcoming") return r._dd > 0;
+    if(S.searchScope === "history") return r._dd !== null && r._dd <= 0;
+    return true;
+  }).sort(function(a,b){
+    if(a._dd > 0 && b._dd > 0) return a._dd - b._dd;
+    return (b.date || "").localeCompare(a.date || "");
+  });
+  var pages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+  var status = historyStatusHTML();
+  var visiblePage = Math.min(searchPage, pages);
+  if(!status) searchPage = visiblePage;
+  var start = (visiblePage - 1) * PAGE_SIZE;
+  var heading = '<div class="sec-h"><h2>搜索结果</h2><span class="c">'+matches.length
+              +'</span><span class="line"></span></div>';
+  if(!matches.length){
+    return heading + (status || '<div class="empty"><div class="e">'+ico('search',26)
+      +'</div><h3>没有匹配的发行</h3><p>试试其他关键词，或切换搜索范围。</p></div>');
+  }
+  return heading + status + gridHTML(matches.slice(start, start + PAGE_SIZE))
+       + (pages > 1 ? pagerHTML(visiblePage, pages, matches.length) : "");
+}
+
 function renderList(){
-  renderBiasBox();
-  $("biasBox").style.display = (S.tab==="mine" && S.mine==="bias" || S.showBiasMgr) ? "" : "none";
+  var isSearch = S.view === "search";
+  if(!isSearch) renderBiasBox();
   $("dateLabel").textContent = S.range.label;
   $("dateBtn").classList.toggle("on", S.range.mode === "custom");
 
   /* 控制条显隐：未来有三档子选项，过去有完整筛选，我的有收藏/本命切换 */
-  var isFuture = (S.tab==="future"), isPast = (S.tab==="past");
-  var isMine = (S.tab==="mine"), isMore = (S.tab==="more"), isGuide = (S.tab==="guide");
+  var tab = isSearch ? "" : S.tab;
+  var isFuture = (tab==="future"), isPast = (tab==="past");
+  var isMine = (tab==="mine"), isMore = (tab==="more"), isGuide = (tab==="guide");
   $("showsBar").style.display = isMore ? "" : "none";
   if(isMore) renderShows("showsBar");
   $("upBar").classList.toggle("on", isFuture);
   $("mineBar").classList.toggle("on", isMine);
   $("filters").style.display = isPast ? "" : "none";
+  var searchBar = $("searchBar");
+  if(searchBar) searchBar.classList.toggle("on", isSearch);
+  if(isSearch){
+    $("biasBox").style.display = "none";
+    document.querySelectorAll("[data-search-scope]").forEach(function(button){
+      var selected = button.getAttribute("data-search-scope") === S.searchScope;
+      button.classList.toggle("on", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+    $("content").innerHTML = searchHTML();
+    return;
+  }
   if(isGuide){                       /* 指南页不需要任何筛选控件 */
     $("biasBox").style.display = "none";
     updateGuideOffset();
@@ -1848,16 +1902,18 @@ function renderList(){
     if(S.frange === "month" || S.frange === "nmonth"){
       var nU = ul.filter(function(r){ return r._dd >= 0; }).length;
       html = ul.length ? gridHTML(ul)
-        : '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>' + esc(R.label) + '没有回归记录</h3>'
-          + '<p>数据每天自动更新</p></div>';
+        : '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>' + esc(R.label)
+          + (dataMayBeStale ? '暂未收录回归记录' : '没有回归记录') + '</h3><p>'
+          + (dataMayBeStale ? '请稍后刷新查看' : '数据每天自动更新') + '</p></div>';
       html = '<div class="mohead"><b>' + esc(R.label) + '</b><span>共 ' + ul.length
            + ' 张 · 其中 ' + nU + ' 张还没发行</span></div>' + html;
     } else {
       html = ul.length
         ? '<div class="sec-h"><h2>即将回归 · 7 天</h2><span class="c">' + ul.length
           + '</span><span class="line"></span></div>' + gridHTML(ul)
-        : '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>未来 7 天没有回归</h3>'
-          + '<p>换「本月」看看，或去「过去」翻历史</p></div>';
+        : '<div class="empty"><div class="e">' + ico('head',26) + '</div><h3>'
+          + (dataMayBeStale ? '目前暂未收录未来 7 天的回归' : '未来 7 天没有回归')
+          + '</h3><p>换「本月」看看，或去「过去」翻历史</p></div>';
     }
     html = subBar + html;
   } else if(isPast){
@@ -1898,10 +1954,9 @@ function renderList(){
   if(isMore) updateTellDelivery();
   $("cFav").classList.toggle("on", S.onlyFav);
   $("cBias").classList.toggle("on", S.onlyBias);
-  $("cReset").style.display = (S.q||S.type||S.kind||S.agency||S.onlyFav||S.onlyBias
+  $("cReset").style.display = (S.type||S.kind||S.agency||S.onlyFav||S.onlyBias
     || S.range.kind !== "pall" || S.sort !== "date_desc") ? "" : "none";
   document.querySelectorAll("#filters select").forEach(function(sel){ if(sel._syncLabel) sel._syncLabel(); });
-  $("qclr").classList.toggle("on", !!S.q);
 }
 
 /* ============================ 自定义下拉 ============================ */
@@ -2053,22 +2108,31 @@ function subscribeCalendar(){
 
 /* 打开详情时把专辑写进网址（#release=id），这样复制网址就能分享这张专辑；
    关掉时把地址还原回列表，浏览器前进/后退也能正常走。 */
+function releaseHash(id){ return "#release=" + encodeURIComponent(id); }
 function openDetail(id){
-  if(!S.detailId){
+  if(!S.detailId && S.view !== "search"){
     var origin = S.view === "home" ? "#view=home" : "#tab=" + (S.tab === "mine" ? S.mine : S.tab);
-    if(S.view !== "home" && S.tab === "past" && S.range.from){
+    if(S.view === "calendar" && S.tab === "past" && S.range.from){
       origin += "&from=" + encodeURIComponent(S.range.from) + "&to=" + encodeURIComponent(S.range.to || S.range.from);
     }
     history.replaceState(null, "", origin);
   }
   S.detailId = id;
-  var h = "#release=" + encodeURIComponent(id);
-  if(location.hash !== h) history.pushState(null, "", h);
+  var h = releaseHash(id);
+  if(location.hash !== h){
+    var state = null;
+    if(S.view === "search"){
+      var entry = searchHistory();
+      state = {zwSearch:Object.assign({}, entry, {hash:searchHash(), depth:entry.depth + 1})};
+    }
+    history.pushState(state, "", h);
+  }
   render();
 }
 function closeDetail(){
   if(!S.detailId) return false;
   S.detailId = null;
+  if(S.view === "search") return true;
   var h = S.view === "home" ? "#view=home" : "#tab=" + S.tab;
   if(location.hash !== h) history.pushState(null, "", h);
   return true;
@@ -2302,10 +2366,20 @@ SponShow("wechat");
 document.addEventListener("click", function(e){
   var t = e.target, el;
 
-  /* 过去模块翻页：只渲染那一页，翻完滚回列表顶部 */
+  if((el = t.closest("[data-search-scope]")) && S.view === "search"){
+    S.searchScope = el.getAttribute("data-search-scope");
+    searchPage = 1;
+    updateSearchHash();
+    render();
+    return;
+  }
+
+  /* 列表翻页：过去和搜索各自记住页码。 */
   var pg = t.closest("[data-page]");
   if(pg && !pg.hasAttribute("disabled")){
-    page = parseInt(pg.getAttribute("data-page"), 10) || 1;
+    var nextPage = parseInt(pg.getAttribute("data-page"), 10) || 1;
+    if(S.view === "search"){ searchPage = nextPage; updateSearchHash(); }
+    else page = nextPage;
     render();
     var c = $("content");
     if(c) window.scrollTo({ top: c.offsetTop - 70, behavior: "smooth" });
@@ -2410,9 +2484,22 @@ document.addEventListener("click", function(e){
     openDetail(el.getAttribute("data-open"));
     return;
   }
-  if(t.closest("#backBtn")){ closeDetail(); syncTabs(); render(); return; }
+  if(t.closest("#backBtn")){
+    if(S.view === "search" && searchHistory().depth){ history.go(-searchHistory().depth); return; }
+    closeDetail(); syncTabs(); render(); return;
+  }
+  if(t.closest("#copyRelease")){
+    var url = SITE_URL + releaseHash(S.detailId);
+    copyText(url, "专辑链接已复制").then(function(copied){
+      if(!copied) window.prompt("请手动复制专辑链接", url);
+    });
+    return;
+  }
   if(t.id === "bdMore"){ S.bdMore = !S.bdMore; render(); return; }
-  if(t.id === "toCal"){ S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return; }
+  if(t.id === "toCal"){
+    exitSearchForNavigation("#tab=" + (S.tab === "mine" ? S.mine : S.tab));
+    S.view = "calendar"; syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
+  }
   /* 订阅日历：首页和「未来」页两个按钮共用 */
   if(t.id === "subCal" || t.id === "subCal2"){ subscribeCalendar(); return; }
   /* 信息有误：不再走 mailto（弹出系统邮件或浏览器很突兀），
@@ -2421,12 +2508,13 @@ document.addEventListener("click", function(e){
     var rr = null;
     for(var i = 0; i < ALL.length; i++){ if(ALL[i].id === S.detailId){ rr = ALL[i]; break; } }
     closeDetail();
+    exitSearchForNavigation("#tab=more");
     S.view = "calendar"; S.tab = "more";
     if(!S.tellText.trim()){
       S.tellKind = "内容纠错";
       S.tellText = "专辑：" + ((rr && rr.artist) || "") + " - " + ((rr && rr.title) || "")
         + "（" + ((rr && rr.date) || "") + "）\n"
-        + (rr ? "专辑链接：https://mywooji.cn/#release=" + encodeURIComponent(rr.id) + "\n" : "")
+        + (rr ? "专辑链接：" + SITE_URL + releaseHash(rr.id) + "\n" : "")
         + "哪里不对：\n正确信息应该是：\n";
       S.tellSaved = saveTellDraft();
     } else { toast("已保留未发送的草稿，请先处理草稿再反馈这张专辑"); }
@@ -2435,7 +2523,10 @@ document.addEventListener("click", function(e){
     if(ta){ ta.scrollIntoView({behavior:"smooth", block:"center"}); ta.focus(); }
     return;
   }
-  if(t.id === "brandHome"){ closeDetail(); S.view = "home"; syncTabs(); render(); return; }
+  if(t.closest("#brandHome")){
+    closeDetail(); exitSearchForNavigation("#view=home");
+    S.view = "home"; syncTabs(); render(); return;
+  }
   /* 收藏按钮（详情页） */
   if(t.closest("#favDetail")){
     var cur = S.detailId; var k = favs.indexOf(cur);
@@ -2461,13 +2552,16 @@ document.addEventListener("click", function(e){
   }
   /* 首页 tab */
   if((el = t.closest("[data-view]"))){
+    exitSearchForNavigation("#view=home");
     S.view = "home"; S.detailId = null;
     syncTabs(); render(); window.scrollTo({top:0,behavior:"smooth"}); return;
   }
   /* 日历 tab */
   if((el = t.closest("[data-tab]"))){
+    var nextTab = el.getAttribute("data-tab");
+    exitSearchForNavigation("#tab=" + (nextTab === "mine" ? S.mine : nextTab));
     S.view = "calendar";
-    S.tab = el.getAttribute("data-tab"); S.detailId = null;
+    S.tab = nextTab; S.detailId = null;
     /* 「即将回归」「本月回归」不带筛选，各自用固定范围，
        所以这里的 S.range 只服务于「全部发布」。 */
     if(S.tab==="past" && S.range.kind==="f30" && S.range.mode==="quick"){
@@ -2562,7 +2656,9 @@ document.addEventListener("click", function(e){
   }
   /* 指南里的跳转按钮：直接切到对应页签 */
   if((el = t.closest("[data-jump]"))){
-    openGuideDestination(el.getAttribute("data-jump")); return;
+    var jump = el.getAttribute("data-jump");
+    exitSearchForNavigation(jump === "home" ? "#view=home" : "#tab=" + (jump === "mine" ? "bias" : jump));
+    openGuideDestination(jump); return;
   }
   /* 主题手册：单击聚焦，再击同一主题恢复全部 */
   if((el = t.closest("[data-guide-topic]"))){
@@ -2628,36 +2724,123 @@ function toggleBias(n){
 }
 function addBias(n){ if(n && bias.indexOf(n)<0){ bias.push(n); LS.set("bias", bias); toast("已加入本命"); render(); } }
 
-/* 搜索 */
-var qt;
-$("q").addEventListener("input", function(){
-  var v = this.value; clearTimeout(qt);
-  qt = setTimeout(function(){
-    S.q = v.trim();
-    /* 在首页输入搜索 → 自动切到日历界面看结果 */
-    if(S.q && S.view === "home"){ S.view = "calendar"; if(S.tab!=="past") S.tab="past"; syncTabs(); }
-    /* 搜索时要放开时间范围：否则范围还锁在「未来 30 天」，
-       明明库里有这张历史专辑却搜不到（和直链进 past 时同样处理） */
-    if(S.q && S.range.kind === "f30" && S.range.mode === "quick"){
-      S.range = rangePreset("pall");
-    }
-    render();
-  }, 170);
-});
-function setSearchOpen(open, focus){
+/* 搜索单独维护关键词、范围和页码，原页面的筛选与详情保留到退出。 */
+var qt, keepSearchOpen = false, searchAfterBack = "";
+var SEARCH_SOURCE_KEYS = ["view", "tab", "detailId", "frange", "mine", "range",
+  "type", "kind", "agency", "sort", "onlyFav", "onlyBias", "guideTopic"];
+function searchHash(){
+  return "#" + new URLSearchParams({search:S.q, scope:S.searchScope, page:searchPage}).toString();
+}
+function searchHistory(){
+  var entry = history.state && history.state.zwSearch;
+  return entry && typeof entry === "object" ? entry : {depth:0, fromSource:false};
+}
+function updateSearchHash(){
+  var h = searchHash();
+  history.replaceState({zwSearch:Object.assign({}, searchHistory(), {hash:h})}, "", h);
+}
+function saveSearchSource(){
+  /* 页签不一定写入 URL，来源以实际页面和筛选为准。 */
+  var source = {page:page};
+  SEARCH_SOURCE_KEYS.forEach(function(key){ source[key] = S[key]; });
+  history.replaceState(Object.assign({}, history.state, {zwSearchSource:source}), "");
+}
+function restoreSearchSource(source){
+  SEARCH_SOURCE_KEYS.forEach(function(key){ S[key] = source[key]; });
+  page = source.page;
+  listSig = listSignature();
+  [["fType","type"],["fKind","kind"],["fAgency","agency"],["fSort","sort"]].forEach(function(pair){
+    $(pair[0]).value = S[pair[1]];
+  });
+}
+function setSearchCover(open){
   $("searchCover").hidden = !open;
   $("searchCover").style.removeProperty("display");
   $("searchToggle").setAttribute("aria-expanded", String(open));
+  updateGuideOffset();
+}
+function clearSearch(restore){
+  clearTimeout(qt);
+  var entry = searchHistory();
+  if(restore && S.view === "search" && entry.fromSource){
+    keepSearchOpen = !$("searchCover").hidden;
+    history.go(-entry.depth - 1);
+    return;
+  }
+  searchAfterBack = "";
+  S.q = ""; S.searchScope = "all"; searchPage = 1;
+  $("q").value = "";
+  if(!restore || S.view !== "search") return;
+  S.view = "home"; S.detailId = null;
+  history.replaceState(null, "", location.pathname + location.search);
+  syncTabs();
+  render();
+}
+function exitSearchForNavigation(hash){
+  if(S.view === "search" || (history.state && history.state.zwSearchSource)){
+    history.replaceState(null, "", hash);
+  }
+  clearSearch(false);
+  setSearchCover(false);
+}
+function queueSearch(e){
+  clearTimeout(qt);
+  if(e.isComposing) return;
+  var value = $("q").value.trim();
+  if(!value){ clearSearch(true); return; }
+  qt = setTimeout(function(){
+    var firstSearch = S.view !== "search";
+    if(!firstSearch && S.detailId && searchHistory().depth){
+      searchAfterBack = value;
+      history.go(-searchHistory().depth);
+      return;
+    }
+    if(firstSearch) saveSearchSource();
+    S.view = "search"; S.detailId = null; S.q = value; searchPage = 1;
+    if(firstSearch){
+      var h = searchHash();
+      history.pushState({zwSearch:{hash:h, depth:0, fromSource:true}}, "", h);
+    }
+    else updateSearchHash();
+    closeCal(); closeAllSels();
+    syncTabs();
+    render();
+    window.scrollTo({top:0,behavior:"instant"});
+  }, 170);
+}
+$("q").addEventListener("input", queueSearch);
+$("q").addEventListener("compositionend", queueSearch);
+function setSearchOpen(open, focus){
+  setSearchCover(open);
   if(open){
     if(focus) $("q").focus();
   } else {
-    clearTimeout(qt);
-    var filtered = !!S.q;
-    $("q").value = ""; S.q = "";
-    if(filtered) render();
+    clearSearch(true);
     if(focus) $("searchToggle").focus();
   }
-  updateGuideOffset();
+}
+function restoreSearchHistory(){
+  clearTimeout(qt);
+  var reopen = keepSearchOpen, nextQuery = searchAfterBack;
+  keepSearchOpen = false; searchAfterBack = "";
+  var hash = S.detailId && searchHistory().hash || location.hash;
+  var params = new URLSearchParams(hash.slice(1)), query = (params.get("search") || "").trim();
+  if(!query){
+    clearSearch(false);
+    var source = history.state && history.state.zwSearchSource;
+    if(source){ restoreSearchSource(source); syncTabs(); }
+    setSearchCover(reopen);
+    if(reopen) $("q").focus({preventScroll:true});
+    return;
+  }
+  var scope = params.get("scope");
+  S.view = "search"; S.q = nextQuery || query;
+  S.searchScope = scope === "upcoming" || scope === "history" ? scope : "all";
+  searchPage = nextQuery ? 1 : Math.max(1, parseInt(params.get("page"), 10) || 1);
+  if(nextQuery) updateSearchHash();
+  $("q").value = S.q;
+  setSearchCover(true);
+  syncTabs();
 }
 $("qclr").addEventListener("click", function(){ setSearchOpen(false, true); });
 $("q").addEventListener("keydown", function(e){
@@ -2672,11 +2855,11 @@ $("fSort").addEventListener("change", function(){ S.sort = this.value; render();
 $("cFav").addEventListener("click", function(){ S.onlyFav = !S.onlyFav; render(); });
 $("cBias").addEventListener("click", function(){ S.onlyBias = !S.onlyBias; render(); });
 $("cReset").addEventListener("click", function(){
-  S.q=""; S.type=""; S.kind=""; S.agency=""; S.onlyFav=false; S.onlyBias=false;
+  S.type=""; S.kind=""; S.agency=""; S.onlyFav=false; S.onlyBias=false;
   S.range = rangePreset("pall");
   S.sort = "date_desc";
   CAL.view = "day"; calInit();
-  $("q").value=""; $("fType").value=""; $("fKind").value=""; $("fAgency").value="";
+  $("fType").value=""; $("fKind").value=""; $("fAgency").value="";
   $("fSort").value = S.sort;
   render(); renderCal();
 });
@@ -2738,15 +2921,16 @@ var GAJ_CODE = "34011102004379";   /* 公安备案号：皖公网安备 34011102
 
 /* 数据新鲜度 */
 (function(){
-  var g = DATA.generated;
-  if(!g){ $("noticeTxt").textContent = "数据暂时不可用，请稍后刷新重试。"; $("notice").classList.add("on"); return; }
-  var d = new Date(g.replace(" ", "T"));
-  var h = (Date.now() - d.getTime()) / 3600000;
+  if(!Number.isFinite(dataAgeHours)){
+    $("noticeTxt").textContent = "暂时无法确认数据的更新时间。最新日程可能尚未收录，可刷新后重试。";
+    $("notice").classList.add("on");
+    return;
+  }
   var ge = $("genAt");
-  if(ge){ ge.textContent = "数据更新于 " + g + " · "; }
-  if(h > 30){
-    $("noticeTxt").textContent = "数据更新于 " + g + "（已过 " + Math.floor(h) + " 小时）。"
-      + "最新回归可能尚未收录，请稍后再来看看。";
+  if(ge){ ge.textContent = "数据更新于 " + generatedAt + " · "; }
+  if(dataMayBeStale){
+    $("noticeTxt").textContent = "上次数据更新于 " + generatedAt + "（" + Math.floor(dataAgeHours) + " 小时前）。"
+      + "部分新发行或回归日程可能尚未收录，请稍后再查。";
     $("notice").classList.add("on");
   }
 })();
@@ -2802,12 +2986,11 @@ if(window.ResizeObserver){
 }
 addEventListener("resize", updateGuideOffset);
 initSelects();
-/* 所有屏幕默认收起，由访客点击搜索按钮展开。 */
-setSearchOpen(false, false);
 initShareBoard();
 applyHash();
+restoreSearchHistory();
 render();
 
 /* 浏览器前进 / 后退：按地址还原页面（打开详情写了 #release，退回去就是列表） */
-addEventListener("popstate", function(){ applyHash(); render(); });
+addEventListener("popstate", function(){ applyHash(); restoreSearchHistory(); render(); });
 })();

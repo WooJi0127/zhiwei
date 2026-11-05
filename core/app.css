@@ -276,6 +276,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 .mini .mcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .mini .mt{margin-top:8px;font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .ms{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .mdate{display:block;margin-top:4px;font-size:12.5px;color:var(--brand)}
 
 /* 本月 MV（首页） */
 /* 6 张 × 190 + 5 间距 ≈ 1200，正好铺满 1280 的内容区，不用横向滚 */

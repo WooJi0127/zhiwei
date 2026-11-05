@@ -52,15 +52,155 @@ async function main(){
             await page.waitForFunction(()=>document.querySelectorAll('#content .card').length>0 && document.querySelector('#listView').style.display!=='none');
             await page.locator('#qclr').click();
             assert.equal(await page.locator('#searchCover').isVisible(),false);
+            await page.locator('#homeView').waitFor({state:'visible'});
             await page.locator('#searchToggle').click();
             await page.locator('#q').fill('This pending search must not survive close');
             await page.locator('#searchToggle').click();
             await page.waitForTimeout(220);
             assert.equal(await page.locator('#q').inputValue(),'');
-            assert.ok(await page.locator('#content .card').count()>0,'closed search debounce still filtered list');
+            assert.equal(await page.locator('#homeView').isVisible(),true,'closing search must return to its source view');
             await page.locator('#searchToggle').click();await page.locator('#q').press('Escape');
             assert.equal(await page.locator('#searchCover').isVisible(),false);
             assert.equal(await page.locator('#searchToggle').getAttribute('aria-expanded'),'false');
+          });
+          if(width===390 && !process.argv[2])await check('global search',async()=>{
+            const current=new Date();
+            const date=new Date(current.getFullYear(),current.getMonth(),current.getDate()+3);
+            const futureDate=[date.getFullYear(),date.getMonth()+1,date.getDate()].map(n=>String(n).padStart(2,'0')).join('-');
+            const artist='Search Fixture';
+            const upcoming={id:'test-upcoming',artist,title:'Upcoming',date:futureDate};
+            const old={id:'test-archive',artist,title:'Fixture Classic',date:'2020-05-01'};
+            const series=Array.from({length:31},(_,i)=>({
+              id:'series-'+i,artist:'Archive Series',title:'Volume '+i,date:'2020-05-01'
+            }));
+            const mainData=route=>route.fulfill({contentType:'text/javascript',body:'window.__KPOP_DATA__='+JSON.stringify({
+              artists:[{name:artist}],releases:[upcoming],years:{2020:1+series.length},generated:current.toISOString(),recentDays:365
+            })});
+            const archive=route=>route.fulfill({contentType:'text/javascript',body:'window.__KPOP_CHUNK_2020__='+JSON.stringify({y:2020,releases:[old,...series]})});
+            await page.route('**/data/data.js*',mainData);
+            await page.route('**/data/data-2020.js*',archive);
+            const resultIds=()=>page.locator('#content .card').evaluateAll(cards=>cards.map(card=>card.dataset.open).sort());
+            const expectResults=async(ids)=>{
+              await page.waitForFunction(expected=>{
+                const list=document.getElementById('listView');
+                const actual=Array.from(document.querySelectorAll('#content .card'),card=>card.dataset.open).sort();
+                return getComputedStyle(list).display!=='none' && JSON.stringify(actual)===JSON.stringify(expected);
+              },ids,{timeout:3500});
+              assert.deepEqual(await resultIds(),ids);
+            };
+            const startSearch=async()=>{
+              await page.locator('#searchToggle').click();
+              await page.locator('#q').fill(artist);
+              await expectResults([old.id,upcoming.id]);
+            };
+            try{
+              const fixtureUrl=new URL(base);
+              fixtureUrl.searchParams.set('search-fixture','1');
+              await page.goto(fixtureUrl.href,{waitUntil:'load'});
+              await startSearch();
+              assert.match(page.url(),/#search=/,'first search must have its own URL');
+              const searchHistoryLength=await page.evaluate(()=>history.length);
+              await page.locator('#q').fill('Fixture Classic');
+              await expectResults([old.id]);
+              await page.locator('#q').fill(artist);
+              await expectResults([old.id,upcoming.id]);
+              const scope=label=>page.getByRole('button',{name:label,exact:true});
+              assert.equal(await scope('全部').getAttribute('aria-pressed'),'true');
+              await scope('即将发行').click();
+              await expectResults([upcoming.id]);
+              await scope('历史发行').click();
+              await expectResults([old.id]);
+              assert.equal(await page.evaluate(()=>history.length),searchHistoryLength,'query and scope must update one history entry');
+              await page.locator('#content .card').click();
+              assert.ok(await page.locator('#detailView').isVisible());
+              assert.match(page.url(),/#release=test-archive$/);
+              await page.goBack();
+              await expectResults([old.id]);
+              assert.equal(await scope('历史发行').getAttribute('aria-pressed'),'true');
+              assert.equal(await page.locator('#q').inputValue(),artist);
+              await page.goForward();
+              assert.ok(await page.locator('#detailView').isVisible());
+              await page.locator('#backBtn').click();
+              await expectResults([old.id]);
+              await page.locator('#qclr').click();
+              await page.locator('#homeView').waitFor({state:'visible'});
+              await page.locator('#toCal').click();
+              await page.reload({waitUntil:'load'});
+              assert.ok(await page.locator('[data-tab="future"]').evaluate(e=>e.classList.contains('on')));
+
+              for(const tab of ['future','past','guide','mine','more']){
+                await page.locator(`[data-tab="${tab}"]`).click();
+                if(tab==='past'){
+                  await page.locator('#dateBtn').click();
+                  await page.locator('[data-calpreset="p365"]').click();
+                  await page.locator('#calApply').click();
+                  assert.equal(await page.locator('#dateLabel').textContent(),'过去 1 年');
+                  await page.locator('#cFav').click();
+                }
+                await startSearch();
+                if(tab==='past'){
+                  await page.reload({waitUntil:'load'});
+                  await expectResults([old.id,upcoming.id]);
+                  assert.equal(await page.locator('#q').inputValue(),artist);
+                  await page.goBack();
+                  assert.ok(await page.locator('[data-tab="past"]').evaluate(e=>e.classList.contains('on')));
+                  assert.ok(await page.locator('#cFav').evaluate(e=>e.classList.contains('on')));
+                  assert.equal(await page.locator('#dateLabel').textContent(),'过去 1 年');
+                  await page.goForward();
+                  await expectResults([old.id,upcoming.id]);
+                  await page.locator('#q').fill('');
+                  await page.waitForFunction(()=>document.getElementById('filters').style.display!=='none');
+                  assert.ok(await page.locator('#cFav').evaluate(e=>e.classList.contains('on')));
+                  assert.equal(await page.locator('#dateLabel').textContent(),'过去 1 年');
+                  assert.equal(await page.locator('#content .card').count(),0);
+                }
+                await page.locator('#qclr').click();
+                await page.waitForFunction(tab=>document.querySelector(`[data-tab="${tab}"]`).classList.contains('on'),tab);
+                assert.ok(await page.locator(`[data-tab="${tab}"]`).evaluate(e=>e.classList.contains('on')));
+                if(tab==='past'){
+                  await page.locator('[data-tab="guide"]').click();
+                  await page.reload({waitUntil:'load'});
+                  assert.ok(await page.locator('#guideSections').isVisible());
+                }
+              }
+
+              await page.locator('[data-view="home"]').click();
+              await page.locator('#homeView [data-open="test-upcoming"]').click();
+              await startSearch();
+              assert.match(page.url(),/#search=/,'searching from a detail must leave the album URL');
+              await page.reload({waitUntil:'load'});
+              await expectResults([old.id,upcoming.id]);
+              await page.goBack();
+              assert.ok(await page.locator('#detailView').isVisible());
+              assert.match(page.url(),/#release=test-upcoming$/);
+              await page.goForward();
+              await expectResults([old.id,upcoming.id]);
+              await page.locator('#qclr').click();
+              await page.locator('#detailView').waitFor({state:'visible'});
+              assert.match(page.url(),/#release=test-upcoming$/);
+
+              await page.locator('#searchToggle').click();
+              await page.evaluate(()=>{
+                const input=document.getElementById('q');
+                input.value='Search Fixture';
+                input.dispatchEvent(new Event('input',{bubbles:true}));
+                document.querySelector('[data-tab="guide"]').click();
+              });
+              await page.waitForTimeout(220);
+              assert.equal(await page.locator('#q').inputValue(),'');
+              assert.equal(await page.locator('#searchCover').isVisible(),false);
+              assert.ok(await page.locator('#guideSections').isVisible());
+
+              fixtureUrl.searchParams.set('search-fixture','page-two');
+              fixtureUrl.hash='search=Archive+Series&scope=history&page=2';
+              await page.goto(fixtureUrl.href,{waitUntil:'load'});
+              await expectResults([series.at(-1).id]);
+              assert.equal(await page.locator('.pager .pgb.on').textContent(),'2');
+            }finally{
+              await page.unroute('**/data/data.js*',mainData);
+              await page.unroute('**/data/data-2020.js*',archive);
+              await page.goto(base,{waitUntil:'load'});
+            }
           });
           await check('detail',async()=>{
             await page.locator('[data-tab="past"]').click();await page.locator('#content .card').first().click();

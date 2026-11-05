@@ -127,7 +127,7 @@ test('opening detail records the actual source list for browser back', () => {
   const ctx={S:{view:'calendar',tab:'past',detailId:null,range:{from:'2020-01-01',to:'2020-12-31'}},
     location:{hash:''},history:{replaceState(a,b,h){replaced.push(h);},pushState(){}},render(){}};
   vm.createContext(ctx);
-  vm.runInContext(source.slice(source.indexOf('function openDetail(id){'),source.indexOf('function closeDetail(){')),ctx);
+  vm.runInContext(source.slice(source.indexOf('function releaseHash(id){'),source.indexOf('function closeDetail(){')),ctx);
   ctx.openDetail('old');
   assert.equal(replaced.length,1);
   assert.match(replaced[0], /tab=past/);
