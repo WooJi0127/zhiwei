@@ -32,7 +32,11 @@ trap 'rm -rf -- "$zw_stage"' EXIT
 
 zw_digest(){
   local digest
-  digest=$(tr -d '\r' < "$1" | sha256sum) || return 1
+  if [[ $1 = *.png ]]; then
+    digest=$(sha256sum < "$1") || return 1
+  else
+    digest=$(tr -d '\r' < "$1" | sha256sum) || return 1
+  fi
   printf '%s\n' "${digest%% *}"
 }
 
@@ -55,7 +59,7 @@ zw_manifest(){
     file=${file%$'\r'}
     [[ $hash =~ ^[a-f0-9]{64}$ && $file && ! $extra ]] || return 1
     case "$file" in
-      index.html|app.js|app.css|backup.js|robots.txt|sitemap.xml|zhiwei.ics|data/data.js|data/data-[0-9][0-9][0-9][0-9].js) ;;
+      index.html|app.js|app.css|backup.js|robots.txt|sitemap.xml|zhiwei.ics|site-icon.png|data/data.js|data/data-[0-9][0-9][0-9][0-9].js) ;;
       *) return 1 ;;
     esac
     [ -z "${seen[$file]:-}" ] || return 1

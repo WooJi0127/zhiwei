@@ -31,6 +31,7 @@ class ReleaseSyncTests(unittest.TestCase):
             "data/data.js": f'window.__KPOP_DATA__ = {{"generated":"{self.today}"}};\n'.encode(),
             "data/data-2020.js": b"new year\r\n",
             "zhiwei.ics": b"BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n",
+            "site-icon.png": b"\x89PNG\r\n\x1a\n",
         }
         self.write("live/index.html", b"previous index")
         self.write("live/version.txt", b"previous version")
@@ -62,7 +63,8 @@ cp -- "mirrors/$url" "$dest"
         lines = ["zhiwei-release-v1\t" + (generated or self.today)]
         for name, content in files.items():
             self.write(f"mirrors/{mirror}/{name}", content)
-            digest = hashlib.sha256(content.replace(b"\r\n", b"\n")).hexdigest()
+            normalized = content if name.endswith(".png") else content.replace(b"\r\n", b"\n")
+            digest = hashlib.sha256(normalized).hexdigest()
             lines.append(f"{digest}\t{name}")
         self.write(f"mirrors/{mirror}/release-manifest.tsv", ("\n".join(lines) + "\n").encode())
 

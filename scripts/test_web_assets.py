@@ -28,16 +28,18 @@ def release_fixture(root):
     (core / 'index.html').write_bytes(
         b'<link rel="stylesheet" href="app.css">\r\n'
         b'<script src="data/data.js"></script>\r\n<script src="app.js"></script>\r\n'
+        b'<!-- home-preview:start --><!-- home-preview:end -->\r\n'
     )
     (core / 'app.js').write_bytes(b'window.example=1;\r\n')
     (core / 'app.css').write_bytes(b'body{color:green}\n')
     (core / 'backup.js').write_bytes(b'window.backup=true;\n')
     (core / 'robots.txt').write_bytes(b'User-agent: *\r\n')
     (core / 'sitemap.xml').write_bytes(b'<urlset/>\n')
+    (core / 'site-icon.png').write_bytes(b'\x89PNG\r\n\x1a\n')
     (core / 'data' / 'data.js').write_bytes(b'previous preview copy\n')
     payload = {
         'generated': '2026-11-05 10:01:08',
-        'releases': [],
+        'releases': [{'id': 'future', 'artist': 'Fixture Artist', 'title': 'Upcoming EP', 'date': '2026-11-07'}],
         'years': {'2020': 1},
         'olderCount': 1,
     }
@@ -94,6 +96,8 @@ class WebAssetsTests(unittest.TestCase):
             script = '<script src="data/data.js?v=' + hashlib.sha256(main).hexdigest()[:16] + '"></script>'
             html = (site / 'index.html').read_text(encoding='utf-8')
             self.assertIn(script, html)
+            self.assertIn('Fixture Artist', html)
+            self.assertIn('Upcoming EP', html)
             offline = (root / '知未.html').read_text(encoding='utf-8')
             self.assertIn(script, offline)
             self.assertIn('window.example=1;', offline)
@@ -103,10 +107,12 @@ class WebAssetsTests(unittest.TestCase):
             listed = dict(line.split('\t', 1)[::-1] for line in lines[1:])
             self.assertEqual(set(listed), {
                 'index.html', 'app.js', 'app.css', 'data/data.js',
-                'data/data-2020.js', 'zhiwei.ics', 'backup.js', 'robots.txt', 'sitemap.xml',
+                'data/data-2020.js', 'zhiwei.ics', 'backup.js', 'robots.txt', 'sitemap.xml', 'site-icon.png',
             })
             for name, digest in listed.items():
-                content = (site / name).read_bytes().replace(b'\r\n', b'\n')
+                content = (site / name).read_bytes()
+                if not name.endswith('.png'):
+                    content = content.replace(b'\r\n', b'\n')
                 self.assertEqual(digest, hashlib.sha256(content).hexdigest(), name)
 
     def test_missing_archive_cannot_publish_partial_manifest(self):

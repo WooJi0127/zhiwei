@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 
 from catalog_state import read_published
+from home_preview import render_home_preview
 
 
 def lf_bytes(path):
@@ -48,6 +49,7 @@ def stamp_assets(root):
         ):
             raise ValueError('Invalid published data timestamp')
         datetime.fromisoformat(generated)
+        text = render_home_preview(text, published)
         files = {'zhiwei.ics': data / 'zhiwei.ics'}
         for year in published['years']:
             if not re.fullmatch(r'[0-9]{4}', year):
@@ -57,6 +59,9 @@ def stamp_assets(root):
             if (core / name).is_file():
                 files[name] = core / name
         digests.update({name: hashlib.sha256(lf_bytes(path)).hexdigest() for name, path in files.items()})
+        icon = core / 'site-icon.png'
+        if icon.is_file():
+            digests[icon.name] = hashlib.sha256(icon.read_bytes()).hexdigest()
         digests['index.html'] = hashlib.sha256(text.encode('utf-8')).hexdigest()
         rows = [f'zhiwei-release-v1\t{generated}']
         rows.extend(f'{digest}\t{name}' for name, digest in sorted(digests.items()))

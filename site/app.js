@@ -1584,7 +1584,7 @@ function miniHTML(r){
     + '</div>';
 }
 function renderHome(){
-  var box = $("homeView"); if(!box) return;
+  var box = $("homeContent") || $("homeView"); if(!box) return;
 
   var todayRel = ALL.filter(function(r){ return r.date === TODAY_S; })
                     .sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); });
@@ -1593,26 +1593,24 @@ function renderHome(){
   var bds = birthdaysToday();
   var tt = showsOn(TODAY.getDay());
 
-  /* 欢迎区：大字「知未」+ 一句话概览，右侧统计卡 */
+  /* 首页标题和用途来自初始 HTML；这里只填当天日期、概览和统计。 */
   var bits = [];
   if(todayRel.length) bits.push('<b>'+todayRel.length+'</b> 张新发行');
   if(bds.length)      bits.push('<b>'+bds.length+'</b> 位艺人过生日');
   if(tt.length)       bits.push('今晚有 <b>'+showNameHTML(tt[0])+'</b>');
   var noReleaseToday = dataMayBeStale ? "目前暂未收录今天的发行" : "今天没有发行安排";
   var noUpcoming = dataMayBeStale ? "目前暂未收录未来 7 天的回归" : "未来 7 天没有回归安排";
-  var h = '<div class="hero">'
-    + '<div class="heroL">'
-    +   '<div class="wel">欢迎来到</div>'
-    +   '<div class="bigname">知未</div>'
-    +   '<div class="hhd"><span class="hmd">'+(TODAY.getMonth()+1)+' 月 '+TODAY.getDate()+' 日</span>'
-    +     '<span class="hwk">'+WK[TODAY.getDay()]+'</span></div>'
-    +   '<div class="hsum">' + (bits.length ? bits.join(" · ") : noReleaseToday+'，看看下面的回归日程') + '</div>'
-    + '</div>'
-    + '<div class="heroR" id="hstats"></div>'
-    + '</div>';
+  var homeDate = $("homeDate"), homeSummary = $("homeSummary");
+  if(homeDate){
+    homeDate.innerHTML = '<span class="hmd">'+(TODAY.getMonth()+1)+' 月 '+TODAY.getDate()+' 日</span>'
+                       + '<span class="hwk">'+WK[TODAY.getDay()]+'</span>';
+  }
+  if(homeSummary){
+    homeSummary.innerHTML = bits.length ? bits.join(" · ") : noReleaseToday+'，看看下面的回归日程';
+  }
 
   /* 今天发行 + 今日生日 + 随心歌单：左边内容、右边歌单，把空位填上 */
-  h += '<div class="hduo"><div class="hduoL">';
+  var h = '<div class="hduo"><div class="hduoL">';
   h += homeSec("今天发行", todayRel.length ? "共 "+todayRel.length+" 张" : "",
         todayRel.length ? '<div class="minibar">'+todayRel.map(miniHTML).join("")+'</div>'
                         : '<div class="hempty">'+noReleaseToday+'</div>');
