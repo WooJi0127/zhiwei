@@ -179,6 +179,7 @@ class CatalogTests(unittest.TestCase):
         after['releases'][0]['id'] = 'apple-r1'
         after['releases'][0]['title'] = 'Record - Single'
         after['releases'][0]['date'] = '2026-10-02'
+        after['releaseAliases'] = {'r1': 'apple-r1'}
         state.validate_export(self.con, before, after, [])
         after['releases'][0]['tracks'] = []
         with self.assertRaisesRegex(ValueError, 'tracks'):

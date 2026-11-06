@@ -17,7 +17,7 @@ function browser({stored = new Map(), fetch = async () => response(), ...overrid
       setAttribute(k,v){this.attributes[k] = v;}, focus(){this.focused = true;}, select(){this.selected = true;}, scrollIntoView(){}}]));
   const listeners = {}, calls = [], timers = new Map(), copied = [];
   let timerId = 0;
-  const c = {S:{}, location:{origin:'https://mywooji.cn', protocol:'https:', href:'https://mywooji.cn/?private=secret#tab=more'},
+  const c = {S:{}, DATA:{}, location:{origin:'https://mywooji.cn', protocol:'https:', href:'https://mywooji.cn/?private=secret#tab=more'},
     navigator:{onLine:true}, crypto:webcrypto, AbortController,
     sessionStorage:{getItem:k => stored.get(k) || null, setItem:(k,v) => stored.set(k,v), removeItem:k => stored.delete(k)},
     fetch:(url, options) => {calls.push({url, options}); return fetch(url, options);},
@@ -30,6 +30,8 @@ function browser({stored = new Map(), fetch = async () => response(), ...overrid
     ...overrides};
   c.window = c;
   vm.createContext(c);
+  const releaseStart = source.indexOf('function releaseId(');
+  vm.runInContext(source.slice(releaseStart, source.indexOf('\n}', releaseStart) + 2), c);
   vm.runInContext(block, c);
   const inputStart = source.indexOf('document.addEventListener("input", function(e){\n  if(e.target && e.target.id === "tellText")');
   vm.runInContext(source.slice(inputStart, source.indexOf('\n});', inputStart) + 4), c);

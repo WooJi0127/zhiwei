@@ -287,21 +287,32 @@ def validate_export(con, before, after, corrections):
     removed_releases = allowed['releases']
     floor = (dt.date.today() - dt.timedelta(days=build.HISTORY_DAYS)).isoformat()
     releases = {r['id']: r for r in after['releases']}
+    aliases = after.get('releaseAliases', {})
     errors = []
-    for old in before['releases']:
+    for old_id, target in aliases.items():
+        if old_id in releases or target not in releases:
+            errors.append('invalid release alias: ' + old_id)
+    old_releases = {r['id']: r for r in before['releases']}
+    old_links = dict(old_releases)
+    for old_id, target in before.get('releaseAliases', {}).items():
+        if target not in old_releases:
+            errors.append('invalid previous release alias: ' + old_id)
+        else:
+            old_links[old_id] = old_releases[target]
+    for old_id, old in old_links.items():
         if old['date'] < floor or (old['id'],) in removed_releases or not build.is_wanted(old['title']):
             continue
-        replacement = releases.get(old['id'])
+        replacement = releases.get(aliases.get(old_id, old_id))
+        # An alias is evidence of compatibility only after checking the album.
+        # Exact surviving source IDs can still receive verified date corrections.
+        if replacement is not None and old['id'] != replacement['id']:
+            if not build.same_release_identity(old, replacement):
+                errors.append('incompatible release alias: ' + old_id)
+                continue
         if replacement is None:
-            # A source switch is allowed only for the same album under existing dedup rules.
-            candidates = [r for r in after['releases'] if r['artist'] == old['artist']
-                          and build.normalize_release_title(r['title']) == build.normalize_release_title(old['title'])
-                          and abs((dt.date.fromisoformat(r['date']) - dt.date.fromisoformat(old['date'])).days) <= build.DATE_TOL_DAYS]
-            replacement = next(iter(candidates), None)
-        if replacement is None:
-            errors.append('release missing: ' + old['id'])
+            errors.append('release missing or alias missing: ' + old_id)
         elif len(replacement.get('tracks', [])) < len(old.get('tracks', [])):
-            errors.append('tracks reduced: ' + old['id'])
+            errors.append('tracks reduced: ' + old_id)
     for label, fields in [('artists', ('name',)), ('members', ('g', 'n'))]:
         new_keys = {tuple(r[k] for k in fields) for r in after[label]}
         for row in before[label]:

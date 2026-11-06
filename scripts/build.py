@@ -1202,6 +1202,18 @@ def normalize_release_title(t):
     return re.sub(r"[^0-9a-z\uac00-\ud7a3]+", "", t)
 
 
+def same_release_identity(left, right):
+    """Only exact artist aliases, normalized titles and nearby source dates merge."""
+    if (names.artist_key(left['artist']) != names.artist_key(right['artist'])
+            or normalize_release_title(left['title']) != normalize_release_title(right['title'])):
+        return False
+    try:
+        return abs((datetime.date.fromisoformat(left['date'])
+                    - datetime.date.fromisoformat(right['date'])).days) <= DATE_TOL_DAYS
+    except (TypeError, ValueError):
+        return False
+
+
 def export_data(con):
     log("· 导出 data.js")
     corrections = catalog_state.prepare_export(con)
@@ -1243,7 +1255,7 @@ def export_data(con):
     # 合作曲归主艺人：'Alok, 나연 & TWICE' -> 'TWICE'
     known = set(a["name"] for a in artists)
     known_lower = {}
-    for n in known:
+    for n in sorted(known):
         known_lower.setdefault(n.lower(), n)
     n_rec = [0]
 
@@ -1313,9 +1325,10 @@ def export_data(con):
 
     groups = {}
     for rel in releases:
-        groups.setdefault((rel["artist"], norm_title(rel["title"])), []).append(rel)
+        groups.setdefault((names.artist_key(rel["artist"]), norm_title(rel["title"])), []).append(rel)
 
     dedup = []
+    release_aliases = {}
     for items in groups.values():
         items.sort(key=_score, reverse=True)
         clusters = []
@@ -1348,6 +1361,9 @@ def export_data(con):
                             best["rtype"] = parse_subtype(r["title"])
                             break
             dedup.append(best)
+            for rel in c:
+                if rel['id'] != best['id']:
+                    release_aliases[rel['id']] = best['id']
     n_dup = len(releases) - len(dedup)
     if n_dup:
         log(f"  合并重复收录 {n_dup} 条")
@@ -1407,10 +1423,31 @@ def export_data(con):
     except Exception:                               # noqa: BLE001
         mvs = []
 
+    # All removed public IDs stay usable, including aliases from older builds.
+    # Source rows are retained; this changes only the published representation.
+    previous = catalog_state.read_published(DATA_DIR)
+    published_ids = {r['id'] for r in releases}
+    published_groups = {}
+    for rel in releases:
+        key = (names.artist_key(rel['artist']), norm_title(rel['title']))
+        published_groups.setdefault(key, []).append(rel)
+    for old in previous['releases']:
+        if old['id'] in published_ids or old['id'] in release_aliases:
+            continue
+        key = (names.artist_key(old['artist']), norm_title(old['title']))
+        matches = [r for r in published_groups.get(key, []) if same_release_identity(old, r)]
+        if len(matches) == 1:
+            release_aliases[old['id']] = matches[0]['id']
+    for old_id, target in previous.get('releaseAliases', {}).items():
+        target = release_aliases.get(target, target)
+        if old_id not in published_ids and target in published_ids:
+            release_aliases.setdefault(old_id, target)
+
     payload = {
         "generated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "artists": artists,
         "releases": recent,
+        "releaseAliases": release_aliases,
         "events": events,
         "members": members,
         "mvs": mvs,
@@ -1419,7 +1456,6 @@ def export_data(con):
         "olderCount": n_old,
     }
     # Validate the complete archive before writing ANY output file.
-    previous = catalog_state.read_published(DATA_DIR)
     catalog_state.validate_export(con, previous, dict(payload, releases=releases), corrections)
     blob = ("window.__KPOP_DATA__ = "
             + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))

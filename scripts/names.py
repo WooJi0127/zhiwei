@@ -467,6 +467,17 @@ def norm_artist(name):
     return n
 
 
+def artist_key(name):
+    """Identity only: ignore casing and the explicitly supported public aliases.
+
+    Do not remove accents, punctuation or spaces: similar names are not evidence
+    that two artists are the same. Keep original names for display and source IDs.
+    """
+    key = (name or '').strip().lower()
+    return {'txt': 'tomorrow x together', '(g)i-dle': 'i-dle',
+            '(g)idle': 'i-dle'}.get(key, key)
+
+
 def zh_of(name):
     """取中文名，没有则 None。"""
     if not name:

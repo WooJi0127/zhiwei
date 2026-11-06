@@ -4,6 +4,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../core/app.js'), 'utf8').replace(/\r\n/g, '\n');
+function identityHelpers(ctx){
+  for(const name of ['releaseId', 'artistSuggestionKey']){
+    const start = source.indexOf('function '+name+'(');
+    vm.runInContext(source.slice(start, source.indexOf('\n}', start) + 2), ctx);
+  }
+}
 function hashContext(hash) {
   const ctx = {location:{hash}, S:{view:'calendar', tab:'past', detailId:'old',
     range:{kind:'p365', mode:'quick'}}, syncTabs(){}, rangePreset(){return {};}};
@@ -37,10 +43,11 @@ test('valid encoded release still opens', () => {
 });
 function loaderContext() {
   const scripts = [];
-  const ctx = {LOADED:{}, PENDING:{}, FAILED:{}, YEAR_RETRY:{}, DATA:{generated:'test version'}, YEARS:{'2020':1}, ALL:[], DATE_COUNT:{}, window:{},
+  const ctx = {LOADED:{}, PENDING:{}, FAILED:{}, YEAR_RETRY:{}, DATA:{generated:'test version'}, YEARS:{'2020':1}, ALL:[], DATE_COUNT:{}, window:{scrollY:0,scrollTo(){}},
     toast(){}, normOne(){}, document:{createElement(){return {};},
       head:{appendChild(s){scripts.push(s);}}}};
   vm.createContext(ctx);
+  identityHelpers(ctx);
   vm.runInContext(source.slice(source.indexOf('function loadYear(y, cb){'),
     source.indexOf('/* 选了更早的时间范围时')), ctx);
   return {ctx, scripts};
@@ -117,19 +124,25 @@ test('explicit retry bypasses a cached failed archive and merges only once',()=>
   assert.equal(ctx.ALL.length,1);
 });
 test('JSON object in saved favorites cannot break page startup', () => {
-  const ctx={LS:{get(){return {};}}}; vm.createContext(ctx);
-  vm.runInContext(source.slice(source.indexOf('var favs = LS.get'), source.indexOf('\nvar S =')),ctx);
+  const ctx={localStorage:{getItem(key){return key==='zw_selections'?null:'{}';}}, DATA:{}}; vm.createContext(ctx);
+  identityHelpers(ctx);
+  vm.runInContext(source.slice(source.indexOf('var LS ='), source.indexOf('\nvar S =')),ctx);
   assert.equal(ctx.isFav('test'),false);
   assert.equal(ctx.isBias('test'),false);
 });
 test('opening detail records the actual source list for browser back', () => {
-  const replaced=[];
+  const replaced=[], snapshots=[];
   const ctx={S:{view:'calendar',tab:'past',detailId:null,range:{from:'2020-01-01',to:'2020-12-31'}},
-    location:{hash:''},history:{replaceState(a,b,h){replaced.push(h);},pushState(){}},render(){}};
+    page:2, window:{scrollY:1200}, document:{activeElement:null}, SEARCH_SOURCE_KEYS:['view','tab','detailId','range'],
+    location:{hash:''},history:{replaceState(a,b,h){replaced.push(h);snapshots.push(a);},pushState(){}},render(){}};
   vm.createContext(ctx);
-  vm.runInContext(source.slice(source.indexOf('function releaseHash(id){'),source.indexOf('function closeDetail(){')),ctx);
+  vm.runInContext(source.slice(source.indexOf('function captureViewFocus(){'),source.indexOf('function restoreViewFocus(')),ctx);
+  vm.runInContext(source.slice(source.indexOf('function browseHash(){'),source.indexOf('function closeDetail(){')),ctx);
   ctx.openDetail('old');
   assert.equal(replaced.length,1);
   assert.match(replaced[0], /tab=past/);
   assert.match(replaced[0], /from=2020-01-01/);
+  assert.equal(snapshots[0].zwBrowse.page,2);
+  assert.equal(snapshots[0].zwBrowse.scrollY,1200);
+  assert.equal(snapshots[0].zwBrowse.detailId,null);
 });

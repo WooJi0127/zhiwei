@@ -45,6 +45,7 @@ test('guide home action opens home and clears any detail', () => {
   const c = context();
   c.S.detailId='old';
   c.syncTabs=()=>{}; c.render=()=>{}; c.window={scrollTo(){}};
+  const routes=[];c.exitSearchForNavigation=hash=>routes.push(hash);
   assert.equal(typeof c.openGuideDestination, 'function');
   c.openGuideDestination('home');
   assert.equal(c.S.view, 'home');
@@ -53,4 +54,5 @@ test('guide home action opens home and clears any detail', () => {
   assert.equal(c.S.view, 'calendar');
   assert.equal(c.S.tab, 'mine');
   assert.equal(c.S.mine, 'bias');
+  assert.deepEqual(routes, ['#view=home', '#tab=bias']);
 });

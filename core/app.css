@@ -270,6 +270,7 @@ main{max-width:1280px;margin:0 auto;padding:18px}
 /* 即将回归：横向迷你卡 */
 /* 卡片整体放大（148 → 176）：首页右侧原本空一大块，大一点才撑得住版面 */
 .minibar{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.hsec .btn.home-calendar{display:inline-flex;width:auto;margin-top:12px;min-height:40px}
 .mini{flex:none;width:176px;background-color:var(--kraft);background-image:var(--kraft-tex);
   background-size:200px 200px;border:0;padding:12px;cursor:pointer;box-shadow:var(--shadow);
   /* 四角半径各不相同 —— 手切纸不会四个角一样圆 */
@@ -400,8 +401,10 @@ a.btn{display:inline-flex;align-items:center}
 /* 与主题手册一致的文字控件，所有范围都先选择、再确认。 */
 .calpop{position:absolute;z-index:90;background-color:var(--card);background-image:var(--kraft-tex);
   border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow-lg);
-  padding:14px;width:306px;display:none;max-height:min(78vh,560px);overflow:auto;overscroll-behavior:contain}
-.calpop.on{display:block}
+  padding:14px;width:306px;display:none;max-height:min(calc(100dvh - 24px),560px);overflow:hidden}
+.calpop.on{display:flex;flex-direction:column}
+.calscroll{min-height:0;overflow:auto;overscroll-behavior:contain}
+.calfoot{flex-shrink:0}
 .calpop button{font-family:var(--font-title);font-size:13px;border:0;border-radius:0;
   background:transparent;color:var(--sub);box-shadow:none;text-shadow:none;min-height:38px}
 .calpop button:hover:not(:disabled):not(.on):not(.sel):not(.pri){color:var(--brand2)}
@@ -610,6 +613,9 @@ a.btn{display:inline-flex;align-items:center}
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .more .y{font-size:11.5px;color:var(--sub);margin-top:2px}
 .more:hover .im{filter:drop-shadow(0 3px 5px rgba(34,37,31,.18))}
+.ctitle:focus-visible,.mini:focus-visible,.more:focus-visible,.djc:focus-visible,
+.favbtn:focus-visible,.heart:focus-visible{outline:2px solid var(--brand2);outline-offset:-2px}
+.ctitle,.mini,.more,.djc,.favbtn,.heart{scroll-margin-top:calc(var(--guide-header-height,100px) + 12px);scroll-margin-bottom:12px}
 
 /* ================= misc ================= */
 .biasbox{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
