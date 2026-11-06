@@ -1450,6 +1450,8 @@ function srcLabel(r){
   if(s==="apple")   return "Apple Music";
   if(s==="netease") return "网易云音乐";
   if(s==="kpopping")return "kpopping 日程";
+  if(s==="official")return "官方发行公告";
+  if(s==="kpopofficial")return "KPOP OFFICIAL 日程（第三方汇总）";
   if(s==="kpopcal") return "kpopcal";
   return "公开音乐资料";
 }

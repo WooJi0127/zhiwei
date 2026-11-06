@@ -66,39 +66,20 @@ def http_json(url, retries=RETRIES, timeout=TIMEOUT):
 
 
 # --------------------------------------------------------- 1. kpopping 日历
+class CalendarFetchError(RuntimeError):
+    """The requested calendar could not be verified; this is not an empty month."""
+
+
 def _unescape_rsc(html):
-    """RSC flight payload 里引号被转义成 \\"，先还原。"""
-    s = html.replace('\\"', '"')
-    s = s.replace('\\u003c', '<').replace('\\u003e', '>').replace('\\u0026', '&')
-    return s
-
-
-def _balanced_slice(s, start):
-    """从 start（必须是 [ 或 {）开始，按括号平衡取出完整片段。"""
-    open_ch = s[start]
-    close_ch = ']' if open_ch == '[' else '}'
-    depth = 0
-    instr = False
-    esc = False
-    for j in range(start, len(s)):
-        c = s[j]
-        if instr:
-            if esc:
-                esc = False
-            elif c == '\\':
-                esc = True
-            elif c == '"':
-                instr = False
-            continue
-        if c == '"':
-            instr = True
-        elif c == open_ch:
-            depth += 1
-        elif c == close_ch:
-            depth -= 1
-            if depth == 0:
-                return s[start:j + 1]
-    return None
+    """Decode flight strings once, keeping escaped quotes inside calendar titles."""
+    chunks = []
+    decoder = json.JSONDecoder()
+    for match in re.finditer(r'self\.__next_f\.push\(\s*', html):
+        payload, _ = decoder.raw_decode(html, match.end())
+        if (isinstance(payload, list) and len(payload) > 1
+                and payload[0] == 1 and isinstance(payload[1], str)):
+            chunks.append(payload[1])
+    return ''.join(chunks) if chunks else html
 
 
 def fetch_kpopping_month(year, month):
@@ -110,50 +91,60 @@ def fetch_kpopping_month(year, month):
       groups      : 团体名集合，来自 anniversaries 的 group 字段
       idols       : 个人名集合，来自 birthdays 的 name 字段
     """
-    url = f"https://kpopping.com/calendar?month={year:04d}-{month:02d}"
+    expected_month = f"{year:04d}-{month:02d}"
+    context = f"kpopping {expected_month}"
+    url = f"https://kpopping.com/calendar?month={expected_month}"
     raw = http_get(url)
     if raw is None:
-        return [], {}, set(), set()
+        raise CalendarFetchError(f"{context}: calendar request failed")
     html = raw.decode("utf-8", "replace")
-    s = _unescape_rsc(html)
+    try:
+        s = _unescape_rsc(html)
+    except (ValueError, TypeError) as exc:
+        raise CalendarFetchError(f"{context}: malformed flight payload") from exc
 
-    # 日期锚点： "2026-11-15":{
-    date_anchors = [(m.start(), m.group(1))
-                    for m in re.finditer(r'"(\d{4}-\d{2}-\d{2})":\{', s)]
-    if not date_anchors:
-        print("    ! kpopping 未找到日期锚点")
-        return [], {}, set(), set()
-
-    def date_for(pos):
-        owner = None
-        for dpos, d in date_anchors:
-            if dpos <= pos:
-                owner = d
-            else:
-                break
-        return owner
+    # Parse the enclosing day object. A later unrelated "releases" array must
+    # never inherit the last date seen elsewhere in the page.
+    days = []
+    decoder = json.JSONDecoder()
+    for match in re.finditer(r'"(\d{4}-\d{2}-\d{2})"\s*:\s*', s):
+        date = match.group(1)
+        if not date.startswith(expected_month + '-'):
+            continue
+        try:
+            datetime.date.fromisoformat(date)
+            day, _ = decoder.raw_decode(s, match.end())
+            if not isinstance(day, dict) or not isinstance(day.get('releases'), list):
+                raise ValueError('missing release list')
+            for field in ('releases', 'anniversaries', 'birthdays'):
+                items = day.get(field, [])
+                if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
+                    raise ValueError(f'invalid {field} list')
+            for release in day['releases']:
+                if not isinstance(release.get('artist'), str) or not release['artist'].strip():
+                    raise ValueError('missing release artist')
+                for field in ('title', 'type', 'image', 'slug'):
+                    if release.get(field) is not None and not isinstance(release[field], str):
+                        raise ValueError(f'invalid release {field}')
+            for field, text_fields in (('anniversaries', ('group', 'artist')),
+                                       ('birthdays', ('name',))):
+                for item in day.get(field, []):
+                    if any(item.get(key) is not None and not isinstance(item[key], str)
+                           for key in text_fields):
+                        raise ValueError(f'invalid {field} name')
+            days.append((date, day))
+        except (ValueError, TypeError) as exc:
+            raise CalendarFetchError(f"{context}: malformed calendar day {date}") from exc
+    if not days:
+        raise CalendarFetchError(f"{context}: requested month calendar not found")
 
     releases = []
     debut_years = {}
     groups = set()
     idols = set()
 
-    # --- releases ---
-    for m in re.finditer(r'"releases":\[', s):
-        arr_start = m.end() - 1
-        if s[arr_start:arr_start + 2] == '[]':
-            continue
-        frag = _balanced_slice(s, arr_start)
-        if not frag:
-            continue
-        try:
-            items = json.loads(frag)
-        except Exception:                           # noqa: BLE001
-            continue
-        d = date_for(arr_start)
-        if not d:
-            continue
-        for it in items:
+    for d, day in days:
+        for it in day['releases']:
             releases.append({
                 "date": d,
                 "artist": (it.get("artist") or "").strip(),
@@ -164,27 +155,8 @@ def fetch_kpopping_month(year, month):
                 "source_id": it.get("id") or "",
             })
 
-    # --- anniversaries: 推算出道年 ---
-    this_year = datetime.date.today().year
-    for m in re.finditer(r'"anniversaries":\[', s):
-        arr_start = m.end() - 1
-        if s[arr_start:arr_start + 2] == '[]':
-            continue
-        frag = _balanced_slice(s, arr_start)
-        if not frag:
-            continue
-        try:
-            items = json.loads(frag)
-        except Exception:                           # noqa: BLE001
-            continue
-        d = date_for(arr_start)
-        if not d:
-            continue
-        try:
-            ev_year = int(d[:4])
-        except Exception:                           # noqa: BLE001
-            continue
-        for it in items:
+        # --- anniversaries: 推算出道年 ---
+        for it in day.get('anniversaries', []):
             gname = (it.get("group") or "").strip()
             if gname:
                 groups.add(gname)
@@ -193,21 +165,10 @@ def fetch_kpopping_month(year, month):
             name = (it.get("group") or it.get("artist") or "").strip()
             yrs = it.get("years")
             if name and isinstance(yrs, int):
-                debut_years[name] = ev_year - yrs
+                debut_years[name] = int(d[:4]) - yrs
 
-    # --- birthdays: 过生日的是个人 ---
-    for m in re.finditer(r'"birthdays":\[', s):
-        arr_start = m.end() - 1
-        if s[arr_start:arr_start + 2] == '[]':
-            continue
-        frag = _balanced_slice(s, arr_start)
-        if not frag:
-            continue
-        try:
-            items = json.loads(frag)
-        except Exception:                           # noqa: BLE001
-            continue
-        for it in items:
+        # --- birthdays: 过生日的是个人 ---
+        for it in day.get('birthdays', []):
             nm = (it.get("name") or "").strip()
             if nm:
                 idols.add(nm)

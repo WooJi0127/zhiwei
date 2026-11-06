@@ -22,6 +22,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import sources  # noqa: E402
 import names    # noqa: E402
 import catalog_state  # noqa: E402
+import schedule_fallback  # noqa: E402
+from announcements import apply_verified_announcements  # noqa: E402
 from member_names import member_name_zh  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -312,7 +314,7 @@ def step_kpopcal(con):
     return n_art
 
 
-def step_kpopping(con, months):
+def step_kpopping(con, months, health=None):
     """抓未来+最近月份日历。返回新增发行数。"""
     log("· 抓取 kpopping.com 日程")
     today = datetime.date.today()
@@ -328,7 +330,15 @@ def step_kpopping(con, months):
         while m < 1:
             m += 12
             y -= 1
-        rels, debs, gs, ids = sources.fetch_kpopping_month(y, m)
+        month = f"{y:04d}-{m:02d}"
+        try:
+            rels, debs, gs, ids = sources.fetch_kpopping_month(y, m)
+        except Exception as exc:                       # independent month failure
+            log(f"  ! {month}: 日程抓取失败（不是零发行）: {exc}")
+            if health is not None:
+                health.append({"month": month, "status": "failed", "count": 0,
+                               "error": str(exc)})
+            continue
         debut_map.update(debs)
         groups_all |= gs
         idols_all |= ids
@@ -357,6 +367,8 @@ def step_kpopping(con, months):
             if nm:
                 con.execute("INSERT OR IGNORE INTO artists(name) VALUES(?)", (nm,))
         total += cnt
+        if health is not None:
+            health.append({"month": month, "status": "ok", "count": cnt})
         log(f"  {y:04d}-{m:02d}: 发行 {cnt}")
         time.sleep(1.0)
 
@@ -389,6 +401,84 @@ def step_kpopping(con, months):
     if upd:
         log(f"  回填出道年 {upd} 条")
     return total
+
+
+def step_schedules(con, months):
+    """Primary calendar plus an independent announcement source for failed months."""
+    report = []
+    step_kpopping(con, months, health=report)
+    for result in report:
+        if result["status"] == "ok":
+            continue
+        year, month = map(int, result["month"].split("-"))
+        try:
+            releases = schedule_fallback.fetch_month(year, month)
+            count = 0
+            # A complete parsed month is obtained before modifying the database.
+            with con:
+                for r in releases:
+                    if not is_wanted(r["title"], r["type"]):
+                        continue
+                    artist = names.norm_artist(r["artist"])
+                    known = con.execute("SELECT name FROM artists WHERE lower(name)=lower(?)",
+                                        (artist,)).fetchone()
+                    if known:
+                        artist = known[0]
+                    rid = f"kof:{r['source_id']}"
+                    # Supplemental announcements should not add another copy of a
+                    # release already provided by an official review or a catalog.
+                    # Older artist rows can contain multiple capitalization forms.
+                    existing = con.execute(
+                        "SELECT id,date,title FROM releases WHERE lower(artist)=lower(?)",
+                        (artist,)).fetchall()
+                    if not any(row[0] == rid for row in existing) and any(
+                            normalize_release_title(title) == normalize_release_title(r["title"])
+                            and abs((datetime.date.fromisoformat(date)
+                                     - datetime.date.fromisoformat(r["date"])).days) <= DATE_TOL_DAYS
+                            for _, date, title in existing):
+                        continue
+                    con.execute("INSERT OR IGNORE INTO artists(name) VALUES(?)", (artist,))
+                    con.execute("""INSERT INTO releases
+                        (id,source,date,artist,title,rtype,image,url,extra,rtype_src)
+                        VALUES(?,?,?,?,?,?,?,?,?,?)
+                        ON CONFLICT(id) DO UPDATE SET date=excluded.date,
+                        artist=excluded.artist,title=excluded.title,
+                        rtype=COALESCE(excluded.rtype,releases.rtype),url=excluded.url,
+                        rtype_src=excluded.rtype_src""",
+                        (rid, "kpopofficial", r["date"], artist, r["title"],
+                         map_src_type(r["type"]) or parse_subtype(r["title"]),
+                         "", r["url"], "", r["type"] or ""))
+                    count += 1
+            result.update(status="fallback", count=count, source="kpopofficial")
+            log(f"  {result['month']}: 备用日程成功，读取 {len(releases)} / 补入 {count}")
+        except Exception as exc:
+            result["fallback_error"] = str(exc)
+            log(f"  ! {result['month']}: 备用日程也失败: {exc}")
+    return report
+
+
+def report_schedule_health(report):
+    """Make missing schedule coverage visible to both local runs and GitHub Actions."""
+    lines = ["### 发行日程来源状态", ""]
+    failed = False
+    for row in report:
+        status = row["status"]
+        failed |= status == "failed"
+        text = f"{row['month']}: {status}; 收录 {row.get('count', 0)}"
+        if row.get("error"):
+            text += f"; 主源: {row['error']}"
+        if row.get("fallback_error"):
+            text += f"; 备用源: {row['fallback_error']}"
+        lines.append("- " + text)
+        if status != "ok":
+            level = "error" if status == "failed" else "warning"
+            safe = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+            print(f"::{level} title=发行日程来源::{safe}")
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    return 3 if failed else 0
 
 
 def step_kind_fallback(con):
@@ -491,12 +581,12 @@ def _ne_put(con, artist, alb):
     if date < floor:
         return 0
     rid = "ne:" + str(alb.get("nid") or (date + artist + title))
-    con.execute("""INSERT INTO releases(id,source,date,artist,title,rtype,image,url,extra)
+    inserted = con.execute("""INSERT INTO releases(id,source,date,artist,title,rtype,image,url,extra)
                    VALUES(?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(id) DO NOTHING""",
                 (rid, "netease", date, artist, title,
                  parse_subtype(title), alb.get("image") or "", "", ""))
-    return 1
+    return inserted.rowcount
 
 
 def step_netease_fill(con, cap=70):
@@ -529,9 +619,9 @@ def step_netease_fill(con, cap=70):
         if not ne_id:
             continue
         have = {r[0] for r in con.execute(
-            "SELECT date FROM releases WHERE artist=?", (nm,)).fetchall()}
+            "SELECT id FROM releases WHERE artist=? AND source='netease'", (nm,)).fetchall()}
         for alb in sources.netease_artist_albums(ne_id):
-            if alb["date"] in have:
+            if alb.get("nid") and "ne:" + str(alb["nid"]) in have:
                 continue
             added += _ne_put(con, nm, alb)
         time.sleep(0.15)
@@ -1025,51 +1115,67 @@ def step_retype(con):
     宁可留空。
     """
     rows = list(con.execute(
-        "SELECT id,artist,title,rtype,rtype_src FROM releases"))
+        "SELECT id,artist,title,rtype,rtype_src,date FROM releases"))
+
+    def nearby(values, date):
+        # A namesake prerelease and its later EP are different releases.
+        # Match the date tolerance used by export deduplication, never title alone.
+        try:
+            target = datetime.date.fromisoformat(date)
+        except (ValueError, TypeError):
+            return set()
+        matched = set()
+        for other_date, value in values:
+            try:
+                if abs((datetime.date.fromisoformat(other_date) - target).days) <= DATE_TOL_DAYS:
+                    matched.add(value)
+            except (ValueError, TypeError):
+                continue
+        return matched
 
     # 类型优先级（2026-10-20 用户定的）：**网易云排第一**。
     # 它的 type 是源生三档标注（Single / EP / 专辑），比标题后缀可靠；
     # 同专辑被多个源各抓一次时，网易云那份（id 以 ne: 开头）对整个专辑生效。
     # 之后才是：其它源生标注 → 标题写明 → 跨源一致时借。
     ne = {}
-    for rid, _a, _t, _o, src in rows:
+    for rid, _a, _t, _o, src, _d in rows:
         if rid.startswith("ne:"):
             v = map_src_type(src)
             if v:
                 ne[rid] = v
     ne_album = {}
-    for rid, artist, title, _o, _s in rows:
+    for rid, artist, title, _o, _s, date in rows:
         v = ne.get(rid)
         if v:
-            ne_album.setdefault((artist, _title_key(title)), set()).add(v)
+            ne_album.setdefault((artist, _title_key(title)), []).append((date, v))
 
     got = {}
-    for rid, artist, title, _o, src in rows:
+    for rid, artist, title, _o, src, date in rows:
         v = ne.get(rid)
         if not v:
-            vs = ne_album.get((artist, _title_key(title)))
+            vs = nearby(ne_album.get((artist, _title_key(title)), []), date)
             if vs and len(vs) == 1:      # 网易云自己有分歧也不猜
                 v = next(iter(vs))
         got[rid] = v or (map_src_type(src) or parse_subtype(title))
 
     # (艺人, 归一标题) -> 已确认的类型集合
     seen = {}
-    for rid, artist, title, _o, _s in rows:
+    for rid, artist, title, _o, _s, date in rows:
         v = got[rid]
         if v:
-            seen.setdefault((artist, _title_key(title)), set()).add(v)
+            seen.setdefault((artist, _title_key(title)), []).append((date, v))
 
     borrowed = 0
-    for rid, artist, title, _o, _s in rows:
+    for rid, artist, title, _o, _s, date in rows:
         if got[rid]:
             continue
-        vs = seen.get((artist, _title_key(title)))
+        vs = nearby(seen.get((artist, _title_key(title)), []), date)
         if vs and len(vs) == 1:          # 有分歧就不猜
             got[rid] = next(iter(vs))
             borrowed += 1
 
     changed = typed = 0
-    for rid, _a, _t, old, _s in rows:
+    for rid, _a, _t, old, _s, _d in rows:
         new = got[rid]
         if new:
             typed += 1
@@ -1456,6 +1562,7 @@ def main():
     if not os.path.exists(DB_PATH):
         catalog_state.restore_snapshot(catalog_state.CATALOG_DIR, catalog_state.Path(DB_PATH))
     con = get_db()
+    apply_verified_announcements(con)
     catalog_state.apply_corrections(con, catalog_state.load_corrections())
     log("=" * 56)
     log("开始更新 K-Pop 数据" + (" （全量）" if full else ""))
@@ -1479,7 +1586,16 @@ def main():
         log("更新完成")
         return 0
 
+    if "--schedules-only" in sys.argv:
+        report = step_schedules(con, [0, 1])
+        export_data(con)
+        export_ics(con)
+        catalog_state.save_snapshot(con, catalog_state.CATALOG_DIR)
+        con.close()
+        return report_schedule_health(report)
+
     ok_any = False
+    schedule_report = []
     try:
         step_kpopcal(con)
         ok_any = True
@@ -1488,10 +1604,12 @@ def main():
 
     try:
         months = [-1, 0, 1, 2] if full else [0, 1]
-        step_kpopping(con, months)
-        ok_any = True
+        schedule_report = step_schedules(con, months)
+        ok_any = ok_any or any(r["status"] != "failed" for r in schedule_report)
     except Exception:                               # noqa: BLE001
         log("  ! kpopping 阶段失败: " + traceback.format_exc(limit=1).strip())
+        schedule_report = [{"month": "日程采集", "status": "failed",
+                            "error": "采集阶段异常，详见日志"}]
 
     lim = None
     if "--limit" in sys.argv:
@@ -1577,6 +1695,10 @@ def main():
     export_ics(con)
     catalog_state.save_snapshot(con, catalog_state.CATALOG_DIR)
     con.close()
+    status = report_schedule_health(schedule_report)
+    if status:
+        log("采集成果已保留，但日程来源不可用；停止自动发布，不标记为完整更新")
+        return status
     log("更新完成")
     return 0
 

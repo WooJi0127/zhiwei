@@ -2,8 +2,8 @@
   "format": 1,
   "tables": {
     "artists": {
-      "rows": 264,
-      "sha256": "9d3ddecc3576456155ffc78d5b67d17fd260365b38a1eb55284ad85d97772b09"
+      "rows": 268,
+      "sha256": "cab3c3b231ad54c1e9fe1a1fbbe22b05996fddf06422fa39b1ee736f2947c924"
     },
     "bili": {
       "rows": 228,
@@ -30,8 +30,8 @@
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "releases": {
-      "rows": 5863,
-      "sha256": "f4414de36d6540df984eda29cddf10fd5bdd49bc3177348d05f190a5f9752d30"
+      "rows": 5873,
+      "sha256": "2bdd52bb089daec668bb158305d0a98d93d0aab63a5f3c115a9f3eb8bb9ddcc8"
     },
     "tracks": {
       "rows": 15846,
