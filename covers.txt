@@ -1,3 +1,5 @@
+kof_127229.jpg
+kof_127389.jpg
 kp_05fcad8f_8773_4db6_a1f9_a0154d2afb5d.jpg
 kp_0717cd70_7886_4926_9722_577d3a3ea748.jpg
 kp_07a07cff_01ea_45c7_823b_b919f51960c4.jpg
@@ -136,6 +138,7 @@ mv_BV18efJYtE9W.jpg
 mv_BV18tnq63E7N.jpg
 mv_BV193tG6hEDc.jpg
 mv_BV19HGczgEJ8.jpg
+mv_BV19S4i6fEcw.jpg
 mv_BV19jnG6kEWV.jpg
 mv_BV19o4y167nz.jpg
 mv_BV19w4m1m7MY.jpg
@@ -170,6 +173,7 @@ mv_BV1HP411y7YV.jpg
 mv_BV1HQ4y1R7LC.jpg
 mv_BV1Hy6gBeESw.jpg
 mv_BV1JHb96fEJ4.jpg
+mv_BV1JLxQ65E1o.jpg
 mv_BV1JRHm64EZ4.jpg
 mv_BV1Jx4y1m7m9.jpg
 mv_BV1K6HDeNEDF.jpg
@@ -192,8 +196,10 @@ mv_BV1SY5s6oEpw.jpg
 mv_BV1TN411673b.jpg
 mv_BV1TN4y1H7v7.jpg
 mv_BV1Tt7q6hE4t.jpg
+mv_BV1UZxD6dEpf.jpg
 mv_BV1Uhe4eKEfi.jpg
 mv_BV1Um411S7gy.jpg
+mv_BV1Uw4t6fEiY.jpg
 mv_BV1V58i6eEgb.jpg
 mv_BV1VVpo6gEYg.jpg
 mv_BV1Vbnn6iEFD.jpg
@@ -201,6 +207,7 @@ mv_BV1VwxN6qEnA.jpg
 mv_BV1WS421d7AW.jpg
 mv_BV1Wr421u7iH.jpg
 mv_BV1X741117yK.jpg
+mv_BV1Xg4i6xE3M.jpg
 mv_BV1Y1pr6AEwC.jpg
 mv_BV1YL4y1T7Ff.jpg
 mv_BV1YQq6B8EkN.jpg
@@ -328,3 +335,4 @@ mv_BV1zx4y1x74t.jpg
 ne_2026_10_13PATEKOD__33____.jpg
 ne_2026_10_14Raon_LeeMine_Mine_.jpg
 ne_2026_10_15__________________.jpg
+official_a2o_soul_superstar_debut_ep.jpg
