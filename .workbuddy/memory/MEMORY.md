@@ -109,6 +109,21 @@
   实际在 `envs/default/Scripts/python.exe`）；发布改用 `scripts/publish_site.py --publish`
   （带备份+校验），或宝塔终端 `bash /root/server_sync.sh`。
 
+## 数据工作铁律（2026-11-09，踩过大坑）
+- **动 `kpop.db` 前先 `python scripts/catalog_state.py restore --replace`**。
+  `scripts/catalog/*.jsonl` 才是权威正式快照，本地 DB 常落后云端每日自动更新
+  （2026-11-09 本地 5859 / 快照 5925）。不 restore 就导出会被 `validate_database`
+  拦下（报 lost N records）。补的数据必须写进 JSONL 快照并推 GitHub 才持久。
+- 历史回填：`scripts/backfill.py`（`--full` 全量 / `--daily` 限量 60 / `--dry-run`）。
+  只补空、标题精确匹配、失败 3 次冷却 7 天、未来发行不算缺口。
+  `build.py` 的 `_ne_put`/`_am_put`/`step_kpopping` 已改「只补空」，**别改回 DO NOTHING**。
+- 备用日程源（kpopping 403 时的 kpopofficial）历史月份会吐出大量无封面、
+  标题带 `Title Track` 冗余的条目，按「宁缺毋滥」不要入库。
+- `tools/fetch_covers.py` 本地要用系统 `python`（有 Pillow 13），项目 envs/default 没装；
+  脚本现在失败会 `sys.exit(1)`，让云端自动任务的封面缺口可见。
+- 本地 Python 正确路径：`C:/Users/13956/.workbuddy/binaries/python/envs/default/Scripts/python.exe`
+  （不是 `envs/default/python.exe`）；系统 `python` 有 Pillow、项目 env 有 paramiko。
+
 ## 待办主线
 备案（ICP + 公安均已完成）→ 国内部署（已完成）→ 才轮到术语词典 / 视频推广。
 详见 WILLDO.md。
