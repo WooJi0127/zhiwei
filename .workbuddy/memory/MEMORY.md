@@ -83,10 +83,21 @@
 - **改图标的固定流程**：改 assets 两个 svg → 改 `core/index.html` 页头内联
   `<svg class="mark">` + `<link rel="icon">` 的 data URI → 跑 `tools/make_icons.py`
   → 跑 `tools/sync.py`（自动同步 desktop/mobile/site/app 并重建 知未.html）
-- 注意：`site/index.html` 是独立的紫粉系营销页，**不跟 app 走墨绿品牌色**，
-  它的 theme-color 保持紫色，别顺手改绿。
 - 顺带修掉的旧 bug：5 个 app 页面 `theme-color` 曾是紫色 `#6d4aff`，已统一为墨绿。
+- 更正（2026-11-09）：营销落地页 2026-10-28 已删，`site/index.html` 现在就是
+  `core/index.html` 的镜像（打开域名即用），跟着 app 走墨绿。旧记忆「紫粉独立页」作废。
+
+## 搜索引擎验证 / 发布边界（2026-11-09）
+- 百度站点验证 meta：`codeva-vhqdHoElKx`，常驻 `core/index.html` 的 head，
+  **验证通过后也不能删**（删了站点所有权会失效）。sync 会带到各端，离线包里带着无害。
+- 生产边界：push 到 main 属常规流程；**立即手动同步国内站需站长另行明确授权**
+  （见 scripts/*-release.md 的《生产环境操作边界》）。服务器每天 10:00 自动拉。
+- **动 `core/` 前先 `git pull --ff-only`**：本机常落后远程多日的自动数据提交，
+  不拉就 sync/push 会把线上退回旧版（2026-11-09 差点踩）。
+- `上传网站.bat` 的 Python 路径已失效（写成 `envs/default/python.exe`，
+  实际在 `envs/default/Scripts/python.exe`）；发布改用 `scripts/publish_site.py --publish`
+  （带备份+校验），或宝塔终端 `bash /root/server_sync.sh`。
 
 ## 待办主线
-备案（管局审核中）→ 国内部署 → 才轮到术语词典 / 视频推广。
+备案（ICP + 公安均已完成）→ 国内部署（已完成）→ 才轮到术语词典 / 视频推广。
 详见 WILLDO.md。
