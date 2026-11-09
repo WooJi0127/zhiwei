@@ -20,10 +20,17 @@
 | 公安备案 | ✅ 已通过：**皖公网安备34011102004379号**（2026-10-30，合肥市包河区网安大队）；服务类型「非交互式」 |
 | iCal 订阅 | `https://mywooji.cn/zhiwei.ics`（build.py 每次导出生成：过去 60 天 + 未来 180 天） |
 
-**服务器自动更新（2026-10-30 定型）**：宝塔计划任务每天 10:00 执行 **常驻脚本**
-`/root/server_sync.sh`（内容同 `tools/server_sync.sh`，7 个镜像依次试，结果写 `/root/sync.log`）。
+**服务器自动更新（2026-11-09 升级，以此为准）**：宝塔计划任务每天 10:00 执行 **常驻脚本**
+`/root/server_sync.sh`。脚本仍是常驻文件 + 7 个镜像依次试（prelude 保留），但**发布尾段已换成
+`scripts/release_sync.sh`**：先拉 `site/release-manifest.tsv`，逐文件校验 sha256 与 data.js 的
+`generated` 时间戳，全对才原子替换；`--once` 手动跑一次，默认 8 小时轮询（33×15min）。
+日志仍是 `/root/sync.log`。
 ⚠️ 绝不能写成 `curl … | bash`（先联网拉脚本）——jsdelivr 之类一不通就静默失败，曾断更两天。
-排查第一步：`cat /root/sync.log`，正常应为 `ok=21 fail=0`。
+排查第一步：`cat /root/sync.log`（看 `awaiting complete catalog` / `published generated=...`）。
+**一键发布**：`python scripts/publish_site.py`（不带参数 = 只读预检）；加 `--publish` 才真发布，
+自动备份旧文件到 `/root/zhiwei-backups/<UTC时间戳>`、逐文件校验上传、必要时升级常驻脚本。
+**立即手动发布需站长明确授权**（见 scripts/*-release.md《生产环境操作边界》）。
+旧的 `tools/upload_site.py` +「上传网站.bat」已过时（bat 的 Python 路径还写错了，别用）。
 
 ## 数据源特性（实测，别再重复试错）
 - **网易云** `/api/v1/album/{id}` 的 `type` 是 **Single / EP / 专辑 三档**
