@@ -355,7 +355,10 @@ def step_kpopping(con, months, health=None):
                            VALUES(?,?,?,?,?,?,?,?,?,?)
                            ON CONFLICT(id) DO UPDATE SET
                              date=excluded.date, title=excluded.title,
-                             rtype=excluded.rtype, image=excluded.image,
+                             rtype=excluded.rtype,
+                             image=CASE WHEN (releases.image IS NULL OR releases.image='')
+                                             AND excluded.image<>'' THEN excluded.image
+                                        ELSE releases.image END,
                              rtype_src=excluded.rtype_src""",
                         (rid, "kpopping", r["date"], r["artist"], r["title"],
                          src or parse_subtype(r["title"]), r["image"], "", "",
@@ -581,12 +584,19 @@ def _ne_put(con, artist, alb):
     if date < floor:
         return 0
     rid = "ne:" + str(alb.get("nid") or (date + artist + title))
-    inserted = con.execute("""INSERT INTO releases(id,source,date,artist,title,rtype,image,url,extra)
+    # 只补空、不覆盖：第一次入库时源没给封面，后面重扫到同一张专辑也要能补回来。
+    # 以前这里是 ON CONFLICT DO NOTHING —— 一次没搜到就永远缺图（2026-11-09 修复）。
+    existed = con.execute("SELECT 1 FROM releases WHERE id=?", (rid,)).fetchone() is not None
+    con.execute("""INSERT INTO releases(id,source,date,artist,title,rtype,image,url,extra)
                    VALUES(?,?,?,?,?,?,?,?,?)
-                   ON CONFLICT(id) DO NOTHING""",
+                   ON CONFLICT(id) DO UPDATE SET
+                     image=CASE WHEN (releases.image IS NULL OR releases.image='')
+                                     AND excluded.image<>'' THEN excluded.image ELSE releases.image END,
+                     url=CASE WHEN (releases.url IS NULL OR releases.url='')
+                                   AND excluded.url<>'' THEN excluded.url ELSE releases.url END""",
                 (rid, "netease", date, artist, title,
                  parse_subtype(title), alb.get("image") or "", "", ""))
-    return inserted.rowcount
+    return 0 if existed else 1
 
 
 def step_netease_fill(con, cap=70):
@@ -717,9 +727,14 @@ def _am_put(con, aname, a):
     if not a.get("date") or not is_wanted(a.get("title") or ""):
         return 0
     rid = "am:" + str(a.get("collectionId") or (a["date"] + aname + a["title"]))
+    # 同 _ne_put：已有记录只补空字段，绝不把已有封面/链接洗掉。
     con.execute("""INSERT INTO releases(id,source,date,artist,title,rtype,image,url,extra)
                    VALUES(?,?,?,?,?,?,?,?,?)
-                   ON CONFLICT(id) DO NOTHING""",
+                   ON CONFLICT(id) DO UPDATE SET
+                     image=CASE WHEN (releases.image IS NULL OR releases.image='')
+                                     AND excluded.image<>'' THEN excluded.image ELSE releases.image END,
+                     url=CASE WHEN (releases.url IS NULL OR releases.url='')
+                                   AND excluded.url<>'' THEN excluded.url ELSE releases.url END""",
                 (rid, "apple", a["date"], aname, a["title"],
                  parse_subtype(a["title"]), a.get("image") or "", "", ""))
     return 1

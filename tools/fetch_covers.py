@@ -130,6 +130,10 @@ def main():
                 else:
                     ok += 1
         print(f"完成：新下载 {ok}，已有 {skip}，失败 {fail}")
+        # 失败要能被看见：自动任务里这步是 continue-on-error，
+        # 退出码非零才会把步骤标红（不妨碍发布，但站长能发现缺口）。
+        if fail:
+            sys.exit(1)
         names = sorted(os.listdir(OUT))
         io.open(os.path.join(ROOT, "covers.txt"), "w", encoding="utf-8").write(
             "\n".join(names) + "\n")
@@ -154,6 +158,8 @@ def main():
             if (ok + skip + fail) % 50 == 0:
                 print(f"  … {ok + skip + fail}/{len(need)}")
     print(f"完成：新下载 {ok}，已有 {skip}，失败 {fail}")
+    if fail:
+        sys.exit(1)
     total = sum(os.path.getsize(os.path.join(OUT, f))
                 for f in os.listdir(OUT)) / 1048576
     print(f"covers 目录：{len(os.listdir(OUT))} 张，共 {total:.1f} MB")

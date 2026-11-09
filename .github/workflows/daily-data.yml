@@ -43,6 +43,10 @@ jobs:
       - name: 采集最新发行
         if: github.event_name != 'push' && inputs.mode != 'verify'
         run: python scripts/build.py
+      - name: 回填历史缺口（限量，失败不影响发布）
+        if: github.event_name != 'push' && inputs.mode != 'verify'
+        continue-on-error: true
+        run: python scripts/backfill.py --daily --max-requests 60 --pause 0.4
       - name: 补抓 B 站官方 MV（包含刚发现的发行）
         if: github.event_name != 'push' && inputs.mode != 'verify'
         continue-on-error: true
