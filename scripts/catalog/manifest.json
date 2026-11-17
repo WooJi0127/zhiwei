@@ -3,11 +3,11 @@
   "tables": {
     "artists": {
       "rows": 273,
-      "sha256": "8c5598b54ff357317268133d55b1b36722081d56cf9a40d1fb308cedf51c4c02"
+      "sha256": "5e6f16c1090ff892fe94d8c2d64c42de2df033467d7581c921450d6b904d7587"
     },
     "bili": {
       "rows": 239,
-      "sha256": "713b903d5d0d492947d09eeccb527a51ca84e15f6b084b64992d1a494dca80e3"
+      "sha256": "4e303cd8924596134af68db341927563a7de1ddb90f065a5c68af69e794e9fd5"
     },
     "bili_mid": {
       "rows": 1196,
@@ -30,12 +30,12 @@
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "releases": {
-      "rows": 6021,
-      "sha256": "c6abcbc57b9201d0c7259e8b864d1f815ba2eff9b1fdde714274d2f6e33544b5"
+      "rows": 6022,
+      "sha256": "48e0ef88652b6c8f24c19713cba2e1b0fa5e1253779e04f7fa86971053023883"
     },
     "tracks": {
-      "rows": 16673,
-      "sha256": "0dfe1bf8598a0cababe344cc61e13e7bd0ad3a3f7fdd1296629046917b5d6910"
+      "rows": 16696,
+      "sha256": "991f2ad3893a4463b85c69ad7ea8af7c27674af7e07c18e423c0ef2f6caa7b82"
     }
   }
 }
