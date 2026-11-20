@@ -7,7 +7,7 @@
     },
     "bili": {
       "rows": 240,
-      "sha256": "fecb52111a54347b50738f47441ee7d0c1ef9a359f14c5731d759ed441622665"
+      "sha256": "7c920e65d9435b8de07ea8ec0d034619d347a000b4b499d46eb35d3ed7af0f94"
     },
     "bili_mid": {
       "rows": 1198,
@@ -31,7 +31,7 @@
     },
     "releases": {
       "rows": 6068,
-      "sha256": "a4ee075cbf6d00333eed0a3fccaf66344c538c55f98cf8ab81a210339e999596"
+      "sha256": "4ca8f574b640244bbf0265bda7dd0a24ef6f03561bc2daec0254b4d8e00e3967"
     },
     "tracks": {
       "rows": 16811,
